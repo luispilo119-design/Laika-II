@@ -1,0 +1,233 @@
+/* Guías de supervivencia (B6). Colores y tamaños: variables de base.css. */
+
+.guides {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 24px 24px 64px;
+}
+
+.guides__head h1 {
+  font-size: 30px;
+  margin-bottom: 4px;
+}
+
+.guides__head p,
+.guides__lead {
+  margin: 0 0 12px;
+  color: var(--text-dim);
+}
+
+.guides__head p {
+  font-size: 17px;
+}
+
+.guides h2 {
+  margin: 24px 0 8px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rust-300);
+}
+
+.guides h4 {
+  margin: 14px 0 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* ---------- Necesidades diarias ---------- */
+
+.guides__needs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 10px;
+}
+
+.guides__need {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+}
+
+.guides__need h3 {
+  margin: 0;
+  font-size: 15px;
+  color: var(--text-dim);
+}
+
+.guides__need p {
+  margin: 0;
+}
+
+.guides__need .guides__need-value {
+  margin: 2px 0 4px;
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--cream);
+}
+
+.guides__need-value span {
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--text-dim);
+}
+
+.guides__need .guides__need-value--empty {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--warn);
+}
+
+.guides__need-why,
+.guides__need-note {
+  font-size: 14px;
+}
+
+.guides__need-note {
+  color: var(--text-dim);
+}
+
+/* ---------- Guías por situación ---------- */
+
+.guides__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.guides__tab {
+  flex: 1 1 auto;
+  min-height: var(--tap);
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.guides__tab:hover {
+  border-color: var(--rust-500);
+}
+
+.guides__tab[aria-selected='true'] {
+  border-color: var(--rust-300);
+  background: var(--rust-700);
+  color: var(--cream);
+  font-weight: 600;
+}
+
+.guides__tab:focus-visible,
+.guides__panel:focus-visible {
+  outline: 2px solid var(--cream);
+  outline-offset: 2px;
+}
+
+.guides__panel {
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-sunken);
+}
+
+.guides__name {
+  margin: 0;
+  font-size: 22px;
+  color: var(--cream);
+}
+
+.guides__cols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 24px;
+}
+
+.guides__facts,
+.guides__steps {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.guides__facts li {
+  padding: 10px 12px 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+}
+
+.guides__steps {
+  counter-reset: step;
+}
+
+.guides__steps li {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  align-items: start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+  counter-increment: step;
+}
+
+.guides__steps li::before {
+  content: counter(step);
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--rust-700);
+  color: var(--cream);
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
+.guides__src {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 10px;
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+/* Cada fuente es un enlace con altura táctil suficiente. */
+.guides__src a {
+  padding-block: 13px;
+  overflow-wrap: anywhere;
+}
+
+.guides__fine {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+.guides__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 720px) {
+  .guides__cols {
+    grid-template-columns: 1fr;
+  }
+}

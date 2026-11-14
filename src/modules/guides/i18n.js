@@ -1,11 +1,211 @@
-/** Textos del módulo "guides". Toda clave debe existir en es y en en. */
+/**
+ * Textos del módulo "guides". Toda clave debe existir en es y en en.
+ * Las cifras de estas frases salen de las referencias de data.js: si cambias una, revisa la fuente.
+ */
 export default {
   es: {
-    title: "Guías de supervivencia",
-    desc: "Lo que necesita el cuerpo humano cada día y cómo responder a emergencias.",
+    title: 'Guías de supervivencia',
+    desc: 'Lo que necesita el cuerpo humano cada día y cómo responder a emergencias.',
+    source: 'Fuente',
+    needs: {
+      title: 'Lo que el cuerpo necesita cada día',
+      lead: 'Cada valor se muestra solo cuando tiene una referencia comprobada. Si todavía no la hay, la tarjeta dice «sin datos» en lugar de una cifra aproximada.',
+      noData: 'Sin datos todavía',
+      range: 'de {low} a {high}',
+    },
+    need: {
+      water: { name: 'Agua', why: 'Para beber, preparar la comida y asearse.' },
+      oxygen: { name: 'Oxígeno', why: 'Para respirar dentro del hábitat y del traje.' },
+      food: { name: 'Alimento', why: 'Energía y nutrientes para trabajar y mantenerse sano.' },
+      pressure: { name: 'Presión', why: 'El hábitat y el traje mantienen el aire a una presión que el cuerpo tolera.' },
+      temperature: { name: 'Temperatura', why: 'El hábitat y el traje mantienen una temperatura habitable.' },
+      radiation: { name: 'Radiación', why: 'La dosis se mide y se va sumando durante toda la misión.' },
+    },
+    guides: {
+      title: 'Guías por situación',
+      pick: 'Elige una situación',
+      facts: 'Qué pasa',
+      steps: 'Qué hacer',
+      links: 'Dónde verlo en la app',
+      basis: 'Los pasos se basan en',
+      disclaimer: 'Los pasos son una guía general armada por el equipo a partir de estas fuentes. No son un procedimiento oficial de la NASA.',
+    },
+    guide: {
+      pressure: {
+        name: 'Fallo de presión',
+        fact: {
+          1: 'En la superficie de Marte la presión es de unos 6.36 milibares, y varía entre 4.0 y 8.7 según la estación.',
+          2: 'La atmósfera de Marte tiene cerca del 1 % de la densidad de la terrestre: solo el hábitat y el traje mantienen la presión que el cuerpo necesita.',
+          3: 'En la estación espacial la tripulación ensaya esta emergencia: ponerse rápido el equipo de seguridad y cerrar la escotilla del módulo para aislar la fuga.',
+        },
+        step: {
+          1: 'Ponte de inmediato el equipo de seguridad: traje o máscara.',
+          2: 'Sal del módulo que pierde presión y cierra su escotilla para aislar la fuga.',
+          3: 'Reúne a la tripulación en un módulo seguro y comprueba que ahí la presión se mantiene.',
+          4: 'Avisa al control de misión. La respuesta puede tardar hasta 20 minutos por trayecto: sigue el procedimiento sin esperarla.',
+          5: 'Si la fuga no se puede aislar, pasa al vehículo o al módulo de refugio, igual que la tripulación de la estación evacúa a su nave.',
+        },
+      },
+      dust: {
+        name: 'Tormenta de polvo',
+        fact: {
+          1: 'Cada año hay tormentas que cubren áreas del tamaño de un continente y duran semanas. En promedio, una vez cada tres años marcianos (unos cinco años y medio terrestres) una crece hasta rodear el planeta.',
+          2: 'El viento de las tormentas más fuertes llega a unos 97 km/h (60 millas por hora), pero con una atmósfera tan tenue es poco probable que vuelque equipos o deje varado a alguien.',
+          3: 'El problema real es el polvo: cubre los paneles solares y, en una tormenta global, reduce la luz que llega al suelo.',
+        },
+        step: {
+          1: 'Vigila la producción de los paneles solares: una caída suele ser el primer aviso.',
+          2: 'Suspende los recorridos y las salidas hasta que el polvo se asiente.',
+          3: 'Ahorra batería: apaga lo que no sea esencial.',
+          4: 'Protege del polvo el equipo delicado.',
+          5: 'Cuando pase la tormenta, limpia los paneles antes de volver al consumo normal.',
+        },
+      },
+      radiation: {
+        name: 'Evento de radiación solar',
+        fact: {
+          1: 'Una erupción solar puede ir seguida de una ola de partículas de alta energía, peligrosa para las personas y para la electrónica.',
+          2: 'Marte no tiene un campo magnético global y su atmósfera es mucho más tenue que la de la Tierra: en la superficie la protección natural es mínima.',
+          3: 'La energía de casi todas esas partículas solares es lo bastante baja para que la estructura de una nave las detenga. Los rayos cósmicos galácticos son más difíciles de blindar.',
+        },
+        step: {
+          1: 'Ante un evento solar, entra al hábitat o al lugar con más blindaje.',
+          2: 'Suspende las salidas al exterior hasta que el evento pase.',
+          3: 'Quédate tras la estructura más gruesa disponible: es la que detiene la mayoría de las partículas solares.',
+          4: 'Anota la dosis de cada persona: se lleva la cuenta de la dosis de corto plazo y de la de toda la vida.',
+        },
+      },
+      comms: {
+        name: 'Pérdida de comunicación',
+        fact: {
+          1: 'Cada dos años Marte y la Tierra quedan en lados opuestos del Sol. El gas caliente de la corona solar interfiere con la radio y puede corromper las órdenes, así que la NASA deja de enviarlas durante ese periodo.',
+          2: 'Incluso en días normales, un mensaje tarda hasta 20 minutos por trayecto.',
+          3: 'En el análogo CHAPEA de la NASA, la tripulación ensayó un apagón de comunicaciones de dos semanas.',
+        },
+        step: {
+          1: 'No esperes una respuesta inmediata: sigan los procedimientos de a bordo y decidan en equipo.',
+          2: 'No ejecutes una orden que haya llegado incompleta o dudosa: una orden corrompida puede causar un comportamiento inesperado.',
+          3: 'Guarda los datos y los mensajes: se pueden retransmitir cuando vuelva el enlace.',
+          4: 'Mantén la rutina y el seguimiento de la salud de la tripulación mientras dure el silencio.',
+        },
+      },
+      power: {
+        name: 'Quedarse sin energía',
+        fact: {
+          1: 'El módulo InSight de la NASA terminó su misión en 2022: el polvo acumulado en sus paneles solares fue reduciendo la energía hasta agotar las baterías.',
+          2: 'Antes de eso, el equipo dejó encendido un solo instrumento científico y logró quitar parte del polvo dejando caer tierra sobre los paneles en días de viento.',
+          3: 'Una tormenta global de polvo reduce además la luz que llega al suelo.',
+        },
+        step: {
+          1: 'Apaga primero lo que no sea esencial y deja para el final el soporte vital.',
+          2: 'Revisa los paneles solares: si tienen polvo, límpialos.',
+          3: 'Si hay tormenta, ahorra batería y espera a que el polvo se asiente.',
+          4: 'Informa al control de misión cuánta energía queda y qué quedó apagado.',
+        },
+      },
+    },
   },
+
   en: {
-    title: "Survival guides",
-    desc: "What the human body needs every day and how to respond to emergencies.",
+    title: 'Survival guides',
+    desc: 'What the human body needs every day and how to respond to emergencies.',
+    source: 'Source',
+    needs: {
+      title: 'What the body needs every day',
+      lead: 'Each value is shown only when it has a checked reference. If there is none yet, the card says “no data” instead of an approximate figure.',
+      noData: 'No data yet',
+      range: '{low} to {high}',
+    },
+    need: {
+      water: { name: 'Water', why: 'For drinking, preparing food and washing.' },
+      oxygen: { name: 'Oxygen', why: 'For breathing inside the habitat and the suit.' },
+      food: { name: 'Food', why: 'Energy and nutrients to work and stay healthy.' },
+      pressure: { name: 'Pressure', why: 'The habitat and the suit keep the air at a pressure the body can tolerate.' },
+      temperature: { name: 'Temperature', why: 'The habitat and the suit keep a livable temperature.' },
+      radiation: { name: 'Radiation', why: 'The dose is measured and adds up over the whole mission.' },
+    },
+    guides: {
+      title: 'Guides by situation',
+      pick: 'Choose a situation',
+      facts: 'What happens',
+      steps: 'What to do',
+      links: 'Where to see it in the app',
+      basis: 'The steps are based on',
+      disclaimer: 'The steps are a general guide put together by the team from these sources. They are not an official NASA procedure.',
+    },
+    guide: {
+      pressure: {
+        name: 'Pressure failure',
+        fact: {
+          1: 'On the surface of Mars the pressure is about 6.36 millibars, varying from 4.0 to 8.7 with the season.',
+          2: 'The atmosphere of Mars is about 1% as dense as Earth’s: only the habitat and the suit hold the pressure the body needs.',
+          3: 'On the space station the crew drills this emergency: quickly putting on safety gear and closing the module hatch to isolate the leak.',
+        },
+        step: {
+          1: 'Put on your safety gear right away: suit or mask.',
+          2: 'Leave the module that is losing pressure and close its hatch to isolate the leak.',
+          3: 'Gather the crew in a safe module and check that pressure is holding there.',
+          4: 'Tell mission control. The reply can take up to 20 minutes one way: follow the procedure without waiting for it.',
+          5: 'If the leak cannot be isolated, move to the vehicle or the shelter module, just as the station crew evacuates to their spacecraft.',
+        },
+      },
+      dust: {
+        name: 'Dust storm',
+        fact: {
+          1: 'Every year there are storms that cover continent-sized areas and last for weeks. On average, once every three Mars years (about five and a half Earth years) one grows until it circles the planet.',
+          2: 'Wind in the strongest storms reaches about 97 km/h (60 miles per hour), but with such thin air it is unlikely to tip equipment over or strand anyone.',
+          3: 'The real problem is dust: it covers solar panels and, in a global storm, reduces the sunlight reaching the ground.',
+        },
+        step: {
+          1: 'Watch the output of the solar panels: a drop is often the first warning.',
+          2: 'Suspend drives and walks outside until the dust settles.',
+          3: 'Save battery: switch off whatever is not essential.',
+          4: 'Protect delicate equipment from dust.',
+          5: 'When the storm passes, clean the panels before going back to normal consumption.',
+        },
+      },
+      radiation: {
+        name: 'Solar radiation event',
+        fact: {
+          1: 'A solar eruption can be followed by a wave of high-energy particles, dangerous to people and to electronics.',
+          2: 'Mars has no global magnetic field and its atmosphere is much thinner than Earth’s: on the surface, natural protection is minimal.',
+          3: 'The energy of almost all those solar particles is low enough for a spacecraft’s structure to stop them. Galactic cosmic rays are harder to shield against.',
+        },
+        step: {
+          1: 'During a solar event, go into the habitat or the most shielded place.',
+          2: 'Suspend activity outside until the event is over.',
+          3: 'Stay behind the thickest structure available: it is what stops most solar particles.',
+          4: 'Log each person’s dose: both the short-term dose and the lifetime dose are tracked.',
+        },
+      },
+      comms: {
+        name: 'Loss of communication',
+        fact: {
+          1: 'Every two years Mars and Earth end up on opposite sides of the Sun. Hot gas from the solar corona interferes with radio and can corrupt commands, so NASA stops sending them during that period.',
+          2: 'Even on normal days, a message takes up to 20 minutes one way.',
+          3: 'In NASA’s CHAPEA analog, the crew rehearsed a two-week communication blackout.',
+        },
+        step: {
+          1: 'Do not expect an immediate reply: follow on-board procedures and decide as a team.',
+          2: 'Do not run a command that arrived incomplete or doubtful: a corrupted command can cause unexpected behavior.',
+          3: 'Keep data and messages: they can be retransmitted when the link returns.',
+          4: 'Keep the routine and the crew health checks going while the silence lasts.',
+        },
+      },
+      power: {
+        name: 'Running out of power',
+        fact: {
+          1: 'NASA’s InSight lander ended its mission in 2022: dust building up on its solar panels kept reducing its energy until the batteries ran out.',
+          2: 'Before that, the team left a single science instrument switched on and managed to remove some dust by dropping soil onto the panels on windy days.',
+          3: 'A global dust storm also reduces the sunlight reaching the ground.',
+        },
+        step: {
+          1: 'Switch off whatever is not essential first, and leave life support for last.',
+          2: 'Check the solar panels: if they are dusty, clean them.',
+          3: 'If there is a storm, save battery and wait for the dust to settle.',
+          4: 'Tell mission control how much energy is left and what was switched off.',
+        },
+      },
+    },
   },
 };
