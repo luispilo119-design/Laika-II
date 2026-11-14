@@ -66,6 +66,9 @@ export default {
       dustNo: 'Llegas fuera de la primavera austral, la época de las grandes tormentas regionales de polvo.',
     },
     use: 'Usar este plan y elegir sitio de aterrizaje',
+    selected: 'Plan seleccionado',
+    watch: 'Mira el viaje paso a paso',
+    drag: 'Arrastra para girar · rueda o pellizco para acercar',
     saved: 'Plan guardado',
     goMap: 'Ir al mapa',
     how: {
@@ -142,6 +145,9 @@ export default {
       dustNo: 'You arrive outside southern spring, the time of the large regional dust storms.',
     },
     use: 'Use this plan and choose a landing site',
+    selected: 'Selected plan',
+    watch: 'Watch the trip step by step',
+    drag: 'Drag to rotate · scroll or pinch to zoom',
     saved: 'Plan saved',
     goMap: 'Go to the map',
     how: {

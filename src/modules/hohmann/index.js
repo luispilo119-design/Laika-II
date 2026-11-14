@@ -6,6 +6,7 @@
  * este archivo solo dibuja y maneja la interacción.
  */
 import './hohmann.css';
+import { createHohmann3D } from './scene3d.js';
 import messages from './i18n.js';
 import {
   addDays,
@@ -122,7 +123,7 @@ const mod = {
     el.innerHTML = `
       <div class="hohmann">
         <section class="hohmann__stage">
-          <div class="hohmann__canvas-wrap"><canvas></canvas></div>
+          <div class="hohmann__canvas-wrap"><canvas></canvas><p class="hohmann__drag">${t('hohmann.drag')}</p></div>
           <div class="hohmann__transport">
             <button type="button" class="btn btn--primary" data-play></button>
             <input type="range" min="0" max="1000" value="0" aria-label="${t('hohmann.timeline')}" />
@@ -139,6 +140,16 @@ const mod = {
           <h1>${t('hohmann.title')}</h1>
           <p class="hohmann__intro">${t('hohmann.intro')}</p>
 
+          <div class="hohmann__planbar" data-planbar></div>
+
+          <h2 class="hohmann__h"><span class="hohmann__num">1</span>${t('hohmann.windows')}</h2>
+          <label class="hohmann__from">
+            <span>${t('hohmann.planFrom')}</span>
+            <input type="date" min="${MIN_DATE}" max="${MAX_DATE}" />
+          </label>
+          <div class="hohmann__windows"></div>
+
+          <h2 class="hohmann__h"><span class="hohmann__num">2</span>${t('hohmann.watch')}</h2>
           <div class="hohmann__steps" role="group">
             ${[1, 2, 3, 4]
               .map(
@@ -152,13 +163,6 @@ const mod = {
             <p data-phase="text"></p>
             <p class="hohmann__live" data-phase="live"></p>
           </div>
-
-          <label class="hohmann__from">
-            <span>${t('hohmann.planFrom')}</span>
-            <input type="date" min="${MIN_DATE}" max="${MAX_DATE}" />
-          </label>
-          <h2 class="hohmann__h">${t('hohmann.windows')}</h2>
-          <div class="hohmann__windows"></div>
 
           <div class="hohmann__summary"></div>
 
@@ -185,6 +189,7 @@ const mod = {
     const dateInput = $('.hohmann__from input');
     const windowsBox = $('.hohmann__windows');
     const summaryBox = $('.hohmann__summary');
+    const planBar = $('[data-planbar]');
     const stat = (name) => $(`[data-stat="${name}"]`);
     const phaseEl = (name) => $(`[data-phase="${name}"]`);
 
@@ -195,6 +200,25 @@ const mod = {
       dim: css.getPropertyValue('--text-dim').trim() || '#b99f8c',
       line: css.getPropertyValue('--line').trim() || '#3a231c',
     };
+
+    // Vista 3D; si el navegador no tiene WebGL se queda el dibujo 2D en el canvas.
+    const three = createHohmann3D($('.hohmann__canvas-wrap'), {
+      earth: EARTH_COLOR,
+      mars: '#e0734a',
+      ship: '#fffff3',
+      sun: SUN_COLOR,
+      labels: {
+        sun: t('hohmann.label.sun'),
+        earth: t('hohmann.label.earth'),
+        mars: t('hohmann.label.mars'),
+        ship: t('hohmann.label.ship'),
+        departure: t('hohmann.label.departure'),
+        arrival: t('hohmann.label.arrival'),
+        angle: '',
+      },
+    });
+    if (three) canvas.hidden = true;
+    else $('.hohmann__drag').hidden = true;
 
     // Comparación con una misión real, para la nota de exactitud.
     const [window2020] = findWindows(new Date(Date.UTC(2020, 0, 1)), 1);
@@ -233,6 +257,25 @@ const mod = {
     /* ---------- Dibujo ---------- */
 
     function draw() {
+      if (three && plan) {
+        const now = new Date(time);
+        const phase = phaseAt(time);
+        const earthNow = planetPosition('earth', now);
+        const marsNow = planetPosition('mars', now);
+        const fraction = (time - depMs()) / (arrMs() - depMs());
+        const flying = fraction >= 0 && fraction < 1;
+        three.update({
+          plan,
+          phase,
+          earth: earthNow,
+          mars: marsNow,
+          fraction,
+          ship: flying ? transferPosition(plan, fraction) : null,
+          shipAhead: flying ? transferPosition(plan, Math.min(1, fraction + 0.01)) : null,
+          angleDeg: phase === 1 ? wrap180(marsNow.lon - earthNow.lon) : null,
+        });
+        return;
+      }
       const { w, h } = size;
       if (!w || !plan) return;
       const dpr = window.devicePixelRatio || 1;
@@ -449,6 +492,7 @@ const mod = {
     function renderSummary() {
       if (!plan) {
         summaryBox.replaceChildren();
+        planBar.replaceChildren();
         return;
       }
       const mission = store.get().mission;
@@ -473,9 +517,16 @@ const mod = {
           )}
         </dl>
         <p class="hohmann__dust${dusty ? ' is-warn' : ''}">${t(dusty ? 'hohmann.summary.dustYes' : 'hohmann.summary.dustNo')}</p>
+      `;
+      planBar.innerHTML = `
+        <div class="hohmann__planbar-info">
+          <span class="kicker">${saved ? t('hohmann.saved') : t('hohmann.selected')}</span>
+          <strong>${fmtDate(plan.departure)} → ${fmtDate(plan.arrival)}</strong>
+          <span>${t('hohmann.summary.tripValue', { days: num(plan.transferDays) })} · Ls ${num(plan.arrivalLs)}°</span>
+        </div>
         <button type="button" class="btn btn--primary hohmann__use">${t(saved ? 'hohmann.goMap' : 'hohmann.use')}</button>
       `;
-      summaryBox.querySelector('.hohmann__use').addEventListener('click', () => {
+      planBar.querySelector('.hohmann__use').addEventListener('click', () => {
         store.set('mission.departure', plan.departure.toISOString());
         store.set('mission.arrival', plan.arrival.toISOString());
         store.set('mission.arrivalLs', plan.arrivalLs);
@@ -498,6 +549,7 @@ const mod = {
         mars: orbitPath('mars', plan.departure),
         transfer: Array.from({ length: 65 }, (_, i) => transferPosition(plan, i / 64)),
       };
+      three?.setPaths(paths);
       shownPhase = 0;
       renderWindows();
       renderSummary();
@@ -601,6 +653,7 @@ const mod = {
       cancelAnimationFrame(raf);
       playing = false;
       resizeObserver.disconnect();
+      three?.dispose();
     };
   },
 };

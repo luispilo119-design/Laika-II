@@ -317,3 +317,157 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* =====================================================================================
+   Rediseño: vista 3D, barra del plan fija arriba y pasos numerados.
+   ===================================================================================== */
+
+.hohmann__canvas-wrap {
+  position: relative;
+  aspect-ratio: 4 / 3.4;
+  max-width: min(760px, calc((100vh - 230px) * 1.18));
+  border: 2px solid var(--ink, var(--line));
+  background: #07060a;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.hohmann__webgl {
+  display: block;
+  position: absolute;
+  inset: 0;
+  cursor: grab;
+}
+
+.hohmann__webgl:active {
+  cursor: grabbing;
+}
+
+.hohmann__labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.hohmann__label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  margin: -10px 0 0 8px;
+  padding: 1px 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #fffff3;
+  background: rgba(7, 6, 10, 0.55);
+  white-space: nowrap;
+  will-change: transform;
+}
+
+.hohmann__label--earth { color: #8cc3f0; }
+.hohmann__label--mars { color: #f39a72; }
+.hohmann__label--sun { color: #f4c95d; }
+.hohmann__label--angle { font-size: 15px; background: transparent; }
+.hohmann__label--departure,
+.hohmann__label--arrival { font-weight: 400; color: #cfc6b8; }
+
+.hohmann__drag {
+  position: absolute;
+  left: 10px;
+  bottom: 8px;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #cfc6b8;
+  pointer-events: none;
+}
+
+.hohmann__planbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 0 18px;
+  padding: 12px 14px;
+  border: 2px solid var(--ink, var(--line));
+  background: var(--paper-hi, var(--bg-raised));
+  box-shadow: 5px 5px 0 var(--ink, transparent);
+}
+
+.hohmann__planbar:empty {
+  display: none;
+}
+
+.hohmann__planbar-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.hohmann__planbar-info strong {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.hohmann__planbar-info span:last-child {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.hohmann__planbar .hohmann__use {
+  min-height: 52px;
+  max-width: 260px;
+  white-space: normal;
+  line-height: 1.15;
+}
+
+.hohmann__num {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--red, var(--rust-500));
+  color: var(--on-accent, #fff);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  vertical-align: 2px;
+}
+
+.hohmann__panel .hohmann__h {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 800;
+  text-transform: none;
+  letter-spacing: -0.01em;
+  color: var(--ink, var(--text));
+  margin-top: 22px;
+}
+
+@media (max-width: 600px) {
+  .hohmann__planbar {
+    grid-template-columns: 1fr;
+  }
+  .hohmann__planbar .hohmann__use {
+    max-width: none;
+  }
+}
+
+.hohmann__window.is-active {
+  border: 2px solid var(--ink, var(--rust-300));
+  background: var(--yellow, #2c1812);
+  box-shadow: 4px 4px 0 var(--ink, transparent);
+}
+
+.hohmann__window.is-active .hohmann__window-sub {
+  color: var(--ink, var(--text));
+}
