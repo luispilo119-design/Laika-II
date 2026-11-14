@@ -9,6 +9,7 @@ export default {
     siteTooltip: 'Tu sitio de aterrizaje',
     panel: { toggle: 'Hubs', close: 'Cerrar' },
     palette: 'Tipos de hub',
+    dragHint: 'También puedes arrastrar el hub en el mapa para moverlo.',
     type: {
       habitat: { name: 'Hábitat', desc: 'Donde vive la tripulación. Pesa sobre todo el agua, y después temperatura, energía, radiación y terreno.' },
       greenhouse: { name: 'Invernadero', desc: 'Cultivos. Pesan el agua, la luz del sol y la temperatura.' },
@@ -50,6 +51,7 @@ export default {
     siteTooltip: 'Your landing site',
     panel: { toggle: 'Hubs', close: 'Close' },
     palette: 'Hub types',
+    dragHint: 'You can also drag the hub on the map to move it.',
     type: {
       habitat: { name: 'Habitat', desc: 'Where the crew lives. Water weighs most, then temperature, energy, radiation and terrain.' },
       greenhouse: { name: 'Greenhouse', desc: 'Crops. Water, sunlight and temperature weigh most.' },

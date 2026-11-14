@@ -12,12 +12,14 @@ import { createMarsMap } from '../../core/marsmap.js';
 import { ENV_REFERENCES, SCORE_SCALES } from '../../core/env.js';
 import { mountClockControl } from '../../core/clock.js';
 import { HUB_TYPES, HUB_REFERENCES, MAX_KM_FROM_HABITAT, hubType, habitatRule, newHubId } from './rules.js';
+import { hubIconSvg, hubIconSize } from './icons.js';
+import { spectrumHtml, radarSvg } from '../../core/viz.js';
 
 const REFERENCES = [...HUB_REFERENCES, ...ENV_REFERENCES];
 const refUrl = (id) => REFERENCES.find((r) => r.id === id)?.url ?? null;
 
 const FACTOR_DIGITS = { water: 2, temperature: 0, energy: 0, radiation: 2, terrain: 1, pressure: 0, dust: 2 };
-const VERDICT_COLOR = { viable: '#7fc98b', marginal: '#e8b04a', not_viable: '#e2664f' };
+const VERDICT_COLOR = { viable: '#2f7d4a', marginal: '#eab422', not_viable: '#d6402a' };
 
 /** Lo que la persona dejó a medias; sobrevive a los remontajes por cambio de idioma. */
 const ui = { tool: null, selectedId: null, movingId: null, panelOpen: null, center: null, zoom: null };
@@ -230,36 +232,48 @@ const mod = {
       const live = new Map(all.map((hub) => [hub.id, evaluate(hub)]));
 
       markers.clearLayers();
+      const size = hubIconSize(map.getZoom());
       for (const hub of all) {
         const verdict = live.get(hub.id).verdict;
+        const selected = hub.id === ui.selectedId;
         L.marker([hub.lat, hub.lon], {
           icon: L.divIcon({
-            className: `hubs__marker is-${verdict}${hub.id === ui.selectedId ? ' is-selected' : ''}`,
-            html: `<span>${hubType(hub.type).glyph}</span>`,
-            iconSize: [40, 40],
-            iconAnchor: [20, 20],
+            className: `hubs__marker hubs__marker--sat is-${verdict}${selected ? ' is-selected' : ''}`,
+            html: hubIconSvg(hub.type, verdict, selected),
+            iconSize: [size, size],
+            iconAnchor: [size / 2, size / 2],
           }),
+          draggable: true,
+          zIndexOffset: selected ? 1000 : 0,
           bubblingMouseEvents: false,
-          title: typeName(hub.type),
+          title: `${typeName(hub.type)} · ${t('hubs.dragHint')}`,
         })
           .on('click', () => select(hub.id, false))
+          .on('dragend', (e) => moveHub(hub.id, e.target.getLatLng()))
           .addTo(markers);
       }
 
       list.replaceChildren();
-      for (const hub of all) {
+      all.forEach((hub, index) => {
         const result = live.get(hub.id);
-        const row = document.createElement('button');
-        row.type = 'button';
-        row.className = `btn hubs__row${hub.id === ui.selectedId ? ' is-active' : ''}`;
+        const row = document.createElement('div');
+        row.className = `hubs__row is-${result.verdict}${hub.id === ui.selectedId ? ' is-active' : ''}`;
         row.innerHTML = `
-          <span class="hubs__glyph">${hubType(hub.type).glyph}</span>
-          <span><strong>${typeName(hub.type)}</strong><small>${coords(hub.lat, hub.lon)}</small></span>
-          <span class="hubs__badge is-${result.verdict}">${result.score}</span>
+          <button type="button" class="hubs__row-main" data-select>
+            <span class="hubs__thumb">${hubIconSvg(hub.type, result.verdict)}</span>
+            <span class="hubs__row-text"><strong>${index + 1}. ${typeName(hub.type)}</strong><small>${coords(hub.lat, hub.lon)}</small></span>
+            <span class="hubs__row-score"><b>${result.score}</b><small>${t(`core.verdict.${result.verdict}`)}</small></span>
+          </button>
+          <div class="hubs__row-tools">
+            <button type="button" class="btn" data-move aria-label="${t('hubs.card.move')}: ${typeName(hub.type)}">✥ ${t('hubs.card.move')}</button>
+            <button type="button" class="btn hubs__danger" data-remove aria-label="${t('hubs.card.remove')}: ${typeName(hub.type)}">✕ ${t('hubs.card.remove')}</button>
+          </div>
         `;
-        row.addEventListener('click', () => select(hub.id, true));
+        row.querySelector('[data-select]').addEventListener('click', () => select(hub.id, true));
+        row.querySelector('[data-move]').addEventListener('click', () => startMove(hub.id));
+        row.querySelector('[data-remove]').addEventListener('click', () => removeHub(hub.id));
         list.append(row);
-      }
+      });
       const viable = all.filter((hub) => live.get(hub.id).verdict === 'viable').length;
       count.textContent = all.length ? t('hubs.count', { n: all.length, viable }) : t('hubs.empty');
       clearAll.hidden = all.length === 0;
@@ -282,6 +296,11 @@ const mod = {
           </div>
           <button type="button" class="btn btn--ghost" data-card-close>${t('hubs.card.close')}</button>
         </div>
+        <div class="hubs__actions hubs__actions--top">
+          <button type="button" class="btn" data-card-move>✥ ${t('hubs.card.move')}</button>
+          <button type="button" class="btn hubs__danger" data-card-remove>✕ ${t('hubs.card.remove')}</button>
+        </div>
+        <p class="hubs__note">${t('hubs.dragHint')}</p>
         <div class="hubs__score is-${result.verdict}">
           <strong>${result.score}</strong>
           <div>
@@ -289,6 +308,8 @@ const mod = {
             <span>${t('hubs.card.scoreNow', { placed: hub.score })}</span>
           </div>
         </div>
+        ${spectrumHtml(result.score, t)}
+        ${radarSvg(result.factors, t)}
         ${
           rule.status === 'not_applicable'
             ? ''
@@ -309,20 +330,39 @@ const mod = {
                   <span>${t(`core.factor.${f.id}`)}${f.modeled ? ` ${model}` : ''}</span>
                   <strong>${f.noData ? '—' : `${f.score} %`}</strong>
                 </div>
-                <div class="hubs__bar"><i style="width:${f.noData ? 0 : f.score}%"></i></div>
+                <div class="glyph-bar" style="--value:${f.noData ? 0 : f.score / 100};--tone:${VERDICT_COLOR[f.score >= 65 ? 'viable' : f.score >= 40 ? 'marginal' : 'not_viable']}"></div>
                 <p>${f.noData ? t('hubs.card.noData') : t('hubs.card.factorLine', { value, weight: num(f.weight * 100) })} · ${sourceLink(f.refId)}</p>
               </div>`;
           })
           .join('')}
         <p class="hubs__note">${t('hubs.card.formula')}</p>
-        <div class="hubs__actions">
-          <button type="button" class="btn" data-card-move>${t('hubs.card.move')}</button>
-          <button type="button" class="btn" data-card-remove>${t('hubs.card.remove')}</button>
-        </div>
       `;
       card.hidden = false;
       card.scrollTop = scroll;
     }
+
+    function moveHub(id, latlng) {
+      const hub = hubs().find((h) => h.id === id);
+      if (!hub) return;
+      const result = env.evaluate(latlng.lat, latlng.lng, store.get().clock, hub.type);
+      ui.selectedId = id;
+      store.set(
+        'mission.hubs',
+        hubs().map((h) => (h.id === id ? { ...h, lat: latlng.lat, lon: latlng.lng, score: result.score, verdict: result.verdict } : h)),
+      );
+    }
+    function startMove(id) {
+      ui.selectedId = id;
+      ui.movingId = id;
+      ui.tool = null;
+      card.hidden = true;
+      paintMode();
+    }
+    function removeHub(id) {
+      if (ui.selectedId === id) ui.selectedId = null;
+      store.set('mission.hubs', hubs().filter((h) => h.id !== id));
+    }
+    map.on('zoomend', () => paintAll());
 
     card.addEventListener('click', (e) => {
       const button = e.target.closest('button');
@@ -331,14 +371,9 @@ const mod = {
         ui.selectedId = null;
         paintAll();
       } else if ('cardMove' in button.dataset) {
-        ui.movingId = ui.selectedId;
-        ui.tool = null;
-        card.hidden = true;
-        paintMode();
+        startMove(ui.selectedId);
       } else if ('cardRemove' in button.dataset) {
-        const id = ui.selectedId;
-        ui.selectedId = null;
-        store.set('mission.hubs', hubs().filter((h) => h.id !== id));
+        removeHub(ui.selectedId);
       }
     });
     clearAll.addEventListener('click', () => {
