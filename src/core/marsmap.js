@@ -4,28 +4,81 @@
  * para que todos compartan proyección, mosaicos y atribución.
  *
  * Proyección: equirectangular (EPSG:4326). Leaflet usa [lat, lon] con lon este-positivo.
+ * Catálogo de capas de Mars Trek: https://trek.nasa.gov/tiles/apidoc/trekAPI.html?body=mars
  */
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 const TREK = 'https://trek.nasa.gov/tiles/Mars/EQ';
 const WMTS = '1.0.0//default/default028mm/{z}/{y}/{x}';
+const WORLD = [
+  [-90, -180],
+  [90, 180],
+];
+export const MAX_ZOOM = 10; // un nivel por encima del mosaico más detallado (THEMIS, nivel 9)
 
-/** Mosaicos base. La tarea A2 verifica cada URL y agrega las capas de datos. */
+/** URL de mosaicos WMTS de una capa de Mars Trek. `ext` es 'jpg' o 'png' según la capa. */
+export function trekTileUrl(trekId, ext = 'png') {
+  return `${TREK}/${trekId}/${WMTS}.${ext}`;
+}
+
+/**
+ * Capa de mosaicos de Mars Trek lista para añadir a un mapa creado con createMarsMap().
+ * @param {string} trekId  "Layer ID" del catálogo de Mars Trek
+ * @param {{ ext?: 'jpg'|'png', maxNativeZoom?: number, opacity?: number, bounds?: [[number, number], [number, number]], attribution?: string, zIndex?: number }} [opts]
+ */
+export function trekLayer(trekId, opts = {}) {
+  const { ext = 'png', maxNativeZoom = 7, opacity = 1, bounds = WORLD, attribution = 'NASA Mars Trek', zIndex = 1 } = opts;
+  return L.tileLayer(trekTileUrl(trekId, ext), {
+    maxNativeZoom,
+    maxZoom: MAX_ZOOM,
+    noWrap: true,
+    bounds,
+    opacity,
+    attribution,
+    zIndex,
+  });
+}
+
+/**
+ * Mosaicos base. `maxNativeZoom` sale del WMTSCapabilities de cada capa (comprobado 2026-11-14).
+ * labelKey apunta a los textos del módulo "map".
+ */
 export const BASEMAPS = {
+  mola: {
+    labelKey: 'map.layer.mola',
+    trekId: 'Mars_MGS_MOLA_ClrShade_merge_global_463m',
+    ext: 'jpg',
+    maxNativeZoom: 7,
+    attribution: 'NASA/JPL/GSFC · MGS MOLA · NASA Mars Trek',
+  },
   viking: {
     labelKey: 'map.layer.viking',
-    url: `${TREK}/Mars_Viking_MDIM21_ClrMosaic_global_232m/${WMTS}.jpg`,
+    trekId: 'Mars_Viking_MDIM21_ClrMosaic_global_232m',
+    ext: 'jpg',
     maxNativeZoom: 7,
     attribution: 'NASA/JPL/USGS · Viking MDIM 2.1 · NASA Mars Trek',
   },
-  mola: {
-    labelKey: 'map.layer.mola',
-    url: `${TREK}/Mars_MGS_MOLA_ClrShade_merge_global_463m/${WMTS}.jpg`,
-    maxNativeZoom: 6,
-    attribution: 'NASA/JPL/GSFC · MGS MOLA · NASA Mars Trek',
+  hrsc: {
+    labelKey: 'map.layer.hrsc',
+    trekId: 'Mars_MOLA_blend200ppx_HRSC_ClrShade_clon0dd_200mpp_lzw',
+    ext: 'jpg',
+    maxNativeZoom: 8,
+    attribution: 'NASA MGS MOLA · ESA Mars Express HRSC · USGS · NASA Mars Trek',
+  },
+  themis: {
+    labelKey: 'map.layer.themis',
+    trekId: 'THEMIS_DayIR_ControlledMosaics_100m_v2_oct2018',
+    ext: 'png',
+    maxNativeZoom: 9,
+    bounds: [
+      [-65, -180],
+      [65, 180],
+    ],
+    attribution: 'NASA/JPL/ASU · Mars Odyssey THEMIS · NASA Mars Trek',
   },
 };
+for (const def of Object.values(BASEMAPS)) def.url = trekTileUrl(def.trekId, def.ext);
 
 /**
  * @param {HTMLElement} container
@@ -39,11 +92,8 @@ export function createMarsMap(container, opts = {}) {
     center,
     zoom,
     minZoom: 1,
-    maxZoom: 9,
-    maxBounds: [
-      [-90, -180],
-      [90, 180],
-    ],
+    maxZoom: MAX_ZOOM,
+    maxBounds: WORLD,
     maxBoundsViscosity: 1,
     worldCopyJump: false,
     attributionControl: true,
@@ -51,16 +101,7 @@ export function createMarsMap(container, opts = {}) {
 
   const layers = {};
   for (const [id, def] of Object.entries(BASEMAPS)) {
-    layers[id] = L.tileLayer(def.url, {
-      maxNativeZoom: def.maxNativeZoom,
-      maxZoom: 9,
-      noWrap: true,
-      bounds: [
-        [-90, -180],
-        [90, 180],
-      ],
-      attribution: def.attribution,
-    });
+    layers[id] = trekLayer(def.trekId, { ...def, zIndex: 1 });
   }
 
   let current = null;
@@ -70,7 +111,7 @@ export function createMarsMap(container, opts = {}) {
     layers[id].addTo(map);
     current = id;
   }
-  setBasemap(basemap);
+  setBasemap(layers[basemap] ? basemap : 'mola');
 
   // Leaflet necesita recalcular el tamaño cuando el contenedor termina de maquetarse.
   const resizeObserver = new ResizeObserver(() => map.invalidateSize());
@@ -82,6 +123,7 @@ export function createMarsMap(container, opts = {}) {
     setBasemap,
     destroy() {
       resizeObserver.disconnect();
+      map.off(); // sin esto, los eventos que dispara remove() llegan a listeners de un mapa ya desmontado
       map.remove();
     },
   };
