@@ -45,7 +45,7 @@ CGI = "https://www-mars.lmd.jussieu.fr/mcd_python/cgi-bin/mcdcgi.py"
 LS_VALUES = list(range(0, 360, 30))
 HOURS = list(range(0, 24, 2))
 HEIGHT_M = 1.5
-PAUSE_S = 1.5
+PAUSE_S = 3
 
 VARS = {
     "t": "Temperature (K)",
@@ -84,7 +84,7 @@ def fetch(name: str, ls: float, hour: float, variables: list[str], offline: bool
     if offline:
         raise SystemExit(f"falta {dest}; ejecuta sin --offline")
     last_error = None
-    for attempt in range(4):
+    for attempt in range(8):
         try:
             html = http_get(query(ls, hour, variables))
             match = re.search(r"href=['\"]?([^'\" >]+\.txt)", html)
@@ -99,7 +99,7 @@ def fetch(name: str, ls: float, hour: float, variables: list[str], offline: bool
             return text
         except Exception as error:  # noqa: BLE001 - se reintenta ante cualquier fallo de red
             last_error = error
-            time.sleep(10 * (attempt + 1))
+            time.sleep(30 * (attempt + 1))  # el servicio a veces rechaza conexiones un rato
     raise SystemExit(f"no se pudo descargar {name}: {last_error}")
 
 

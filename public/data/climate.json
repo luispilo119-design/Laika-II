@@ -1,0 +1,101 @@
+{
+ "generated": "2026-11-14",
+ "source": "Mars Climate Database v6.2 (LMD/OU/IAA/ESA/CNES), escenario de climatolog\u00eda con actividad solar media",
+ "url": "https://www-mars.lmd.jussieu.fr/mcd_python/",
+ "note": "Modelo de circulaci\u00f3n general, no mediciones. Temperatura del aire a 1.5 m.",
+ "ls": [
+  0,
+  30,
+  60,
+  90,
+  120,
+  150,
+  180,
+  210,
+  240,
+  270,
+  300,
+  330
+ ],
+ "hours": [
+  0,
+  2,
+  4,
+  6,
+  8,
+  10,
+  12,
+  14,
+  16,
+  18,
+  20,
+  22
+ ],
+ "grid": {
+  "nLat": 48,
+  "nLon": 64,
+  "north": 90,
+  "west": -180,
+  "latStep": 3.8297872340425534,
+  "lonStep": 5.714285714285714
+ },
+ "encoding": {
+  "temperature": "uint8, K = valor + 100, dimensiones [ls, hora, lat, lon]",
+  "solar": "uint16, W/m2 = valor / 10, media diaria, [ls, lat, lon]",
+  "pressure": "uint16, Pa, media diaria, [ls, lat, lon]",
+  "dust": "uint16, tau = valor / 1000, media mensual, [ls, lat, lon]",
+  "orography": "int16, m sobre el areoide, altura del terreno que usa la MCD, [lat, lon]"
+ },
+ "sections": {
+  "temperature": {
+   "offset": 0,
+   "length": 442368,
+   "dtype": "uint8",
+   "shape": [
+    12,
+    12,
+    48,
+    64
+   ]
+  },
+  "solar": {
+   "offset": 442368,
+   "length": 73728,
+   "dtype": "uint16",
+   "shape": [
+    12,
+    48,
+    64
+   ]
+  },
+  "pressure": {
+   "offset": 516096,
+   "length": 73728,
+   "dtype": "uint16",
+   "shape": [
+    12,
+    48,
+    64
+   ]
+  },
+  "dust": {
+   "offset": 589824,
+   "length": 73728,
+   "dtype": "uint16",
+   "shape": [
+    12,
+    48,
+    64
+   ]
+  },
+  "orography": {
+   "offset": 663552,
+   "length": 6144,
+   "dtype": "int16",
+   "shape": [
+    48,
+    64
+   ]
+  }
+ }
+}
