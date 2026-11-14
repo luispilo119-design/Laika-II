@@ -49,6 +49,8 @@
  * @property {Site|null} site         Sitio de aterrizaje elegido en el mapa.
  * @property {Hub[]} hubs
  * @property {Route[]} routes
+ * @property {{ day: number, days: Object<string, object> }} [journal]  Diario de supervivencia por sol
+ *   (lo escribe guides; lo lee dashboard). Forma y validación en src/core/journal.js.
  */
 
 /**

@@ -60,6 +60,7 @@ export default {
     site: null,        // { lat, lon, name? }; lo escribe map
     hubs: [],          // Hub[]; lo escribe hubs
     routes: [],        // Route[]; lo escribe routes
+    journal: { day: 1, days: {} }, // diario por sol; lo escribe guides, lo lee dashboard (src/core/journal.js)
   },
 }
 ```

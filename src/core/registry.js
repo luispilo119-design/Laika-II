@@ -13,6 +13,7 @@ import hubs from '../modules/hubs/index.js';
 import routes from '../modules/routes/index.js';
 import guides from '../modules/guides/index.js';
 import references from '../modules/references/index.js';
+import dashboard from '../modules/dashboard/index.js';
 
 /** Fases de la misión, en el orden en que se recorren. */
 export const PHASES = [
@@ -22,7 +23,8 @@ export const PHASES = [
   { id: 3, key: 'core.phase.3' },
   { id: 4, key: 'core.phase.4' },
   { id: 5, key: 'core.phase.5' },
+  { id: 6, key: 'core.phase.6' },
 ];
 
 /** @type {import('./types.js').ModuleDef[]} */
-export const modules = [home, hohmann, map, transit, descent, hubs, routes, guides, references];
+export const modules = [home, hohmann, map, transit, descent, hubs, routes, guides, dashboard, references];

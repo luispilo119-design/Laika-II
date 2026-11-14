@@ -4,7 +4,9 @@
  * Se guarda en `mission.journal` = { day: number, days: { [sol]: DayLog } }.
  * Cada cifra objetivo sale de una referencia (ver TARGETS); la radiación del sitio viene del
  * entorno (env.sample), que es un MODELO, y se dice así en pantalla.
+ * Vive en el núcleo porque lo usan la guía (registro) y el tablero de misión (resumen).
  */
+import { HUMAN_NEEDS } from './human-needs.js';
 
 /**
  * @typedef {Object} DayLog
@@ -28,6 +30,14 @@ export const TARGETS = {
 export const CRUISE_MSV_PER_DAY = 1.8;
 /** Límite de dosis efectiva de toda la carrera (mSv). Ref: nasa-std-3001-radiation. */
 export const CAREER_LIMIT_MSV = 600;
+
+/** Objetivos de agua (L) y alimento (kg) en uso, tomados de human-needs.js. */
+export function targetValues() {
+  return {
+    water: HUMAN_NEEDS[TARGETS.water.need]?.value ?? TARGETS.water.fallback,
+    food: HUMAN_NEEDS[TARGETS.food.need]?.value ?? TARGETS.food.fallback,
+  };
+}
 
 export const MEALS_PER_DAY = 3;
 export const WATER_STEP_L = 0.25;

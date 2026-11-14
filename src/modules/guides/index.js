@@ -24,7 +24,7 @@ import {
   cruiseDays,
   doseSummary,
   journalStats,
-} from './journal.js';
+} from '../../core/journal.js';
 
 // Si la Parte A todavía no creó el archivo, esto devuelve un objeto vacío (no falla al compilar).
 const needsModule = Object.values(import.meta.glob('../../core/human-needs.js', { eager: true }))[0];

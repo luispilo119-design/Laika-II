@@ -9,7 +9,7 @@ import {
   doseSummary,
   journalStats,
   CAREER_LIMIT_MSV,
-} from '../src/modules/guides/journal.js';
+} from '../src/core/journal.js';
 
 const VALUES = { water: 2, food: 1.51 };
 

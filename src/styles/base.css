@@ -575,6 +575,13 @@ a {
   .topbar {
     display: none;
   }
+  html,
+  body,
+  #app,
+  .app {
+    height: auto;
+    overflow: visible;
+  }
   body {
     background: #fff;
   }
