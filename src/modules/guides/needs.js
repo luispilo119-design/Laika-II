@@ -32,6 +32,7 @@ function cleanRef(ref) {
  * @property {number|null} max    límite superior aceptable
  * @property {string} unit
  * @property {string} where       tabla o sección de donde sale el dato
+ * @property {string} whereEn     lo mismo en inglés ('' si el archivo no lo trae)
  * @property {{ title: string, org: string, url: string }|null} ref
  */
 
@@ -61,6 +62,7 @@ export function readNeeds(source) {
       max: pair ? pair[1] : numberOrNull(item.max),
       unit: typeof item.unit === 'string' ? item.unit : '',
       where: typeof item.where === 'string' ? item.where : '',
+      whereEn: typeof item.whereEn === 'string' ? item.whereEn : '',
       ref: cleanRef(item.ref) ?? refs.get(item.refId) ?? null,
     };
     // Sin ningún número utilizable se queda como "sin datos".

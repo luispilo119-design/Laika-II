@@ -60,6 +60,8 @@ const mod = {
           </article>`;
       }
       const unit = esc(need.unit);
+      // En inglés se usa whereEn; si el archivo de la Parte A no lo trae, queda el texto original.
+      const where = lang === 'es' ? need.where : need.whereEn || need.where;
       const limits =
         need.min !== null && need.max !== null
           ? t('guides.needs.range', { low: num.format(need.min), high: num.format(need.max), unit })
@@ -76,7 +78,7 @@ const mod = {
           <p class="guides__need-value">${main}</p>
           ${need.value !== null && limits ? `<p class="guides__need-note">${limits}</p>` : ''}
           ${why}
-          ${need.where ? `<p class="guides__need-note">${t('guides.needs.where', { where: esc(need.where) })}</p>` : ''}
+          ${where ? `<p class="guides__need-note">${t('guides.needs.where', { where: esc(where) })}</p>` : ''}
           ${need.ref ? `<p class="guides__src"><span>${t('guides.source')}:</span>${shortLink(need.ref)}</p>` : ''}
         </article>`;
     }

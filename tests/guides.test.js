@@ -16,13 +16,16 @@ test('sin archivo de la Parte A no hay valores: todo queda como "sin datos"', ()
 test('lee el formato de src/core/human-needs.js: valor, límites, origen y referencia por id', () => {
   const needs = readNeeds({
     HUMAN_NEEDS: {
-      oxygen: { id: 'oxygen', value: 0.82, unit: 'kg/d', refId: 'bvad', where: 'Tabla 3-33' },
+      oxygen: { id: 'oxygen', value: 0.82, unit: 'kg/d', refId: 'bvad', where: 'Tabla 3-33', whereEn: 'Table 3-33' },
       cabinPressure: { id: 'cabinPressure', value: 101, min: 48, max: 102.7, unit: 'kPa', refId: 'bvad', where: 'Tabla 4-1' },
       careerRadiation: { id: 'careerRadiation', max: 600, unit: 'mSv', refId: 'no-registrada', where: 'V1 4030' },
     },
     HUMAN_REFERENCES: [{ id: 'bvad', ...REF }],
   });
-  assert.deepEqual(needs.get('oxygen'), { id: 'oxygen', value: 0.82, min: null, max: null, unit: 'kg/d', where: 'Tabla 3-33', ref: REF });
+  assert.deepEqual(needs.get('oxygen'), {
+    id: 'oxygen', value: 0.82, min: null, max: null, unit: 'kg/d', where: 'Tabla 3-33', whereEn: 'Table 3-33', ref: REF,
+  });
+  assert.equal(needs.get('cabinPressure').whereEn, '', 'sin whereEn queda vacío y la pantalla usa where');
   assert.deepEqual([needs.get('cabinPressure').min, needs.get('cabinPressure').max], [48, 102.7]);
   const career = needs.get('careerRadiation');
   assert.deepEqual([career.value, career.max], [null, 600], 'un límite sin valor nominal también es un dato');
@@ -34,6 +37,9 @@ test('el archivo real de la Parte A trae las seis necesidades esenciales con su 
   for (const id of ESSENTIAL_NEEDS) {
     assert.ok(needs.has(id), `falta ${id}`);
     assert.ok(needs.get(id).ref?.url, `${id} sin referencia`);
+  }
+  for (const [id, need] of needs) {
+    if (need.where) assert.ok(need.whereEn, `${id}: el origen del dato no tiene texto en inglés`);
   }
   for (const id of needs.keys()) assert.ok(NEED_ORDER.includes(id), `sin nombre en pantalla: ${id}`);
 });
