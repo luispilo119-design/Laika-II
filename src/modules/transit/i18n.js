@@ -5,7 +5,7 @@
 export default {
   es: {
     title: 'El viaje',
-    desc: 'Los meses de viaje: peligros para el cuerpo, rutina, aislamiento y juegos.',
+    desc: 'Los meses de viaje: el cuerpo día a día, la rutina, juegos y los peligros.',
     tabsLabel: 'Secciones del tránsito',
     tab: {
       trip: 'Viaje',
@@ -239,7 +239,7 @@ export default {
 
   en: {
     title: 'The journey',
-    desc: 'The months of travel: hazards to the body, routine, isolation and games.',
+    desc: 'The months of travel: the body day by day, the routine, games and the hazards.',
     tabsLabel: 'Transit sections',
     tab: {
       trip: 'Trip',

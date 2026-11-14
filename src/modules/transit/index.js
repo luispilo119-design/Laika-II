@@ -8,7 +8,7 @@
 import './transit.css';
 import messages from './i18n.js';
 import { submitScore, topScores, ALIAS_MAX } from '../../services/index.js';
-import { REFERENCES, refOf, STAGES, METERS, HAZARDS, SOLO_CHANGES, SOLO_TIPS } from './data.js';
+import { REFERENCES, refOf, STAGES, METERS, HAZARDS } from './data.js';
 import { CAREER_LIMIT_MSV } from '../../core/journal.js';
 import {
   tripInfo,
@@ -54,7 +54,7 @@ const VIZ = {
     </div>`,
 };
 
-const TABS = ['trip', 'routine', 'solo', 'games', 'hazards'];
+const TABS = ['trip', 'routine', 'games', 'hazards'];
 const SAVE_KEY = 'laika2.transit.v1';
 
 // Ritmo del minijuego, en milisegundos.
@@ -397,25 +397,6 @@ const mod = {
       return () => panel.removeEventListener('click', onClick);
     }
 
-    // ---------- Caso solo ----------
-
-    function renderSolo() {
-      const list = (items, prefix) =>
-        items.map((item) => `<li>${t(`${prefix}.${item.id}`)}${sources(item.refs)}</li>`).join('');
-      panel.innerHTML = `
-        <h2>${t('transit.solo.heading')}</h2>
-        <p class="transit__lead">${t('transit.solo.lead')}</p>
-        <p class="transit__notice transit__notice--plain">${t('transit.disclaimer')}</p>
-
-        <h3>${t('transit.solo.changesTitle')}</h3>
-        <ul class="transit__points">${list(SOLO_CHANGES, 'transit.solo.change')}</ul>
-
-        <h3>${t('transit.solo.tipsTitle')}</h3>
-        <ul class="transit__points">${list(SOLO_TIPS, 'transit.solo.tip')}</ul>
-
-      `;
-    }
-
     // ---------- Juegos ----------
 
     function renderGames() {
@@ -616,7 +597,7 @@ const mod = {
 
     // ---------- Pestañas ----------
 
-    const renderers = { trip: renderTrip, hazards: renderHazards, routine: renderRoutine, solo: renderSolo, games: renderGames };
+    const renderers = { trip: renderTrip, hazards: renderHazards, routine: renderRoutine, games: renderGames };
 
     function rerender(focusSelector) {
       disposeTab?.();
