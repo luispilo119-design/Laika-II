@@ -126,7 +126,7 @@ export function zoneHtml({ lat, lon, sample: s, evaluation, isSite, t, num, coor
       return `
         <div class="zone__factor${f.noData ? ' is-nodata' : ''}">
           <div class="zone__factor-head">
-            <span>${t(`map.factor.${f.id}`)}${f.modeled ? ` ${model}` : ''}</span>
+            <span>${t(`core.factor.${f.id}`)}${f.modeled ? ` ${model}` : ''}</span>
             <strong>${f.noData ? '—' : `${f.score} %`}</strong>
           </div>
           <div class="zone__bar"><i style="width:${f.noData ? 0 : f.score}%"></i></div>
@@ -171,7 +171,7 @@ export function zoneHtml({ lat, lon, sample: s, evaluation, isSite, t, num, coor
     <div class="zone__score is-${evaluation.verdict}">
       <strong>${evaluation.score}</strong>
       <div>
-        <span class="zone__verdict">${t(`map.verdict.${evaluation.verdict}`)}</span>
+        <span class="zone__verdict">${t(`core.verdict.${evaluation.verdict}`)}</span>
         <span>${t('map.zone.scoreHint', { viable: VERDICT_THRESHOLDS.viable, marginal: VERDICT_THRESHOLDS.marginal })}</span>
       </div>
     </div>

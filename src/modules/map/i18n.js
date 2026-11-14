@@ -54,20 +54,6 @@ export default {
     point: {
       noData: 'sin datos',
     },
-    factor: {
-      water: 'Agua (hielo subterráneo)',
-      temperature: 'Temperatura mínima del sol',
-      energy: 'Energía solar (media diaria)',
-      radiation: 'Radiación',
-      terrain: 'Terreno (pendiente media)',
-      pressure: 'Presión atmosférica',
-      dust: 'Polvo en el aire',
-    },
-    verdict: {
-      viable: 'Viable',
-      marginal: 'Marginal',
-      not_viable: 'No viable',
-    },
     best: {
       title: 'Mejores zonas',
       find: 'Buscar ahora',
@@ -222,20 +208,6 @@ export default {
     },
     point: {
       noData: 'no data',
-    },
-    factor: {
-      water: 'Water (subsurface ice)',
-      temperature: 'Lowest temperature of the sol',
-      energy: 'Solar energy (daily mean)',
-      radiation: 'Radiation',
-      terrain: 'Terrain (mean slope)',
-      pressure: 'Atmospheric pressure',
-      dust: 'Dust in the air',
-    },
-    verdict: {
-      viable: 'Viable',
-      marginal: 'Marginal',
-      not_viable: 'Not viable',
     },
     best: {
       title: 'Best zones',
