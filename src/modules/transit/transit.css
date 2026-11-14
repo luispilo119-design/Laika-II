@@ -1,0 +1,687 @@
+/* Tránsito y confinamiento (B3). Colores y tamaños: variables de base.css. */
+
+.transit {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 24px 24px 64px;
+  /* Colores de las actividades de la rutina, derivados de la paleta. */
+  --transit-sleep: var(--rust-700);
+  --transit-exercise: var(--ok);
+  --transit-work: var(--rust-300);
+  --transit-leisure: var(--warn);
+  --transit-rest: var(--line);
+}
+
+.transit__head h1 {
+  font-size: 30px;
+  margin-bottom: 4px;
+}
+
+.transit__head p,
+.transit__lead {
+  margin: 0 0 16px;
+  font-size: 17px;
+  color: var(--text-dim);
+}
+
+.transit h2 {
+  font-size: 24px;
+  margin: 0 0 8px;
+}
+
+.transit h3 {
+  margin: 28px 0 10px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rust-300);
+}
+
+.transit h4 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+/* ---------- Pestañas ---------- */
+
+.transit__tabs {
+  display: flex;
+  gap: 6px;
+  margin: 0 -4px 20px;
+  padding: 4px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.transit__tab {
+  flex: 1 0 auto;
+  min-height: var(--tap);
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+  color: var(--text);
+  font: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.transit__tab:hover {
+  border-color: var(--rust-500);
+}
+
+.transit__tab[aria-selected='true'] {
+  border-color: var(--rust-300);
+  background: var(--rust-700);
+  color: var(--cream);
+  font-weight: 600;
+}
+
+.transit__tab:focus-visible,
+.transit__tile:focus-visible,
+.transit__panel:focus-visible {
+  outline: 2px solid var(--cream);
+  outline-offset: 2px;
+}
+
+.transit__panel:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ---------- Piezas comunes ---------- */
+
+.transit__src {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 12px;
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+/* Cada fuente es un enlace con altura táctil suficiente. */
+.transit__src a {
+  padding-block: 13px;
+  overflow-wrap: anywhere;
+}
+
+.transit__fine {
+  margin: 12px 0 0;
+  max-width: 72ch;
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+.transit__notice {
+  margin: 0 0 20px;
+  padding: 14px 16px;
+  border: 1px solid var(--warn);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+}
+
+.transit__notice p {
+  margin: 0;
+}
+
+.transit__notice .btn {
+  margin-top: 4px;
+}
+
+.transit__notice--plain {
+  border-color: var(--line);
+  color: var(--text-dim);
+}
+
+.transit__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.transit__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
+}
+
+.transit__card,
+.transit__meter,
+.transit__hazard,
+.transit__stage {
+  padding: 14px 16px 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+}
+
+.transit__card p,
+.transit__stage p {
+  margin: 0;
+}
+
+/* ---------- Viaje ---------- */
+
+.transit__dates {
+  margin: 0 0 20px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+}
+
+.transit__day {
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-sunken);
+}
+
+.transit__day-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.transit__day-head label {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.transit__day-out {
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--cream);
+}
+
+.transit__day input[type='range'] {
+  display: block;
+  width: 100%;
+  height: var(--tap);
+  margin: 4px 0;
+  accent-color: var(--rust-300);
+  cursor: pointer;
+}
+
+.transit__day-btns {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.transit__day-btns .btn {
+  padding: 0 8px;
+}
+
+.transit__stages {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.transit__stage.is-current {
+  border-color: var(--rust-300);
+  background: color-mix(in srgb, var(--rust-700) 30%, var(--bg-raised));
+}
+
+.transit__stage .transit__stage-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+  font-weight: 700;
+  color: var(--cream);
+}
+
+.transit__here {
+  color: var(--cream);
+  border-color: var(--rust-300);
+}
+
+.transit__here[hidden] {
+  display: none;
+}
+
+.transit__meters {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 10px;
+}
+
+.transit__meter p {
+  margin: 0;
+}
+
+.transit__meter-label {
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+.transit__meter .transit__meter-value {
+  margin: 2px 0 6px;
+  font-size: 24px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--cream);
+}
+
+.transit__meter-note {
+  font-size: 14px;
+}
+
+/* ---------- Peligros ---------- */
+
+.transit__hazards {
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.transit__hazard header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.transit__hazard h3 {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--cream);
+}
+
+.transit__letter {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  background: var(--rust-700);
+  color: var(--cream);
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.transit__hazard dl {
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  gap: 8px 16px;
+  margin: 0;
+}
+
+.transit__hazard dt {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--rust-300);
+  padding-top: 3px;
+}
+
+.transit__hazard dd {
+  margin: 0;
+}
+
+/* ---------- Rutina ---------- */
+
+.transit__plan {
+  display: grid;
+  gap: 8px;
+  max-width: 560px;
+}
+
+.transit__plan-row {
+  display: grid;
+  grid-template-columns: 1fr var(--tap) 76px var(--tap);
+  align-items: center;
+  gap: 8px;
+}
+
+.transit__plan-row[data-kind='rest'] {
+  grid-template-columns: 1fr 76px var(--tap);
+  min-height: var(--tap);
+  color: var(--text-dim);
+}
+
+.transit__plan-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.transit__swatch {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  border: 1px solid var(--bg);
+}
+
+.transit__plan-hours {
+  text-align: center;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.transit__step {
+  width: var(--tap);
+  padding: 0;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.transit__step:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+[data-kind='sleep'] > .transit__plan-name .transit__swatch,
+.transit__bar [data-kind='sleep'] {
+  background: var(--transit-sleep);
+}
+
+[data-kind='exercise'] > .transit__plan-name .transit__swatch,
+.transit__bar [data-kind='exercise'] {
+  background: var(--transit-exercise);
+}
+
+[data-kind='work'] > .transit__plan-name .transit__swatch,
+.transit__bar [data-kind='work'] {
+  background: var(--transit-work);
+}
+
+[data-kind='leisure'] > .transit__plan-name .transit__swatch,
+.transit__bar [data-kind='leisure'] {
+  background: var(--transit-leisure);
+}
+
+[data-kind='rest'] > .transit__plan-name .transit__swatch,
+.transit__bar [data-kind='rest'] {
+  background: var(--transit-rest);
+}
+
+.transit__bar {
+  display: flex;
+  gap: 2px;
+  height: 28px;
+  margin-top: 16px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.transit__bar span {
+  flex-basis: 0;
+  min-width: 2px;
+}
+
+.transit__checks,
+.transit__points {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.transit__checks li,
+.transit__points li {
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-left-width: 4px;
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+}
+
+.transit__points li {
+  padding-bottom: 4px;
+}
+
+.transit__checks li[data-state='ok'] {
+  border-left-color: var(--ok);
+}
+
+.transit__checks li[data-state='low'],
+.transit__checks li[data-state='high'] {
+  border-left-color: var(--warn);
+}
+
+/* ---------- Juego ---------- */
+
+.transit__game {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 16px;
+  align-items: start;
+}
+
+.transit__game-main,
+.transit__board {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+}
+
+.transit__game h3 {
+  margin-top: 0;
+}
+
+.transit__game-main > p {
+  margin: 0 0 12px;
+}
+
+.transit__hud {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.transit__hud .badge {
+  font-size: 13px;
+  padding: 4px 12px;
+}
+
+.transit__game-main > .transit__status {
+  min-height: 3em;
+  margin: 0 0 8px;
+  font-weight: 600;
+  color: var(--cream);
+}
+
+.transit__console {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  max-width: 460px;
+}
+
+.transit__tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 84px;
+  padding: 6px;
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-sunken);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.transit__tile[aria-disabled='true'] {
+  cursor: default;
+}
+
+.transit__tile-code {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.transit__tile-name {
+  font-size: 12px;
+  color: var(--text-dim);
+  text-align: center;
+}
+
+/* Encendido: cambia el fondo, el borde y el grosor, no solo el color. */
+.transit__tile.is-lit {
+  border-color: var(--cream);
+  border-width: 4px;
+  background: var(--rust-500);
+  color: var(--cream);
+}
+
+.transit__tile.is-lit .transit__tile-name {
+  color: var(--cream);
+}
+
+.transit__tile.is-right {
+  border-color: var(--ok);
+  background: color-mix(in srgb, var(--ok) 22%, var(--bg-sunken));
+}
+
+.transit__tile.is-wrong {
+  border-color: var(--bad);
+  border-style: dashed;
+  background: color-mix(in srgb, var(--bad) 25%, var(--bg-sunken));
+}
+
+.transit__score-form {
+  margin-top: 16px;
+}
+
+.transit__score-form[hidden] {
+  display: none;
+}
+
+.transit__score-form label {
+  display: block;
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+.transit__score-form .transit__row {
+  margin-top: 6px;
+}
+
+.transit__score-form input {
+  flex: 1 1 180px;
+  min-height: var(--tap);
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-sunken);
+  color: var(--text);
+  font: inherit;
+}
+
+.transit__score-form input:focus-visible {
+  outline: 2px solid var(--rust-300);
+  outline-offset: 2px;
+}
+
+.transit__game-main > .transit__saved {
+  margin: 10px 0 0;
+  color: var(--ok);
+}
+
+.transit__saved:empty {
+  display: none;
+}
+
+.transit__board-source {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.transit__board-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: rank;
+}
+
+.transit__board-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+  counter-increment: rank;
+}
+
+.transit__board-list li::before {
+  content: counter(rank) '.';
+  width: 1.6em;
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+}
+
+.transit__board-list li span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.transit__board-list strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.transit__board-list .transit__board-empty {
+  color: var(--text-dim);
+}
+
+.transit__board-list .transit__board-empty::before {
+  content: none;
+}
+
+/* ---------- Pantallas estrechas ---------- */
+
+@media (max-width: 720px) {
+  .transit__game {
+    grid-template-columns: 1fr;
+  }
+
+  .transit__hazard dl {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .transit__hazard dd {
+    margin-bottom: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .transit {
+    padding-inline: 16px;
+  }
+
+  .transit__day-btns {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
