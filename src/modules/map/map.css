@@ -539,3 +539,213 @@
     border-radius: var(--radius) var(--radius) 0 0;
   }
 }
+
+/* =====================================================================================
+   Rediseño: ficha minimizable y más legible, ayuda grande y simbología dentro del mapa.
+   ===================================================================================== */
+
+.mapview__hint {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--ink, var(--text));
+  padding: 10px 12px;
+  border-left: 6px solid var(--red, var(--rust-500));
+  background: var(--paper-lo, var(--bg-sunken));
+}
+
+.mapview__sheet {
+  border: 2px solid var(--ink, var(--line));
+  box-shadow: 6px 6px 0 var(--ink, rgba(0, 0, 0, 0.4));
+  background: var(--paper-hi, var(--bg));
+  width: min(440px, calc(100% - 20px));
+  transition: max-height 0.25s ease, bottom 0.25s ease;
+}
+
+.zone__head-tools {
+  display: flex;
+  gap: 6px;
+}
+
+.zone__head-tools .btn {
+  width: var(--tap);
+  padding: 0;
+  font-size: 18px;
+}
+
+.zone__mini {
+  display: none;
+}
+
+/* Minimizada: una tira con la puntuación que no tapa el mapa. */
+.mapview__sheet.is-min {
+  bottom: auto;
+  padding: 0;
+  overflow: hidden;
+}
+
+.mapview__sheet.is-min .zone__head,
+.mapview__sheet.is-min .zone__full {
+  display: none;
+}
+
+.mapview__sheet.is-min .zone__mini {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas: 'score verdict open' 'score coords open';
+  align-items: center;
+  gap: 0 12px;
+  width: 100%;
+  min-height: 60px;
+  padding: 8px 14px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.zone__mini strong {
+  grid-area: score;
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.zone__mini strong.is-viable { color: var(--ok); }
+.zone__mini strong.is-marginal { color: var(--warn); }
+.zone__mini strong.is-not_viable { color: var(--red, var(--bad)); }
+.zone__mini > span:nth-of-type(1) { grid-area: verdict; font-weight: 800; }
+.zone__mini-coords { grid-area: coords; font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); }
+.zone__mini-open { grid-area: open; font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; }
+
+.zone__actions--top {
+  margin: 4px 0 14px;
+  padding: 0;
+  border: 0;
+}
+
+.zone__choose {
+  width: 100%;
+  min-height: 52px;
+  font-size: 16px;
+}
+
+/* "Aquí, en este instante" contra "lo que necesita una persona": títulos grandes y dos columnas. */
+.zone h3.zone__big {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  text-transform: none;
+  color: var(--ink, var(--text));
+}
+
+.zone__compare-head {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.zone__col {
+  padding: 8px 10px;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--on-accent, #fff);
+}
+
+.zone__col--here { background: var(--red, var(--rust-500)); }
+.zone__col--body { background: var(--blue, var(--rust-700)); }
+
+.zone__compare-row {
+  grid-template-columns: 1fr 1fr;
+  gap: 0 6px;
+}
+
+.zone__compare-row h4 {
+  grid-column: 1 / -1;
+}
+
+.zone__cell {
+  padding: 6px 10px;
+  margin: 0;
+}
+
+.zone__cell--here {
+  border-left: 5px solid var(--red, var(--rust-500));
+  background: color-mix(in srgb, var(--red, var(--rust-500)) 7%, transparent);
+}
+
+.zone__cell--body {
+  border-left: 5px solid var(--blue, var(--rust-700));
+  background: color-mix(in srgb, var(--blue, var(--rust-700)) 7%, transparent);
+}
+
+.zone .glyph-bar {
+  margin: 6px 0;
+}
+
+/* ---------- Simbología ---------- */
+
+.mapview__legend {
+  margin-top: 8px !important;
+  max-width: 230px;
+  padding: 6px 10px;
+  border: 2px solid var(--ink, var(--line)) !important;
+  background: var(--paper-hi, var(--bg));
+  color: var(--text);
+  font-size: 13px;
+}
+
+.mapview__legend summary {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.mapview__legend ul {
+  list-style: none;
+  margin: 4px 0 4px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mapview__legend li {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.2;
+}
+
+.mapview__lg {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  justify-self: center;
+}
+
+.mapview__lg--site { color: var(--red, var(--rust-500)); font-size: 20px; }
+.mapview__lg--point { border-radius: 50%; border: 3px solid var(--ink, var(--cream)); background: rgba(20, 12, 10, 0.6); width: 18px; height: 18px; }
+.mapview__lg--mission { border-radius: 50%; border: 2px solid var(--ink, var(--cream)); background: var(--rust-500); width: 14px; height: 14px; }
+.mapview__lg--best { width: 34px; gap: 2px; }
+.mapview__lg--best i { width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--ink); }
+.mapview__lg--best .is-viable { background: var(--ok); }
+.mapview__lg--best .is-marginal { background: var(--yellow, var(--warn)); }
+.mapview__lg--best .is-not_viable { background: var(--red, var(--bad)); }
+.mapview__lg--crater { border-radius: 50%; border: 2px dashed var(--ink, var(--cream)); }
+.mapview__lg--track { width: 30px; height: 6px; background: linear-gradient(90deg, var(--c1) 50%, var(--c2) 50%); }

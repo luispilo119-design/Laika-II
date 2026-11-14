@@ -30,6 +30,14 @@ export default {
       pressure: 'Presión atmosférica',
       dust: 'Polvo en el aire',
     },
+    spectrum: {
+      aria: 'Puntuación {score} de 100: {verdict}',
+      not_viable: 'No viable: a la zona le faltan varias cosas que la tripulación necesitaría traer o fabricar.',
+      marginal: 'Marginal: se puede vivir aquí, pero con apoyo extra en los factores más bajos.',
+      viable: 'Viable: la zona cubre bien la mayoría de lo que necesita la tripulación.',
+    },
+    radar: { aria: 'Polígono con la puntuación de cada factor' },
+    factorShort: { water: 'Agua', temperature: 'Temp.', energy: 'Energía', radiation: 'Radiación', terrain: 'Terreno', pressure: 'Presión', dust: 'Polvo' },
     verdict: {
       viable: 'Viable',
       marginal: 'Marginal',
@@ -91,6 +99,14 @@ export default {
       pressure: 'Atmospheric pressure',
       dust: 'Dust in the air',
     },
+    spectrum: {
+      aria: 'Score {score} of 100: {verdict}',
+      not_viable: 'Not viable: the zone lacks several things the crew would need to bring or make.',
+      marginal: 'Marginal: people could live here, but with extra support on the lowest factors.',
+      viable: 'Viable: the zone covers most of what the crew needs.',
+    },
+    radar: { aria: 'Polygon with the score of each factor' },
+    factorShort: { water: 'Water', temperature: 'Temp.', energy: 'Energy', radiation: 'Radiation', terrain: 'Terrain', pressure: 'Pressure', dust: 'Dust' },
     verdict: {
       viable: 'Viable',
       marginal: 'Marginal',

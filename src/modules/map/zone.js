@@ -5,6 +5,7 @@
  */
 import { SCORE_SCALES, VERDICT_THRESHOLDS } from '../../core/env.js';
 import { HUMAN_NEEDS, solsToCareerLimit } from '../../core/human-needs.js';
+import { spectrumHtml, radarSvg } from '../../core/viz.js';
 
 /**
  * Restricciones preliminares de la NASA para zonas de exploración humana en Marte:
@@ -129,7 +130,7 @@ export function zoneHtml({ lat, lon, sample: s, evaluation, isSite, t, num, coor
             <span>${t(`core.factor.${f.id}`)}${f.modeled ? ` ${model}` : ''}</span>
             <strong>${f.noData ? '—' : `${f.score} %`}</strong>
           </div>
-          <div class="zone__bar"><i style="width:${f.noData ? 0 : f.score}%"></i></div>
+          <div class="glyph-bar" style="--value:${f.noData ? 0 : f.score / 100};--tone:${f.score >= VERDICT_THRESHOLDS.viable ? 'var(--ok)' : f.score >= VERDICT_THRESHOLDS.marginal ? 'var(--yellow)' : 'var(--red)'}"></div>
           <p>
             ${t('map.zone.factorLine', { value, weight: num(f.weight * 100), points: num(f.score * f.weight, 1) })}
             ${f.noData ? t('map.zone.factorNoData') : ''}
@@ -159,54 +160,69 @@ export function zoneHtml({ lat, lon, sample: s, evaluation, isSite, t, num, coor
     )
     .join('');
 
+  const actions = isSite
+    ? `<p class="zone__chosen">${t('map.zone.chosen')}</p>
+       <button type="button" class="btn btn--primary" data-zone-next>${t('map.zone.next')}</button>
+       <button type="button" class="btn btn--ghost" data-zone-clear>${t('map.zone.clear')}</button>`
+    : `<button type="button" class="btn btn--primary zone__choose" data-zone-choose>${t('map.zone.choose')}</button>`;
+
   return `
     <div class="zone__head">
       <div>
         <h2>${t('map.zone.title')}</h2>
         <p class="zone__coords">${coords(lat, lon)}</p>
       </div>
-      <button type="button" class="btn btn--ghost" data-zone-close>${t('map.panel.close')}</button>
-    </div>
-
-    <div class="zone__score is-${evaluation.verdict}">
-      <strong>${evaluation.score}</strong>
-      <div>
-        <span class="zone__verdict">${t(`core.verdict.${evaluation.verdict}`)}</span>
-        <span>${t('map.zone.scoreHint', { viable: VERDICT_THRESHOLDS.viable, marginal: VERDICT_THRESHOLDS.marginal })}</span>
+      <div class="zone__head-tools">
+        <button type="button" class="btn btn--ghost zone__min" data-zone-min aria-label="${t('map.zone.minimize')}" title="${t('map.zone.minimize')}">–</button>
+        <button type="button" class="btn btn--ghost" data-zone-close aria-label="${t('map.panel.close')}">✕</button>
       </div>
     </div>
 
-    <h3>${t('map.zone.compareTitle')}</h3>
-    <div class="zone__compare">
-      <div class="zone__compare-head"><span>${t('map.zone.here')}</span><span>${t('map.zone.body')}</span></div>
-      ${compare
-        .map(
-          (row) => `
-            <div class="zone__compare-row">
-              <h4>${t(`map.zone.row.${row.key}`)}</h4>
-              <p>${row.here}</p>
-              <p>${row.needs} <small>${sourceLink(row.ref)}</small></p>
-            </div>`,
-        )
-        .join('')}
-    </div>
+    <button type="button" class="zone__mini" data-zone-max aria-label="${t('map.zone.expand')}">
+      <strong class="is-${evaluation.verdict}">${evaluation.score}</strong>
+      <span>${t(`core.verdict.${evaluation.verdict}`)}</span>
+      <span class="zone__mini-coords">${coords(lat, lon)}</span>
+      <span class="zone__mini-open">${t('map.zone.expand')} ↑</span>
+    </button>
 
-    <h3>${t('map.zone.breakdownTitle')}</h3>
-    <p class="zone__note">${t('map.zone.formula')}</p>
-    ${factorRows}
+    <div class="zone__full">
+      <div class="zone__actions zone__actions--top">${actions}</div>
 
-    <h3>${t('map.zone.landingTitle')}</h3>
-    <ul class="zone__landing">${landingRows}</ul>
-    <p class="zone__note">${t('map.zone.landingNote')} ${sourceLink(LANDING_CONSTRAINTS.refId)}</p>
+      <div class="zone__score is-${evaluation.verdict}">
+        <strong>${evaluation.score}</strong>
+        <div>
+          <span class="zone__verdict">${t(`core.verdict.${evaluation.verdict}`)}</span>
+          <span>${t('map.zone.scoreHint', { viable: VERDICT_THRESHOLDS.viable, marginal: VERDICT_THRESHOLDS.marginal })}</span>
+        </div>
+      </div>
+      ${spectrumHtml(evaluation.score, t)}
 
-    <div class="zone__actions">
-      ${
-        isSite
-          ? `<p class="zone__chosen">${t('map.zone.chosen')}</p>
-             <button type="button" class="btn btn--primary" data-zone-next>${t('map.zone.next')}</button>
-             <button type="button" class="btn btn--ghost" data-zone-clear>${t('map.zone.clear')}</button>`
-          : `<button type="button" class="btn btn--primary" data-zone-choose>${t('map.zone.choose')}</button>`
-      }
+      <h3 class="zone__big">${t('map.zone.compareTitle')}</h3>
+      <div class="zone__compare">
+        <div class="zone__compare-head">
+          <span class="zone__col zone__col--here">${t('map.zone.here')}</span>
+          <span class="zone__col zone__col--body">${t('map.zone.body')}</span>
+        </div>
+        ${compare
+          .map(
+            (row) => `
+              <div class="zone__compare-row">
+                <h4>${t(`map.zone.row.${row.key}`)}</h4>
+                <p class="zone__cell zone__cell--here">${row.here}</p>
+                <p class="zone__cell zone__cell--body">${row.needs} <small>${sourceLink(row.ref)}</small></p>
+              </div>`,
+          )
+          .join('')}
+      </div>
+
+      <h3>${t('map.zone.breakdownTitle')}</h3>
+      ${radarSvg(evaluation.factors, t)}
+      <p class="zone__note">${t('map.zone.formula')}</p>
+      ${factorRows}
+
+      <h3>${t('map.zone.landingTitle')}</h3>
+      <ul class="zone__landing">${landingRows}</ul>
+      <p class="zone__note">${t('map.zone.landingNote')} ${sourceLink(LANDING_CONSTRAINTS.refId)}</p>
     </div>
   `;
 }

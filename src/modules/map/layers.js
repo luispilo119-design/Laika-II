@@ -70,19 +70,7 @@ export const DATA_LAYERS = [
     ramp: null,
     credit: 'MGS MOLA · Kreslavsky y Head (2000), JGR 105',
   },
-  {
-    id: 'nightir',
-    trekId: 'THEMIS_NightIR_ControlledMosaics_100m_v2_oct2018',
-    ext: 'png',
-    maxNativeZoom: 9,
-    opacity: 0.8,
-    bounds: [
-      [-65, -180],
-      [65, 180],
-    ],
-    ramp: 'gray',
-    credit: 'Mars Odyssey THEMIS',
-  },
+
 ].map((layer) => ({
   ...layer,
   reference: {

@@ -182,7 +182,8 @@ const mod = {
       }
       baseNote.textContent = t(`map.baseNote.${id}`);
     }
-    for (const id of Object.keys(BASEMAPS)) {
+    // HRSC queda fuera del selector (se usa solo al acercarse a un recorrido): con MOLA basta.
+    for (const id of Object.keys(BASEMAPS).filter((key) => key !== 'hrsc')) {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'btn';
@@ -192,7 +193,7 @@ const mod = {
       baseButtons[id] = btn;
       baseBox.append(btn);
     }
-    selectBase(BASEMAPS[ui.base] ? ui.base : 'mola');
+    selectBase(BASEMAPS[ui.base] && ui.base !== 'hrsc' ? ui.base : 'mola');
 
     /* ---------- Capas de datos ---------- */
 
@@ -550,16 +551,31 @@ const mod = {
       pointMarker.setLatLng([lat, lon]).addTo(map);
     }
 
+    function setSheetMin(min) {
+      ui.sheetMin = min;
+      sheet.classList.toggle('is-min', min);
+    }
+
     function showPoint(lat, lon) {
       ui.point = [lat, lon];
       sheet.scrollTop = 0;
+      setSheetMin(false);
       paintSheet();
     }
+    // Al explorar el mapa la ficha se encoge sola para no estorbar; un toque la vuelve a abrir.
+    map.on('dragstart zoomstart', () => {
+      if (ui.point && !sheet.hidden) setSheetMin(true);
+    });
+    setSheetMin(Boolean(ui.sheetMin));
 
     sheet.addEventListener('click', (e) => {
       const button = e.target.closest('button');
       if (!button) return;
-      if ('zoneClose' in button.dataset) {
+      if ('zoneMin' in button.dataset) {
+        setSheetMin(true);
+      } else if ('zoneMax' in button.dataset) {
+        setSheetMin(false);
+      } else if ('zoneClose' in button.dataset) {
         ui.point = null;
         paintSheet();
       } else if ('zoneChoose' in button.dataset && ui.point) {
@@ -600,6 +616,30 @@ const mod = {
       ui.best = false;
     });
     if (ui.best) drawBest();
+
+    // Simbología dentro del mapa, junto a los controles de navegación.
+    const legend = L.control({ position: 'topleft' });
+    legend.onAdd = () => {
+      const box = L.DomUtil.create('details', 'mapview__legend');
+      box.open = ui.legendOpen ?? window.innerWidth > 900;
+      box.addEventListener('toggle', () => {
+        ui.legendOpen = box.open;
+      });
+      L.DomEvent.disableClickPropagation(box);
+      L.DomEvent.disableScrollPropagation(box);
+      box.innerHTML = `
+        <summary>${t('map.legend.title')}</summary>
+        <ul>
+          <li><span class="mapview__lg mapview__lg--site">★</span>${t('map.legend.site')}</li>
+          <li><span class="mapview__lg mapview__lg--point"></span>${t('map.legend.point')}</li>
+          <li><span class="mapview__lg mapview__lg--mission"></span>${t('map.legend.missions')}</li>
+          <li><span class="mapview__lg mapview__lg--best"><i class="is-viable"></i><i class="is-marginal"></i><i class="is-not_viable"></i></span>${t('map.legend.best')}</li>
+          <li><span class="mapview__lg mapview__lg--crater"></span>${t('map.legend.craters')}</li>
+          <li><span class="mapview__lg mapview__lg--track" style="--c1:${ROVERS.perseverance.color};--c2:${ROVERS.curiosity.color}"></span>${t('map.legend.tracks')}</li>
+        </ul>`;
+      return box;
+    };
+    legend.addTo(map);
 
     paintSite();
     paintSheet();

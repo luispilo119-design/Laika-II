@@ -586,3 +586,93 @@ a {
     background: #fff;
   }
 }
+
+/* ---------- Espectro de viabilidad (core/viz.js) ---------- */
+
+.spectrum {
+  margin: 10px 0 4px;
+}
+
+.spectrum__track {
+  position: relative;
+  display: flex;
+  height: 16px;
+  border: 2px solid var(--ink, var(--line));
+}
+
+.spectrum__zone--bad { background: var(--red, var(--bad)); }
+.spectrum__zone--mid { background: var(--yellow, var(--warn)); }
+.spectrum__zone--good { background: var(--ok); }
+
+.spectrum__pin {
+  position: absolute;
+  top: -9px;
+  width: 0;
+  height: 30px;
+  border-left: 3px solid var(--ink, var(--text));
+  transition: left 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.spectrum__pin b {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0 4px;
+  background: var(--ink, var(--text));
+  color: var(--on-accent, var(--bg));
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.spectrum--compact .spectrum__track { height: 10px; }
+.spectrum--compact .spectrum__pin { top: -6px; height: 22px; }
+.spectrum--compact .spectrum__pin b { display: none; }
+
+.spectrum__labels {
+  display: flex;
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.spectrum__labels span {
+  display: flex;
+  flex-direction: column;
+  padding-right: 4px;
+  line-height: 1.15;
+}
+
+.spectrum__labels small {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.spectrum__explain {
+  margin: 6px 0 0;
+  font-size: 14px;
+}
+
+/* ---------- Radar de factores (core/viz.js) ---------- */
+
+.radar {
+  width: 100%;
+  max-width: 280px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  overflow: visible;
+}
+
+.radar__ring { fill: none; stroke: var(--line); stroke-width: 1; }
+.radar__ring--outer { fill: color-mix(in srgb, var(--ok) 14%, transparent); stroke: var(--ink, var(--line)); stroke-width: 1.5; }
+.radar__ring--viable { stroke: var(--ok); stroke-dasharray: 4 3; stroke-width: 1.5; }
+.radar__ring--marginal { fill: color-mix(in srgb, var(--red, var(--bad)) 14%, transparent); stroke: var(--red, var(--bad)); stroke-dasharray: 4 3; }
+.radar__axis { stroke: var(--line); }
+.radar__shape { fill: color-mix(in srgb, var(--blue, var(--rust-500)) 35%, transparent); stroke: var(--blue, var(--rust-500)); stroke-width: 2.5; stroke-linejoin: round; }
+.radar__node { fill: var(--blue, var(--rust-500)); }
+.radar__pull { fill: var(--red, var(--bad)); stroke: var(--paper-hi, var(--bg)); stroke-width: 2; }
+.radar__label { font-family: var(--font-mono); font-size: 10px; fill: var(--text); }
