@@ -1,0 +1,234 @@
+/* Estilos del módulo map. */
+
+.mapview {
+  height: 100%;
+  display: flex;
+  min-height: 0;
+}
+
+.mapview__panel {
+  width: 340px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  padding: 16px;
+  background: var(--bg);
+  border-right: 1px solid var(--line);
+  display: none;
+}
+
+.mapview.is-panel-open .mapview__panel {
+  display: block;
+}
+
+.mapview__panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mapview__panel-head h1 {
+  font-size: 22px;
+  margin: 0;
+}
+
+.mapview__panel h2 {
+  font-size: 12px;
+  font-family: var(--font-mono);
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin: 22px 0 8px;
+}
+
+.mapview__hint,
+.mapview__note,
+.mapview__source {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin: 8px 0 0;
+}
+
+.mapview__source a {
+  color: var(--rust-300);
+}
+
+.mapview__base {
+  display: grid;
+  gap: 6px;
+}
+
+.mapview__base .btn {
+  text-align: left;
+  width: 100%;
+}
+
+.mapview__layer {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+  margin-bottom: 6px;
+}
+
+.mapview__layer.is-on {
+  border-color: var(--rust-500);
+}
+
+.mapview__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 8px;
+}
+
+.mapview__check {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--tap);
+  padding: 4px 12px;
+  cursor: pointer;
+}
+
+.mapview__check input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--rust-500);
+  flex-shrink: 0;
+}
+
+.mapview__row .btn {
+  min-height: 36px;
+  padding: 0 12px;
+}
+
+.mapview__layer-body {
+  padding: 0 12px 12px;
+  font-size: 14px;
+}
+
+.mapview__layer-body p {
+  margin: 0 0 8px;
+}
+
+.mapview__ramp {
+  height: 10px;
+  border-radius: 5px;
+  border: 1px solid var(--line);
+}
+
+.mapview__ramp-ends {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--text-dim);
+  margin: 4px 0 8px;
+}
+
+.mapview__opacity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.mapview__opacity input {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  accent-color: var(--rust-500);
+}
+
+.mapview__stage {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+
+.mapview__map {
+  position: absolute;
+  inset: 0;
+  background: var(--bg-sunken);
+}
+
+.mapview__toggle {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 500;
+  background: var(--bg-sunken);
+}
+
+.mapview__swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--cream);
+  flex-shrink: 0;
+}
+
+/* En pantallas angostas el panel se abre encima del mapa */
+@media (max-width: 900px) {
+  .mapview__panel {
+    position: absolute;
+    z-index: 600;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: min(340px, 88vw);
+    box-shadow: 8px 0 24px rgba(0, 0, 0, 0.5);
+  }
+  .mapview {
+    position: relative;
+  }
+}
+
+/* Ventanas emergentes de Leaflet con el tema oscuro */
+.mapview .leaflet-popup-content-wrapper,
+.mapview .leaflet-popup-tip {
+  background: var(--bg-raised);
+  color: var(--text);
+  border: 1px solid var(--line);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+}
+
+.mapview .leaflet-popup-content {
+  margin: 12px 14px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.mapview .leaflet-popup-content strong {
+  color: var(--cream);
+}
+
+.mapview .leaflet-popup-content small {
+  color: var(--text-dim);
+}
+
+.mapview .leaflet-container a.leaflet-popup-close-button {
+  color: var(--text-dim);
+}
+
+.mapview .leaflet-bar a {
+  background: var(--bg-raised);
+  color: var(--text);
+  border-bottom-color: var(--line);
+  width: 36px;
+  height: 36px;
+  line-height: 36px;
+}
+
+.mapview .leaflet-control-attribution {
+  background: rgba(13, 7, 6, 0.8);
+  color: var(--text-dim);
+}
+
+.mapview .leaflet-control-attribution a {
+  color: var(--rust-300);
+}

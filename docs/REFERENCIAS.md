@@ -19,14 +19,22 @@ falta y cambia el estado a "verificada" (y `verified: true` en el código).
 
 | Tema | Fuente | Enlace | Estado |
 |---|---|---|---|
-| Posición de los planetas | JPL SSD, elementos orbitales aproximados | https://ssd.jpl.nasa.gov/planets/approx_pos.html | sin abrir |
-| Tiempo y estación marciana (Ls) | NASA GISS, algoritmo de Mars24 | https://www.giss.nasa.gov/tools/mars24/help/algorithm.html | sin abrir |
+| Catálogo de capas y mosaicos | NASA Mars Trek, API WMTS | https://trek.nasa.gov/tiles/apidoc/trekAPI.html?body=mars | verificada 2026-11-14 |
+| Inercia térmica, polvo, albedo, rugosidad, infrarrojo | Resúmenes de producto de Mars Trek (MGS TES, MGS MOLA, Odyssey THEMIS) | https://trek.nasa.gov/mars/TrekWS/rest/cat/abstract?label=TES_Thermal_Inertia (y uno por capa, ver `src/modules/map/layers.js`) | verificada 2026-11-14 |
+| Sitios de aterrizaje | NASA NSSDCA Master Catalog | https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=1975-075C (y uno por misión, ver `src/modules/map/sites.js`) | verificada 2026-11-14; InSight no trae coordenadas |
+| Recorrido de Perseverance | NASA/JPL, datos del mapa "Where is Perseverance?" | https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json | verificada 2026-11-14 |
+| Recorrido de Curiosity | NASA/JPL, datos del mapa "Where is Curiosity?" | https://mars.nasa.gov/mmgis-maps/MSL/Layers/json/MSL_waypoints.json | verificada 2026-11-14 |
+| Posición de los planetas | JPL SSD, elementos orbitales aproximados (Tabla 1, 1800–2050) | https://ssd.jpl.nasa.gov/planets/approx_pos.html | verificada 2026-11-14 |
+| Tiempo y estación marciana (Ls) | NASA GISS, algoritmo de Mars24 (Allison y McEwen, 2000) | https://www.giss.nasa.gov/tools/mars24/help/algorithm.html | verificada 2026-11-14 |
+| Estaciones de Marte según Ls | NASA GISS, notas técnicas de Mars24 | https://www.giss.nasa.gov/tools/mars24/help/notes.html | verificada 2026-11-14 |
+| Lanzamiento y aterrizaje de Perseverance | NASA Science, Mars 2020 | https://science.nasa.gov/mission/mars-2020-perseverance/ | verificada 2026-11-14 |
+| Constantes (UA, GM del Sol y de la Tierra) | JPL SSD, parámetros astrodinámicos | https://ssd.jpl.nasa.gov/astro_par.html | sin abrir |
 | Topografía | Smith et al. (2001), MOLA, J. Geophys. Res. | https://doi.org/10.1029/2000JE001364 | sin abrir |
 | Hielo subterráneo | NASA, mapa SWIM | https://science.nasa.gov/resource/swim-map-shows-subsurface-water-ice-on-mars/ | sin abrir |
 | Hielo subterráneo | Proyecto SWIM (PSI) | https://swim.psi.edu | sin abrir |
 | Hielo subterráneo | Morgan et al. (2021), Nature Astronomy | https://doi.org/10.1038/s41550-020-01290-z | sin abrir |
 | Cráteres | Robbins y Hynek (2012), J. Geophys. Res. | https://doi.org/10.1029/2011JE003966 | sin abrir |
-| Temperatura y polvo | NASA, temperatura atmosférica y seguimiento de tormentas | https://science.nasa.gov/resource/mars-atmospheric-temperature-and-dust-storm-tracking/ | sin abrir |
+| Temperatura y polvo | NASA, temperatura atmosférica y seguimiento de tormentas | https://science.nasa.gov/resource/mars-atmospheric-temperature-and-dust-storm-tracking/ | verificada 2026-11-14 para la época de tormentas regionales (primavera austral); no da valores de Ls |
 | Clima | Mars Climate Database (LMD/ESA/CNES) | https://www-mars.lmd.jussieu.fr/ | sin abrir |
 | Clima medido | REMS (Curiosity) y MEDA (Perseverance), NASA PDS | por localizar | sin abrir |
 | Radiación en superficie | Hassler et al. (2014), Science | https://doi.org/10.1126/science.1244797 | sin abrir |
