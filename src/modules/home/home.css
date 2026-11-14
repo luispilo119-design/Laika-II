@@ -1,0 +1,354 @@
+/* Pantalla de inicio (B1). Los colores y tamaños salen de las variables de base.css.
+   Nota: base.css todavía trae reglas .home / .home__* de la versión mínima anterior; aquí se
+   usan otros nombres de clase para no heredarlas. */
+
+.home__stage {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-sunken);
+}
+
+.home__bg {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Oscurece el fondo detrás del texto para que siempre se lea. */
+.home__scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    var(--bg-sunken) 0%,
+    var(--bg-sunken) 30%,
+    transparent 62%
+  );
+}
+
+.home__hud {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: clamp(20px, 4vh, 40px) clamp(20px, 5vw, 64px);
+}
+
+.home__brand,
+.home__main,
+.home__foot {
+  width: 100%;
+  max-width: 440px;
+}
+
+.home__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.home__mark {
+  width: 56px;
+  height: 56px;
+}
+
+.home__team {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.home__main {
+  margin-block: auto;
+}
+
+.home__tagline {
+  margin: 0 0 8px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--rust-300);
+}
+
+.home__name {
+  margin: 0 0 28px;
+  font-family: var(--font-mono);
+  font-size: clamp(48px, 8vw, 104px);
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: 0.06em;
+  color: var(--cream);
+}
+
+/* ---------- Menú ---------- */
+
+.home__menu {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.home__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--bg-raised) 92%, transparent);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 17px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-align: left;
+  cursor: pointer;
+}
+
+.home__item::before {
+  content: '>';
+  color: var(--rust-300);
+}
+
+.home__item:hover {
+  border-color: var(--rust-500);
+  color: var(--cream);
+}
+
+.home__item--primary {
+  border-color: var(--rust-500);
+  background: var(--rust-500);
+  color: var(--cream);
+  font-weight: 700;
+}
+
+.home__item--primary::before {
+  color: var(--cream);
+}
+
+.home__item--primary:hover {
+  background: var(--rust-700);
+}
+
+.home__item:focus-visible,
+.home__lang-btn:focus-visible,
+.home__link:focus-visible {
+  outline: 2px solid var(--cream);
+  outline-offset: 2px;
+}
+
+.home__hint {
+  margin-left: auto;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--text-dim);
+}
+
+.home__lang {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.home__lang-label {
+  margin-right: auto;
+  padding-left: 16px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.home__lang-btn {
+  min-width: 104px;
+  min-height: var(--tap);
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.home__lang-btn:hover {
+  border-color: var(--rust-500);
+}
+
+.home__lang-btn[aria-pressed='true'] {
+  border-color: var(--rust-300);
+  background: var(--rust-700);
+  color: var(--cream);
+}
+
+/* ---------- Pie: estado del guardado y dedicatoria ---------- */
+
+.home__foot {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.home__foot p {
+  margin: 0;
+}
+
+.home__sync {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.home__foot .home__sync {
+  margin-bottom: 6px;
+}
+
+.home__sync::before {
+  content: '';
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-dim);
+}
+
+.home__sync[data-status='synced']::before {
+  background: var(--ok);
+}
+
+.home__sync[data-status='offline']::before,
+.home__sync[data-status='connecting']::before,
+.home__sync[data-status='saving']::before {
+  background: var(--warn);
+}
+
+/* ---------- Índice ---------- */
+
+.home__panel {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  padding: clamp(20px, 4vh, 40px) clamp(20px, 5vw, 64px);
+  background: color-mix(in srgb, var(--bg-sunken) 94%, transparent);
+}
+
+.home__panel[hidden] {
+  display: none;
+}
+
+.home__panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 1100px;
+  margin: 0 auto 20px;
+}
+
+.home__panel-head h2 {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 22px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cream);
+}
+
+.home__phases {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.home__phase {
+  padding: 14px 8px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+}
+
+.home__phase h3 {
+  margin: 0 8px 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--rust-300);
+}
+
+.home__phase ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.home__link {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 56px;
+  padding: 8px;
+  border-radius: 8px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.home__link:hover {
+  background: var(--bg-sunken);
+}
+
+.home__link strong {
+  font-weight: 600;
+}
+
+.home__link span {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+/* ---------- Vertical (tablet de pie): agujero arriba, menú abajo ---------- */
+
+@media (max-aspect-ratio: 11/10) {
+  .home__scrim {
+    background: linear-gradient(180deg, transparent 32%, var(--bg-sunken) 54%);
+  }
+
+  .home__brand,
+  .home__main,
+  .home__foot {
+    max-width: 520px;
+    margin-inline: auto;
+  }
+
+  .home__main {
+    margin-block: auto 0;
+  }
+
+  .home__name br {
+    display: none;
+  }
+
+  .home__name {
+    font-size: clamp(36px, 9vw, 64px);
+    margin-bottom: 20px;
+  }
+}
