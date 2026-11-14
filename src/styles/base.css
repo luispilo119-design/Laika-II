@@ -1,0 +1,392 @@
+/* Estilos base y tokens de diseño. Dueño: Parte A.
+   Cada módulo puede traer su propio CSS (importado desde su index.js) con clases prefijadas
+   por su id (.hohmann__..., .routes__...) para no chocar con otros módulos. */
+
+:root {
+  /* Paleta tomada del logo de LAIKA II */
+  --rust-700: #96483a;
+  --rust-500: #a5583b;
+  --rust-300: #cf8a63;
+  --cream: #fffff3;
+  --bg: #140c0a;
+  --bg-raised: #20130f;
+  --bg-sunken: #0d0706;
+  --line: #3a231c;
+  --text: #f6ecdd;
+  --text-dim: #b99f8c;
+  --ok: #7fc98b;
+  --warn: #e8b04a;
+  --bad: #e2664f;
+
+  --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Mono', 'SF Mono', Consolas, monospace;
+  --radius: 10px;
+  --tap: 44px; /* tamaño mínimo táctil para tablet */
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-tap-highlight-color: transparent;
+}
+
+a {
+  color: var(--rust-300);
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.2;
+  margin: 0 0 0.5em;
+  text-wrap: balance;
+}
+
+#app,
+.app {
+  height: 100%;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+}
+
+.view {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  position: relative;
+}
+
+/* ---------- Botones e insignias ---------- */
+
+.btn {
+  min-height: var(--tap);
+  padding: 0 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--bg-raised);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.btn:hover {
+  border-color: var(--rust-500);
+}
+
+.btn:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--rust-300);
+  outline-offset: 2px;
+}
+
+.btn--primary {
+  background: var(--rust-500);
+  border-color: var(--rust-500);
+  color: var(--cream);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.btn--ghost {
+  background: transparent;
+}
+
+.btn.is-active {
+  background: var(--rust-700);
+  border-color: var(--rust-500);
+  color: var(--cream);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  border: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.badge--warn {
+  color: var(--warn);
+  border-color: var(--warn);
+}
+
+/* ---------- Barra superior con las fases ---------- */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 16px;
+  background: var(--bg-sunken);
+  border-bottom: 1px solid var(--line);
+}
+
+.topbar__brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--cream);
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.topbar__brand img {
+  width: 36px;
+  height: 36px;
+}
+
+.topbar__nav {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.topbar__group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.topbar__phase {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.topbar__links {
+  display: flex;
+  gap: 4px;
+}
+
+.topbar__links a {
+  padding: 6px 10px;
+  border-radius: 8px;
+  color: var(--text);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.topbar__links a:hover {
+  background: var(--bg-raised);
+}
+
+.topbar__links a.is-active {
+  background: var(--rust-700);
+  color: var(--cream);
+}
+
+.topbar__tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+  .topbar {
+    flex-wrap: wrap;
+  }
+  .topbar__nav {
+    order: 3;
+    flex-basis: 100%;
+  }
+  .topbar__tools {
+    margin-left: auto;
+  }
+}
+
+/* ---------- Pantalla provisional ---------- */
+
+.stub {
+  max-width: 640px;
+  margin: 10vh auto;
+  padding: 0 24px;
+}
+
+.stub__tag {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--warn);
+  margin: 0 0 12px;
+}
+
+.stub__desc {
+  color: var(--text-dim);
+  font-size: 18px;
+}
+
+.stub__task {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-dim);
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+/* ---------- Inicio (versión mínima; B1 la reemplaza) ---------- */
+
+.home {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6vh 24px 32px;
+  text-align: center;
+}
+
+.home__logo {
+  width: 120px;
+  height: 120px;
+}
+
+.home__kicker {
+  margin: 12px 0 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.home__title {
+  font-family: var(--font-mono);
+  font-size: clamp(36px, 8vw, 72px);
+  letter-spacing: 0.1em;
+  color: var(--cream);
+  margin: 4px 0 24px;
+}
+
+.home__actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.home__actions .btn--primary {
+  min-width: 200px;
+  font-size: 18px;
+}
+
+.home__index-title {
+  margin: 48px 0 16px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.home__index {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  width: 100%;
+  max-width: 1000px;
+  text-align: left;
+}
+
+.home__group {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  background: var(--bg-raised);
+}
+
+.home__group h3 {
+  font-size: 13px;
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+  font-weight: 400;
+}
+
+.home__group ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.home__group li a {
+  display: block;
+  padding: 8px 0;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.home__group li a:hover {
+  color: var(--rust-300);
+}
+
+.home__credit {
+  margin-top: auto;
+  padding-top: 40px;
+  font-size: 13px;
+  color: var(--text-dim);
+  max-width: 60ch;
+}
+
+/* ---------- Mapa ---------- */
+
+.mapview {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.mapview__bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.mapview__layers {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mapview__hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.mapview__map {
+  flex: 1;
+  min-height: 320px;
+  background: var(--bg-sunken);
+}
+
+.leaflet-container {
+  background: var(--bg-sunken);
+  font-family: var(--font-ui);
+}
