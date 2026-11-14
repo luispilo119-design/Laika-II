@@ -676,3 +676,73 @@ a {
 .radar__node { fill: var(--blue, var(--rust-500)); }
 .radar__pull { fill: var(--red, var(--bad)); stroke: var(--paper-hi, var(--bg)); stroke-width: 2; }
 .radar__label { font-family: var(--font-mono); font-size: 10px; fill: var(--text); }
+
+/* ---------- Barra superior compacta: todas las pestañas a la vista, sin desplazarse ---------- */
+
+.topbar {
+  flex-wrap: nowrap;
+  gap: 12px;
+  padding: 6px 12px;
+}
+
+.topbar__nav {
+  flex-wrap: wrap;
+  overflow: visible;
+  gap: 4px 6px;
+  align-items: center;
+}
+
+.topbar__group {
+  flex-direction: row;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 4px 2px 2px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+}
+
+.topbar__group.is-current {
+  border-color: var(--line);
+}
+
+.topbar__phase {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--ink, var(--line));
+  color: var(--on-accent, var(--text));
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.topbar__links {
+  gap: 2px;
+}
+
+.topbar__links a {
+  min-height: 38px;
+  padding: 4px 9px;
+  font-size: 14px;
+  line-height: 1.15;
+}
+
+.topbar__brand-team {
+  font-size: 20px;
+}
+
+@media (max-width: 900px) {
+  .topbar {
+    flex-wrap: wrap;
+  }
+  .topbar__nav {
+    order: 3;
+    flex-basis: 100%;
+  }
+  .topbar__links a {
+    min-height: var(--tap);
+  }
+}

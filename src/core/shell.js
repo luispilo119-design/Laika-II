@@ -41,13 +41,18 @@ function buildTopbar(active) {
 
   const nav = el('nav', 'topbar__nav');
   const groups = [
-    ...PHASES.filter((p) => p.id !== 0).map((p) => ({ label: t(p.key), mods: modules.filter((m) => m.phase === p.id) })),
-    { label: t('core.phase.resources'), mods: modules.filter((m) => m.phase == null) },
+    ...PHASES.filter((p) => p.id !== 0).map((p) => ({ chip: String(p.id), label: t(p.key), mods: modules.filter((m) => m.phase === p.id) })),
+    { chip: '+', label: t('core.phase.resources'), mods: modules.filter((m) => m.phase == null) },
   ];
   for (const group of groups) {
     if (group.mods.length === 0) continue;
     const box = el('div', 'topbar__group');
-    box.append(el('span', 'topbar__phase', group.label));
+    box.title = group.label;
+    if (group.mods.some((m) => m.id === active.id)) box.classList.add('is-current');
+    // Número de fase compacto; el nombre completo queda en el título y para lectores de pantalla.
+    const chip = el('span', 'topbar__phase', group.chip);
+    chip.setAttribute('aria-label', group.label);
+    box.append(chip);
     const links = el('div', 'topbar__links');
     for (const mod of group.mods) {
       const link = el('a', mod.id === active.id ? 'is-active' : '', t(`${mod.id}.title`));
