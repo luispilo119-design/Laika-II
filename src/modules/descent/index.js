@@ -57,6 +57,7 @@ const mod = {
       return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
     };
     const nextModule = modules.find((m) => m.id === 'hubs') ? 'hubs' : 'home';
+    const prevModule = modules.find((m) => m.id === 'transit') ? 'transit' : 'home';
 
     const READOUTS = ['temperature', 'pressure', 'radiation', 'elevation', 'slope', 'dust', 'position'];
 
@@ -65,7 +66,9 @@ const mod = {
         <canvas class="descent__canvas" aria-label="${t('descent.canvasLabel')}"></canvas>
 
         <div class="descent__top">
-          <button type="button" class="btn" data-go="home">${t('descent.back')}</button>
+          <button type="button" class="btn" data-go="${prevModule}">${t('descent.prev', { name: t(`${prevModule}.title`) })}</button>
+          <button type="button" class="btn" data-go="map">${t('descent.toMap')}</button>
+          <button type="button" class="btn" data-ascend hidden>${t('descent.ascend')}</button>
           <button type="button" class="btn" data-go="${nextModule}">${t('descent.next', { name: t(`${nextModule}.title`) })}</button>
           ${env.isMock ? `<span class="badge badge--warn">${t('core.mockBadge')}</span>` : ''}
         </div>
@@ -240,6 +243,7 @@ const mod = {
         stick.hidden = false;
         hint.hidden = false;
         root.classList.add('is-landed');
+        el.querySelector('[data-ascend]').hidden = false;
       }
       if (now - lastHud > HUD_EVERY_MS) {
         lastHud = now;
@@ -312,6 +316,16 @@ const mod = {
     function onClick(event) {
       const go = event.target.closest('[data-go]')?.dataset.go;
       if (go) return navigate(go);
+      if (event.target.closest('[data-ascend]') && scene) {
+        scene.ascend();
+        landed = false;
+        stick.hidden = true;
+        hint.hidden = true;
+        root.classList.remove('is-landed');
+        el.querySelector('[data-ascend]').hidden = true;
+        intro.hidden = false;
+        return undefined;
+      }
       if (event.target.closest('[data-descend]') && scene) {
         scene.startDescent(reducedMotion.matches);
         intro.hidden = true;

@@ -5,6 +5,9 @@ export default {
     desc: 'Baja al sitio de aterrizaje y recorre el terreno a pie.',
     canvasLabel: 'Vista en primera persona del terreno de Marte',
     back: '← Inicio',
+    prev: '← {name}',
+    toMap: 'Mapa del sitio',
+    ascend: '↑ Subir a la vista aérea',
     next: 'Siguiente: {name}',
     card: { n: 'N', s: 'S', e: 'E', w: 'O' },
     noSite: 'Aún no eliges sitio de aterrizaje: se usa un punto de ejemplo.',
@@ -14,7 +17,7 @@ export default {
     fallback: 'Este dispositivo no puede mostrar la vista 3D. A la derecha están las condiciones del sitio.',
     descend: 'Bajar al sitio',
     decorNote:
-      'La forma del terreno ({km} km de lado) sale de la rejilla de elevación, que tiene celdas de unos 15 km: a esta escala llega interpolada. El relieve fino, las rocas y los colores son decorativos, no datos.',
+      'La forma del terreno ({km} km de lado) sale de la rejilla de elevación, que tiene celdas de unos 15 km: a esta escala llega interpolada. El relieve fino, los cráteres pequeños, las rocas, los vehículos y los colores son decorativos, no datos.',
     hint: 'Muévete con W, A, S, D o las flechas (Mayús para correr) y arrastra para mirar. En tablet, usa la palanca de la izquierda.',
     hud: {
       title: 'Condiciones en tu posición',
@@ -43,6 +46,9 @@ export default {
     desc: 'Go down to the landing site and explore the terrain on foot.',
     canvasLabel: 'First-person view of the Martian terrain',
     back: '← Start',
+    prev: '← {name}',
+    toMap: 'Site map',
+    ascend: '↑ Back to aerial view',
     next: 'Next: {name}',
     card: { n: 'N', s: 'S', e: 'E', w: 'W' },
     noSite: 'You have not chosen a landing site yet: an example point is used.',
@@ -52,7 +58,7 @@ export default {
     fallback: 'This device cannot show the 3D view. The site conditions are on the right.',
     descend: 'Go down to the site',
     decorNote:
-      'The shape of the terrain ({km} km across) comes from the elevation grid, whose cells are about 15 km: at this scale it arrives interpolated. Fine relief, rocks and colors are decorative, not data.',
+      'The shape of the terrain ({km} km across) comes from the elevation grid, whose cells are about 15 km: at this scale it arrives interpolated. Fine relief, small craters, rocks, vehicles and colors are decorative, not data.',
     hint: 'Move with W, A, S, D or the arrow keys (Shift to run) and drag to look around. On a tablet, use the stick on the left.',
     hud: {
       title: 'Conditions at your position',
