@@ -1,0 +1,82 @@
+/* Control del reloj marciano (src/core/clock.js). */
+
+.clock {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+  padding: 12px;
+}
+
+.clock__now {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+
+.clock__now strong {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  color: var(--cream);
+}
+
+.clock__now span {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.clock__now .clock__dust {
+  color: var(--warn);
+}
+
+.clock__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--tap);
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.clock__row > span {
+  width: 76px;
+  flex-shrink: 0;
+}
+
+.clock__row input[type='range'] {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  accent-color: var(--rust-500);
+}
+
+.clock__stepper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.clock__stepper .btn {
+  min-width: var(--tap);
+  padding: 0 6px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.clock__stepper output {
+  flex: 1;
+  text-align: center;
+  font-family: var(--font-mono);
+  color: var(--text);
+}
+
+.clock__note {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin: 6px 0 8px;
+}
+
+.clock__reset {
+  width: 100%;
+}

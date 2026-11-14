@@ -72,6 +72,14 @@ h3 {
   position: relative;
 }
 
+.app__loading {
+  margin: auto;
+  padding: 24px;
+  text-align: center;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+}
+
 /* ---------- Botones e insignias ---------- */
 
 .btn {
