@@ -15,6 +15,7 @@ import {
   speedOnSlope,
   segmentTime,
   smoothPath,
+  joinLegs,
 } from '../src/modules/routes/routing.js';
 import { PROFILES, PROFILE_IDS, REFERENCES, refOf } from '../src/modules/routes/profiles.js';
 
@@ -196,4 +197,24 @@ test('el suavizado nunca deja la ruta más lenta que el tramo de rejilla que ree
   assert.ok(timeOf(smooth) <= timeOf(cells) + 1e-6, `${timeOf(smooth)} > ${timeOf(cells)}`);
   const straight = segmentTime(grid, mask, rover, start, goal);
   assert.ok(timeOf(smooth) <= straight + 1e-6, 'no es más lenta que la recta');
+});
+
+test('paradas intermedias: los tramos se unen en una sola ruta con distancias acumuladas', () => {
+  const flat = elevation(BOX, 65);
+  const stop = [0.8, 0];
+  const leg1 = planRoute({ origin: A, destination: stop, profile: rover, elevation: flat, craters: [] });
+  const leg2 = planRoute({ origin: stop, destination: B, profile: rover, elevation: flat, craters: [] });
+  const joined = joinLegs([leg1, leg2]);
+  assert.equal(joined.ok, true);
+  assert.ok(Math.abs(joined.distanceKm - (leg1.distanceKm + leg2.distanceKm)) < 1e-9);
+  assert.ok(Math.abs(joined.durationH - (leg1.durationH + leg2.durationH)) < 1e-9);
+  assert.deepEqual(joined.points[0], A);
+  assert.deepEqual(joined.points.at(-1), B);
+  assert.ok(joined.points.some((p) => p[0] === stop[0] && p[1] === stop[1]), 'pasa por la parada');
+  const types = joined.steps.map((s) => s.type);
+  assert.equal(types[0], 'depart');
+  assert.equal(types.at(-1), 'arrive');
+  assert.equal(types.filter((x) => x === 'stop').length, 1);
+  assert.equal(types.filter((x) => x === 'arrive').length, 1);
+  assert.ok(joined.samples.every((s, i) => i === 0 || s.km >= joined.samples[i - 1].km), 'km crecientes');
 });

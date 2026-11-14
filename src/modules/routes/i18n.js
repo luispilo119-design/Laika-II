@@ -36,6 +36,15 @@ export default {
       lon: 'Longitud este',
       reset: 'Volver al sitio de aterrizaje y al primer hub',
     },
+    stops: {
+      add: '+ Agregar parada intermedia',
+      name: 'Parada {n}',
+      remove: 'Quitar la parada {n}',
+      asStop: 'Agregar {name} como parada',
+      leg: 'Tramo {from} → {to}',
+      step: 'Parada {n} (km {km}). Sigue hacia el {dir}.',
+      count: '{n} paradas',
+    },
     base: {
       title: 'Tu base',
       hint: 'Usa el sitio de aterrizaje o un hub como origen (A) o destino (B). También puedes tocarlos en el mapa.',
@@ -145,6 +154,15 @@ export default {
       lat: 'Latitude',
       lon: 'East longitude',
       reset: 'Back to the landing site and the first hub',
+    },
+    stops: {
+      add: '+ Add an intermediate stop',
+      name: 'Stop {n}',
+      remove: 'Remove stop {n}',
+      asStop: 'Add {name} as a stop',
+      leg: 'Leg {from} → {to}',
+      step: 'Stop {n} (km {km}). Continue {dir}.',
+      count: '{n} stops',
     },
     base: {
       title: 'Your base',

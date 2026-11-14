@@ -461,3 +461,45 @@
   color: var(--text-dim);
   font-size: 12px;
 }
+
+/* ---------- Paradas intermedias ---------- */
+
+.routes__base-item {
+  grid-template-columns: 40px 1fr var(--tap) var(--tap) var(--tap);
+}
+
+.routes__base-btn--stop {
+  border-style: dashed;
+}
+
+.routes__add-stop {
+  width: 100%;
+  margin: 2px 0 8px;
+  border-style: dashed;
+}
+
+.routes__point--stop {
+  grid-template-columns: minmax(0, 1.2fr) var(--tap) minmax(0, 1fr) minmax(0, 1fr);
+  padding-left: 18px;
+  border-left: 3px dashed var(--ink, var(--line));
+  margin-left: 14px;
+}
+
+.routes__point--stop .routes__letter {
+  background: var(--yellow, var(--warn));
+  color: var(--ink, #000);
+}
+
+.routes__stop-remove {
+  width: var(--tap);
+  padding: 0;
+  color: var(--red, var(--bad));
+}
+
+.routes__pin--stop span {
+  width: 26px;
+  height: 26px;
+  font-size: 13px;
+  background: var(--yellow, #eab422) !important;
+  color: #161412 !important;
+}

@@ -21,6 +21,7 @@ import {
   routeBBox,
   expandBBox,
   planRoute,
+  joinLegs,
 } from './routing.js';
 
 const SAVE_KEY = 'laika2.routes.v1';
@@ -38,6 +39,7 @@ const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ESCAPES[c
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const isPoint = (p) => Array.isArray(p) && p.length === 2 && p.every(Number.isFinite);
 const round4 = (v) => Math.round(v * 1e4) / 1e4;
+const MAX_STOPS = 6;
 
 function readSaved() {
   try {
@@ -58,12 +60,14 @@ const ui = {
   destination: isPoint(saved.destination) ? saved.destination : null,
   profile: PROFILE_IDS.includes(saved.profile) ? saved.profile : PROFILE_IDS[0],
   pick: 'destination',
+  // Paradas intermedias entre A y B, en orden.
+  stops: Array.isArray(saved.stops) ? saved.stops.filter(isPoint).slice(0, MAX_STOPS) : [],
 };
 
 function persist() {
   try {
-    const { origin, destination, profile } = ui;
-    globalThis.localStorage?.setItem(SAVE_KEY, JSON.stringify({ origin, destination, profile }));
+    const { origin, destination, profile, stops } = ui;
+    globalThis.localStorage?.setItem(SAVE_KEY, JSON.stringify({ origin, destination, profile, stops }));
   } catch {
     /* almacenamiento no disponible */
   }
@@ -136,12 +140,13 @@ const mod = {
              <button type="button" class="btn" data-go="hubs">${t('routes.notice.goHubs')}</button></p>`,
     ].join('');
 
-    const pointRow = (which, letter) => `
-      <div class="routes__point" data-point="${which}">
+    const pointRow = (which, letter, isStop = false) => `
+      <div class="routes__point${isStop ? ' routes__point--stop' : ''}" data-point="${which}">
         <button type="button" class="routes__pick" data-pick="${which}">
           <span class="routes__letter" aria-hidden="true">${letter}</span>
-          <span>${t(`routes.points.${which}`)}</span>
+          <span>${isStop ? t('routes.stops.name', { n: letter }) : t(`routes.points.${which}`)}</span>
         </button>
+        ${isStop ? `<button type="button" class="btn routes__stop-remove" data-stop-remove="${which.slice(4)}" aria-label="${t('routes.stops.remove', { n: letter })}">✕</button>` : ''}
         <label>${t('routes.points.lat')}
           <input type="number" inputmode="decimal" step="0.01" min="-85" max="85" data-coord="${which}:0" />
         </label>
@@ -180,6 +185,7 @@ const mod = {
                 <span class="routes__base-name">${esc(b.label)}</span>
                 <button type="button" class="routes__base-btn" data-base="${esc(b.id)}" data-as="origin" aria-label="${t('routes.base.asOrigin', { name: esc(b.label) })}">A</button>
                 <button type="button" class="routes__base-btn" data-base="${esc(b.id)}" data-as="destination" aria-label="${t('routes.base.asDestination', { name: esc(b.label) })}">B</button>
+                <button type="button" class="routes__base-btn routes__base-btn--stop" data-base="${esc(b.id)}" data-as="stop" aria-label="${t('routes.stops.asStop', { name: esc(b.label) })}">+</button>
               </li>`,
               )
               .join('')}
@@ -201,6 +207,8 @@ const mod = {
             <h2>${t('routes.points.title')}</h2>
             <p class="routes__hint">${t('routes.points.hint')}</p>
             ${pointRow('origin', 'A')}
+            <div class="routes__stops" data-stops></div>
+            <button type="button" class="btn routes__add-stop" data-stop-add>${t('routes.stops.add')}</button>
             ${pointRow('destination', 'B')}
             ${baseList()}
             <button type="button" class="btn" data-points-reset>${t('routes.points.reset')}</button>
@@ -267,13 +275,45 @@ const mod = {
     const cratersLayer = L.layerGroup().addTo(map);
     const savedLayer = L.layerGroup().addTo(map);
     const routeLayer = L.layerGroup().addTo(map);
-    const pin = (letter) =>
-      L.divIcon({ className: 'routes__pin', html: `<span>${letter}</span>`, iconSize: [32, 32], iconAnchor: [16, 16] });
+    const pin = (letter, small = false) =>
+      L.divIcon({
+        className: `routes__pin${small ? ' routes__pin--stop' : ''}`,
+        html: `<span>${letter}</span>`,
+        iconSize: small ? [26, 26] : [32, 32],
+        iconAnchor: small ? [13, 13] : [16, 16],
+      });
     const markers = {
       origin: L.marker(start, { icon: pin('A'), keyboard: false, interactive: false }).addTo(map),
       destination: L.marker(end, { icon: pin('B'), keyboard: false, interactive: false }).addTo(map),
     };
     let fitNext = true;
+    const stopLayer = L.layerGroup().addTo(map);
+    const stopPoint = (i) => ui.stops[i];
+    const allPoints = () => [origin(), ...ui.stops, destination()];
+    const pointOf = (which) =>
+      which === 'origin' ? origin() : which === 'destination' ? destination() : stopPoint(Number(which.slice(4)));
+
+    function paintStops() {
+      const box = el.querySelector('[data-stops]');
+      box.innerHTML = ui.stops.map((_, i) => pointRow(`stop${i}`, String(i + 1), true)).join('');
+      el.querySelector('[data-stop-add]').disabled = ui.stops.length >= MAX_STOPS;
+      stopLayer.clearLayers();
+      ui.stops.forEach((point, i) => {
+        L.marker(point, { icon: pin(String(i + 1), true), keyboard: false, interactive: false }).addTo(stopLayer);
+      });
+    }
+
+    function addStop(point) {
+      if (ui.stops.length >= MAX_STOPS) return;
+      const last = ui.stops.at(-1) ?? origin();
+      const end = destination();
+      ui.stops.push(point ?? [round4((last[0] + end[0]) / 2), round4((last[1] + end[1]) / 2)]);
+      ui.pick = `stop${ui.stops.length - 1}`;
+      persist();
+      paintStops();
+      paintControls();
+      compute();
+    }
 
     // Sitio y hubs en el mapa: tocarlos pone ese punto en A o B (el que esté elegido).
     const baseLayer = L.layerGroup().addTo(map);
@@ -296,7 +336,7 @@ const mod = {
 
     function onMapClick(event) {
       setPoint(ui.pick, [event.latlng.lat, event.latlng.lng]);
-      if (ui.pick === 'origin') ui.pick = 'destination'; // tras fijar A, lo siguiente suele ser B
+      if (ui.pick !== 'destination') ui.pick = 'destination'; // tras fijar A o una parada, lo siguiente suele ser B
       paintControls();
     }
     map.on('click', onMapClick);
@@ -304,14 +344,14 @@ const mod = {
     // ---------- Estado → controles ----------
 
     function paintControls() {
-      for (const which of ['origin', 'destination']) {
-        const point = which === 'origin' ? origin() : destination();
-        el.querySelector(`[data-pick="${which}"]`).setAttribute('aria-pressed', String(ui.pick === which));
+      for (const which of ['origin', 'destination', ...ui.stops.map((_, i) => `stop${i}`)]) {
+        const point = pointOf(which);
+        el.querySelector(`[data-pick="${which}"]`)?.setAttribute('aria-pressed', String(ui.pick === which));
         for (const axis of [0, 1]) {
           const input = el.querySelector(`[data-coord="${which}:${axis}"]`);
-          if (document.activeElement !== input) input.value = String(round4(point[axis]));
+          if (input && document.activeElement !== input) input.value = String(round4(point[axis]));
         }
-        markers[which].setLatLng(point);
+        markers[which]?.setLatLng(point);
       }
       for (const item of el.querySelectorAll('[data-base-item]')) {
         const b = basePoints.find((x) => x.id === item.dataset.baseItem);
@@ -329,7 +369,11 @@ const mod = {
     }
 
     function setPoint(which, point) {
-      ui[which] = [round4(clamp(point[0], -85, 85)), round4(clamp(point[1], -180, 180))];
+      const p = [round4(clamp(point[0], -85, 85)), round4(clamp(point[1], -180, 180))];
+      if (which.startsWith('stop')) {
+        ui.stops[Number(which.slice(4))] = p;
+        paintStops();
+      } else ui[which] = p;
       persist();
       paintControls();
       compute();
@@ -339,12 +383,11 @@ const mod = {
 
     async function compute() {
       const id = ++runId;
-      const from = origin();
-      const to = destination();
+      const pts = allPoints();
       const profile = PROFILES[ui.profile];
       current = null;
 
-      if (distanceKm(from, to) < 0.5) {
+      if (pts.slice(1).some((p, i) => distanceKm(pts[i], p) < 0.5)) {
         routeLayer.clearLayers();
         cratersLayer.clearLayers();
         resultBox.innerHTML = `<p class="routes__fail">${t('routes.fail.same')}</p>`;
@@ -352,18 +395,40 @@ const mod = {
       }
       resultBox.innerHTML = `<p class="routes__hint">${t('routes.computing')}</p>`;
 
+      // Cada tramo (A → 1, 1 → 2, … → B) se calcula con su propia rejilla y luego se unen.
       let result;
-      let cellKm;
+      let cellKm = 0;
+      const legName = (i) => {
+        const name = (k) => (k === 0 ? 'A' : k === pts.length - 1 ? 'B' : String(k));
+        return t('routes.stops.leg', { from: name(i), to: name(i + 1) });
+      };
       try {
         await env.ready();
-        const bbox = routeBBox(from, to);
-        const [elevation, craters] = await Promise.all([
-          env.elevationGrid(bbox, GRID_SIZE),
-          env.craters(expandBBox(bbox, CRATER_MARGIN_DEG), profile.avoidCraterKm),
-        ]);
-        if (!alive || id !== runId) return;
-        cellKm = ((bbox.north - bbox.south) / (GRID_SIZE - 1)) * KM_PER_DEG;
-        result = planRoute({ origin: from, destination: to, profile, elevation, craters });
+        const legs = [];
+        const avoidedAll = [];
+        const insideAll = { origin: [], destination: [] };
+        for (let i = 0; i < pts.length - 1; i++) {
+          const bbox = routeBBox(pts[i], pts[i + 1]);
+          const [elevation, craters] = await Promise.all([
+            env.elevationGrid(bbox, GRID_SIZE),
+            env.craters(expandBBox(bbox, CRATER_MARGIN_DEG), profile.avoidCraterKm),
+          ]);
+          if (!alive || id !== runId) return;
+          cellKm = Math.max(cellKm, ((bbox.north - bbox.south) / (GRID_SIZE - 1)) * KM_PER_DEG);
+          const leg = planRoute({ origin: pts[i], destination: pts[i + 1], profile, elevation, craters });
+          for (const c of leg.avoided ?? []) if (!avoidedAll.includes(c)) avoidedAll.push(c);
+          insideAll.origin.push(...(leg.inside?.origin ?? []));
+          insideAll.destination.push(...(leg.inside?.destination ?? []));
+          if (!leg.ok) {
+            result = { ...leg, leg: pts.length > 2 ? legName(i) : null };
+            break;
+          }
+          legs.push(leg);
+        }
+        if (!result) result = joinLegs(legs);
+        // Para el mapa: todos los cráteres rodeados y los que contienen un extremo, de todos los tramos.
+        result.avoided = avoidedAll;
+        result.inside = insideAll;
       } catch {
         if (!alive || id !== runId) return;
         resultBox.innerHTML = `<p class="routes__fail">${t('routes.fail.data')}</p>`;
@@ -393,7 +458,7 @@ const mod = {
       routeLayer.clearLayers();
 
       if (!result.ok) {
-        resultBox.innerHTML = `<p class="routes__fail">${t(`routes.fail.${result.reason}`, {
+        resultBox.innerHTML = `<p class="routes__fail">${result.leg ? `<strong>${esc(result.leg)}:</strong> ` : ''}${t(`routes.fail.${result.reason}`, {
           vehicle: t(`routes.profile.${ui.profile}.name`),
         })}</p>`;
         return;
@@ -444,6 +509,7 @@ const mod = {
     function stepText(step) {
       const km = num(step.km);
       if (step.type === 'depart') return t('routes.step.depart', { dir: t(`routes.dir.${step.dir}`) });
+      if (step.type === 'stop') return t('routes.stops.step', { n: step.n, km, dir: t(`routes.dir.${step.dir}`) });
       if (step.type === 'crater') {
         return t('routes.step.crater', { km, side: t(`routes.dir.${step.side}`), size: num(step.diameterKm) });
       }
@@ -517,6 +583,7 @@ const mod = {
       // Si los extremos son el sitio o un hub, se guarda su nombre para el tablero y la lista.
       const fromLabel = labelAt(current.points[0]);
       const toLabel = labelAt(current.points.at(-1));
+      if (ui.stops.length) route.stops = ui.stops.length;
       if (fromLabel) route.from = fromLabel;
       if (toLabel) route.to = toLabel;
       store.set('mission.routes', [...(store.get().mission.routes ?? []), route]);
@@ -530,12 +597,23 @@ const mod = {
       const target = event.target;
       const go = target.closest('[data-go]')?.dataset.go;
       if (go) return navigate(go);
+      if (target.closest('[data-stop-add]')) return addStop();
+      const removeStop = target.closest('[data-stop-remove]')?.dataset.stopRemove;
+      if (removeStop != null) {
+        ui.stops.splice(Number(removeStop), 1);
+        if (ui.pick.startsWith('stop')) ui.pick = 'destination';
+        persist();
+        paintStops();
+        paintControls();
+        return compute();
+      }
       const baseBtn = target.closest('[data-base]');
       if (baseBtn) {
         const b = basePoints.find((x) => x.id === baseBtn.dataset.base);
         if (b) {
           fitNext = true;
-          setPoint(baseBtn.dataset.as, b.point);
+          if (baseBtn.dataset.as === 'stop') addStop([...b.point]);
+          else setPoint(baseBtn.dataset.as, b.point);
         }
         return undefined;
       }
@@ -554,7 +632,9 @@ const mod = {
       if (target.closest('[data-points-reset]')) {
         ui.origin = null;
         ui.destination = null;
+        ui.stops = [];
         ui.pick = 'destination';
+        paintStops();
         fitNext = true;
         persist();
         paintControls();
@@ -582,7 +662,7 @@ const mod = {
       const [which, axis] = key.split(':');
       const value = Number(event.target.value);
       if (event.target.value === '' || !Number.isFinite(value)) return paintControls();
-      const point = [...(which === 'origin' ? origin() : destination())];
+      const point = [...pointOf(which)];
       point[Number(axis)] = value;
       fitNext = true;
       setPoint(which, point);
@@ -592,6 +672,7 @@ const mod = {
     el.addEventListener('click', onClick);
     el.addEventListener('change', onChange);
 
+    paintStops();
     paintControls();
     paintSaved();
     compute();

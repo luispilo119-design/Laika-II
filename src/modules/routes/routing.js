@@ -515,3 +515,48 @@ export function planRoute({ origin, destination, profile, elevation, craters }) 
   const measured = measureRoute(grid, mask, profile, points);
   return { ok: true, points, avoided, inside, steps: describeRoute(measured, points, avoided, inside), ...measured };
 }
+
+/**
+ * Une los tramos de una ruta con paradas (A → 1 → 2 → … → B) en una sola ruta.
+ * Cada tramo es el resultado ok de planRoute. Las distancias de muestras y pasos se corren al
+ * kilómetro acumulado; en la guía, cada salida intermedia pasa a ser un paso "stop".
+ * @param {any[]} legs
+ */
+export function joinLegs(legs) {
+  if (legs.length === 1) return legs[0];
+  let kmOffset = 0;
+  let hours = 0;
+  const points = [];
+  const samples = [];
+  const steps = [];
+  const avoided = [];
+  let maxSlope = { deg: 0, km: 0 };
+  let highest = null;
+  let lowest = null;
+  legs.forEach((leg, i) => {
+    points.push(...(i === 0 ? leg.points : leg.points.slice(1)));
+    for (const s of i === 0 ? leg.samples : leg.samples.slice(1)) samples.push({ ...s, km: s.km + kmOffset });
+    if (leg.maxSlope.deg > maxSlope.deg) maxSlope = { deg: leg.maxSlope.deg, km: leg.maxSlope.km + kmOffset };
+    if (!highest || leg.highest.elevM > highest.elevM) highest = { elevM: leg.highest.elevM, km: leg.highest.km + kmOffset };
+    if (!lowest || leg.lowest.elevM < lowest.elevM) lowest = { elevM: leg.lowest.elevM, km: leg.lowest.km + kmOffset };
+    for (const step of leg.steps) {
+      if (step.type === 'arrive' && i < legs.length - 1) continue;
+      if (step.type === 'depart' && i > 0) {
+        steps.push({ type: 'stop', n: i, km: kmOffset, dir: step.dir });
+        continue;
+      }
+      // La pendiente máxima y el punto más alto se dan una sola vez, para toda la ruta (abajo).
+      if (step.type === 'slope' || step.type === 'high') continue;
+      steps.push({ ...step, km: step.km + kmOffset });
+    }
+    for (const c of leg.avoided ?? []) if (!avoided.includes(c)) avoided.push(c);
+    kmOffset += leg.distanceKm;
+    hours += leg.durationH;
+  });
+  const arrive = steps.pop(); // el 'arrive' del último tramo
+  if (maxSlope.deg >= 1) steps.push({ type: 'slope', km: maxSlope.km, deg: maxSlope.deg });
+  steps.sort((a, b) => a.km - b.km || (a.type === 'depart' ? -1 : 0));
+  steps.push({ ...arrive, km: kmOffset, hours });
+  const inside = { origin: legs[0].inside?.origin ?? [], destination: legs[legs.length - 1].inside?.destination ?? [] };
+  return { ok: true, points, samples, steps, avoided, inside, distanceKm: kmOffset, durationH: hours, maxSlope, highest, lowest };
+}
