@@ -362,19 +362,34 @@
 }
 
 .home__tribute {
+  /* Fijo en la esquina inferior derecha del escenario, fuera de la columna que se desplaza. */
+  position: absolute;
+  right: clamp(16px, 3vw, 40px);
+  bottom: clamp(16px, 3vh, 32px);
+  width: min(380px, calc(100% - 32px));
   display: grid;
-  grid-template-columns: 96px 1fr;
-  gap: 16px;
+  grid-template-columns: 72px 1fr;
+  gap: 14px;
   align-items: center;
-  margin: 10px 0 0;
-  padding: 14px 16px;
+  margin: 0;
+  padding: 12px 16px;
   border-left: 6px solid var(--rust-500);
-  background: color-mix(in srgb, var(--bg-sunken) 80%, transparent);
+  background: color-mix(in srgb, var(--bg-sunken) 82%, transparent);
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+  animation: home-tribute-in 700ms cubic-bezier(0.2, 0.8, 0.2, 1) 200ms both;
+}
+
+@keyframes home-tribute-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
 }
 
 .home__tribute img {
-  width: 96px;
-  height: 96px;
+  width: 72px;
+  height: 72px;
   filter: drop-shadow(0 0 16px rgba(224, 138, 99, 0.35));
 }
 
@@ -382,11 +397,12 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
 }
 
 .home__tribute-kicker {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 11px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--rust-300);
@@ -395,7 +411,7 @@
 .home__tribute-name {
   font-family: var(--font-display);
   font-weight: 900;
-  font-size: clamp(36px, 4.5vw, 56px);
+  font-size: clamp(28px, 3vw, 40px);
   line-height: 0.95;
   letter-spacing: 0.08em;
   color: var(--cream);
@@ -403,15 +419,35 @@
 
 .home__tribute-date {
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text);
 }
 
 .home__tribute .home__dedication {
   margin-top: 4px;
-  font-size: 15px;
+  font-size: 13px;
   line-height: 1.35;
   color: var(--text);
+}
+
+/* Pantallas angostas o de pie: el menú ocupa el centro, así que se reserva el alto del homenaje
+   abajo para que nunca lo tape. */
+@media (max-width: 1000px), (max-aspect-ratio: 11/10) {
+  .home__hud {
+    padding-bottom: 168px;
+  }
+}
+
+@media (max-height: 560px) {
+  .home__tribute .home__dedication {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home__tribute {
+    animation: none;
+  }
 }
 
 /* ---------- Índice como galería ---------- */

@@ -133,17 +133,19 @@ const mod = {
 
           <footer class="home__foot">
             <p class="home__sync" role="status"></p>
-            <figure class="home__tribute">
-              <img src="./laika-logo.png" alt="" width="96" height="96" />
-              <figcaption>
-                <span class="home__tribute-kicker">${t('home.tribute.kicker')}</span>
-                <strong class="home__tribute-name">LAIKA</strong>
-                <span class="home__tribute-date">${t('home.tribute.date')}</span>
-                <span class="home__dedication">${t('home.credit')}</span>
-              </figcaption>
-            </figure>
           </footer>
         </div>
+
+        <!-- Homenaje fijo en la esquina inferior derecha: siempre a la vista, sin desplazarse. -->
+        <figure class="home__tribute">
+          <img src="./laika-logo.png" alt="" width="96" height="96" />
+          <figcaption>
+            <span class="home__tribute-kicker">${t('home.tribute.kicker')}</span>
+            <strong class="home__tribute-name">LAIKA</strong>
+            <span class="home__tribute-date">${t('home.tribute.date')}</span>
+            <span class="home__dedication">${t('home.credit')}</span>
+          </figcaption>
+        </figure>
 
         <div class="home__panel" role="dialog" aria-modal="true" aria-labelledby="home-index-title" hidden>
           <div class="home__panel-head">
