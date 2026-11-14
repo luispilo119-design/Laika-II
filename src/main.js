@@ -1,4 +1,5 @@
 import './styles/base.css';
+import './styles/topbar.css';
 import { startShell } from './core/shell.js';
 import { init as initServices } from './services/index.js';
 

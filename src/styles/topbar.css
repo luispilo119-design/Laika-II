@@ -1,0 +1,289 @@
+/* Barra superior con el riel de misión (src/core/topbar.js). Dueño: Parte A.
+   Base común: todas las pestañas a la vista y sin desplazamiento. En pantallas de 1200 px o más
+   va en una fila; por debajo, la navegación baja a su propia fila a todo lo ancho. */
+
+.topbar {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 8px 16px;
+}
+
+.topbar__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--tap);
+  color: var(--ink);
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.topbar__brand img {
+  width: 40px;
+  height: 40px;
+}
+
+.topbar__brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+}
+
+.topbar__brand-team {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 20px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.topbar__brand-app {
+  margin-top: 3px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.topbar__nav {
+  order: 3;
+  flex: 1 1 100%;
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  min-width: 0;
+}
+
+.topbar__tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+@media (min-width: 1200px) {
+  .topbar {
+    flex-wrap: nowrap;
+  }
+  .topbar__nav {
+    order: 0;
+    flex: 1 1 auto;
+  }
+  .topbar__tools {
+    margin-left: 0;
+  }
+}
+
+.topbar__group {
+  position: relative;
+  display: flex;
+  gap: 4px;
+  /* Cada grupo crece según cuántas pestañas tiene; si no caben (teléfono), pasan a otra fila. */
+  flex: var(--n) 1 calc(var(--n) * 64px + (var(--n) - 1) * 4px);
+  min-width: 0;
+}
+
+.topbar__rail,
+.topbar__rail-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+}
+
+.topbar__item {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: var(--tap);
+  display: flex;
+  color: var(--text);
+  text-decoration: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+}
+
+.topbar__item:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.topbar__cap {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.topbar__label {
+  font-size: clamp(12px, 1.05vw, 14px);
+  font-weight: 600;
+  line-height: 1.1;
+  hyphens: auto;
+  overflow-wrap: break-word;
+}
+
+.topbar__nav.is-resizing,
+.topbar__nav.is-resizing * {
+  transition: none !important;
+}
+
+/* ---------- Riel de misión: la línea se llena (en tinta) hasta la estación activa, que crece
+   en rojo; las estaciones recorridas quedan rellenas. ---------- */
+
+.topbar {
+  background: var(--paper-hi);
+  border-bottom: 3px solid var(--ink);
+}
+
+.topbar .topbar__nav {
+  gap: 18px 6px;
+  padding-top: 16px;
+}
+
+.topbar .topbar__group {
+  gap: 0;
+}
+
+.topbar .topbar__phase {
+  display: block;
+  position: absolute;
+  top: -16px;
+  left: 0;
+  right: 0;
+  padding-left: 6px;
+  border-left: 2px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-dim);
+  transition: color 250ms, border-color 250ms;
+}
+
+.topbar .topbar__group.is-current .topbar__phase {
+  color: var(--ink);
+  border-color: var(--red);
+}
+
+.topbar .topbar__item {
+  border-radius: var(--radius);
+}
+
+.topbar .topbar__item:hover {
+  background: var(--paper-lo);
+}
+
+.topbar .topbar__cap {
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 5px 2px 6px;
+  text-align: center;
+}
+
+.topbar .topbar__dot {
+  display: block;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  background: var(--paper-hi);
+  transform: scale(1);
+}
+
+.topbar.is-ready .topbar__dot {
+  transition:
+    transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    background-color 220ms 120ms,
+    border-color 220ms 120ms,
+    box-shadow 320ms;
+}
+
+.topbar .topbar__item.is-passed .topbar__dot {
+  background: var(--ink);
+}
+
+.topbar .topbar__item.is-active .topbar__dot {
+  background: var(--red);
+  border-color: var(--red);
+  transform: scale(1.45);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--red) 22%, transparent);
+}
+
+.topbar .topbar__item:active .topbar__dot {
+  transform: scale(0.8);
+}
+
+/* Recursos no es una fase: estación cuadrada y punteada, fuera del riel. */
+.topbar .topbar__item[data-phase='res'] .topbar__dot {
+  border-style: dashed;
+  border-radius: 3px;
+}
+
+.topbar .topbar__label {
+  color: var(--text-dim);
+  transition: color 250ms;
+}
+
+.topbar .topbar__item.is-passed .topbar__label {
+  color: var(--ink);
+}
+
+.topbar .topbar__item.is-active .topbar__label {
+  color: var(--red);
+  font-weight: 800;
+}
+
+.topbar .topbar__rail,
+.topbar .topbar__rail-fill {
+  display: block;
+  z-index: 0;
+  width: calc(var(--rail-w, 0) * 1px);
+  height: 3px;
+  background: var(--line);
+  transform: translate(var(--rail-x, 0), calc(var(--rail-y, 0px) - 1.5px));
+}
+
+.topbar .topbar__rail-fill {
+  background: var(--ink);
+  transform-origin: 0 50%;
+  transform: translate(var(--rail-x, 0), calc(var(--rail-y, 0px) - 1.5px)) scaleX(var(--rail-p, 0));
+}
+
+.topbar.is-ready .topbar__rail-fill {
+  transition: transform 600ms cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* En teléfono las estaciones pasan a varias filas: el riel continuo ya no tiene sentido. */
+.topbar .rail-wraps .topbar__rail,
+.topbar .rail-wraps .topbar__rail-fill {
+  display: none;
+}
+
+/* ---------- Movimiento reducido ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .topbar,
+  .topbar *,
+  .topbar *::before,
+  .topbar *::after {
+    transition: none !important;
+  }
+}

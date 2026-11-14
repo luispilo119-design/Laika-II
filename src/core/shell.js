@@ -1,5 +1,5 @@
 /**
- * Shell de la app: barra de fases, cambio de idioma y montaje de módulos por hash (#/<id>).
+ * Shell de la app: barra de fases (src/core/topbar.js), cambio de idioma y montaje de módulos por hash (#/<id>).
  * Dueño: Parte A.
  */
 import { store } from './store.js';
@@ -7,6 +7,7 @@ import { t, registerMessages, setLang } from './i18n.js';
 import { env } from './env.js';
 import { modules, PHASES } from './registry.js';
 import coreMessages from './messages.js';
+import { buildTopbar, setActive } from './topbar.js';
 
 const DEFAULT_MODULE = 'home';
 
@@ -26,59 +27,6 @@ function el(tag, className, text) {
   return node;
 }
 
-function buildTopbar(active) {
-  const bar = el('header', 'topbar');
-
-  const brand = el('a', 'topbar__brand');
-  brand.href = '#/home';
-  const logo = el('img');
-  logo.src = './laika-logo.png';
-  logo.alt = 'LAIKA II';
-  const brandText = el('span', 'topbar__brand-text');
-  brandText.append(el('span', 'topbar__brand-team', 'LAIKA II'), el('span', 'topbar__brand-app', t('core.appName')));
-  brand.append(logo, brandText);
-  bar.append(brand);
-
-  const nav = el('nav', 'topbar__nav');
-  const groups = [
-    ...PHASES.filter((p) => p.id !== 0).map((p) => ({ chip: String(p.id), label: t(p.key), mods: modules.filter((m) => m.phase === p.id) })),
-    { chip: '+', label: t('core.phase.resources'), mods: modules.filter((m) => m.phase == null) },
-  ];
-  for (const group of groups) {
-    if (group.mods.length === 0) continue;
-    const box = el('div', 'topbar__group');
-    box.title = group.label;
-    if (group.mods.some((m) => m.id === active.id)) box.classList.add('is-current');
-    // Número de fase compacto; el nombre completo queda en el título y para lectores de pantalla.
-    const chip = el('span', 'topbar__phase', group.chip);
-    chip.setAttribute('aria-label', group.label);
-    box.append(chip);
-    const links = el('div', 'topbar__links');
-    for (const mod of group.mods) {
-      const link = el('a', mod.id === active.id ? 'is-active' : '', t(`${mod.id}.title`));
-      link.href = `#/${mod.id}`;
-      links.append(link);
-    }
-    box.append(links);
-    nav.append(box);
-  }
-  bar.append(nav);
-
-  const tools = el('div', 'topbar__tools');
-  if (env.isMock) {
-    const badge = el('span', 'badge badge--warn', t('core.mockBadge'));
-    badge.title = t('core.mockHint');
-    tools.append(badge);
-  }
-  const langBtn = el('button', 'btn btn--ghost', t('core.langToggle'));
-  langBtn.type = 'button';
-  langBtn.addEventListener('click', () => setLang(store.get().lang === 'es' ? 'en' : 'es'));
-  tools.append(langBtn);
-  bar.append(tools);
-
-  return bar;
-}
-
 /**
  * @param {HTMLElement} root
  * @returns {import('./types.js').Ctx}
@@ -91,6 +39,24 @@ export function startShell(root) {
   const ctx = { store, t, env, navigate, modules, phases: PHASES };
 
   let cleanup = null;
+  // La barra se conserva entre pantallas para que el riel anime el cambio; solo se reconstruye
+  // si cambia el idioma.
+  let bar = null;
+  let barLang = '';
+
+  function topbarFor() {
+    const lang = store.get().lang;
+    if (!bar || barLang !== lang) {
+      bar = buildTopbar({
+        t,
+        isMock: env.isMock,
+        onNavigate: navigate,
+        onToggleLang: () => setLang(lang === 'es' ? 'en' : 'es'),
+      });
+      barLang = lang;
+    }
+    return bar;
+  }
 
   function render() {
     const mod = currentModule();
@@ -104,12 +70,19 @@ export function startShell(root) {
     cleanup = null;
     document.documentElement.lang = store.get().lang;
     document.title = `${t(`${mod.id}.title`)} — Martian Map`;
-    root.replaceChildren();
     root.className = mod.fullscreen ? 'app app--fullscreen' : 'app';
-    if (!mod.fullscreen) root.append(buildTopbar(mod));
     const view = el('main', 'view');
     view.dataset.module = mod.id;
-    root.append(view);
+    if (mod.fullscreen) {
+      root.replaceChildren(view);
+    } else {
+      const topbar = topbarFor();
+      // Si la barra ya estaba montada, se deja en su lugar (no se reinserta) para no cortar la animación.
+      for (const child of [...root.children]) if (child !== topbar) child.remove();
+      if (topbar.parentNode !== root) root.prepend(topbar);
+      root.append(view);
+      setActive(topbar, mod.id);
+    }
     try {
       cleanup = mod.mount(view, ctx) ?? null;
     } catch (err) {

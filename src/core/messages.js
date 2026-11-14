@@ -21,6 +21,21 @@ export default {
       task: 'Tarea {task} · ver docs/PARTE-{owner}.md',
     },
     langToggle: 'English',
+    nav: {
+      hohmann: 'Hohmann',
+      map: 'Aterrizaje',
+      transit: 'El viaje',
+      descent: 'En sitio',
+      hubs: 'Hubs',
+      routes: 'Rutas',
+      guides: 'Guías',
+      dashboard: 'Reporte',
+      references: 'Referencias',
+    },
+    menu: {
+      aria: 'Fases de la misión',
+      phaseShort: 'Fase {n}',
+    },
     factor: {
       water: 'Agua (hielo subterráneo)',
       temperature: 'Temperatura mínima del sol',
@@ -90,6 +105,21 @@ export default {
       task: 'Task {task} · see docs/PARTE-{owner}.md',
     },
     langToggle: 'Español',
+    nav: {
+      hohmann: 'Hohmann',
+      map: 'Landing',
+      transit: 'Journey',
+      descent: 'On site',
+      hubs: 'Hubs',
+      routes: 'Routes',
+      guides: 'Guides',
+      dashboard: 'Report',
+      references: 'References',
+    },
+    menu: {
+      aria: 'Mission phases',
+      phaseShort: 'Phase {n}',
+    },
     factor: {
       water: 'Water (subsurface ice)',
       temperature: 'Lowest temperature of the sol',
