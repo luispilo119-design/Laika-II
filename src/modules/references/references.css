@@ -1,0 +1,163 @@
+/* Pantalla de referencias (B7). Colores y tamaños: variables de base.css. */
+
+.refs {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+.refs__head h1 {
+  font-size: 32px;
+}
+
+.refs__lead {
+  margin: 0 0 12px;
+  font-size: 18px;
+  color: var(--text-dim);
+}
+
+.refs__count {
+  margin: 0 0 6px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.refs__legend {
+  margin: 0;
+  max-width: 68ch;
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+.refs__empty {
+  margin: 32px 0 0;
+  padding: 20px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  color: var(--text-dim);
+}
+
+.refs__group {
+  margin-top: 36px;
+}
+
+.refs__group > h2 {
+  margin-bottom: 12px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rust-300);
+}
+
+.refs__list,
+.refs__plain {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.refs__list {
+  display: grid;
+  gap: 8px;
+}
+
+.refs__item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 4px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+}
+
+.refs__item > .badge {
+  margin-top: 12px;
+}
+
+.refs__item-main {
+  min-width: 0;
+}
+
+.refs__item p {
+  margin: 0;
+}
+
+.refs__title {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* Enlaces con altura táctil de al menos 44 px. */
+.refs__title a,
+.refs__used a,
+.refs__credit a {
+  display: inline-block;
+  padding-block: 12px;
+}
+
+.refs__meta,
+.refs__used {
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+.refs__meta {
+  margin-top: -6px;
+}
+
+.refs__badge--ok {
+  color: var(--ok);
+  border-color: var(--ok);
+}
+
+.refs__credit {
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+}
+
+.refs__credit + .refs__credit {
+  margin-top: 8px;
+}
+
+.refs__credit h3 {
+  margin-bottom: 4px;
+  font-size: 16px;
+}
+
+.refs__credit p {
+  margin: 0;
+  color: var(--text-dim);
+}
+
+.refs__credit--team {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.refs__credit--team img {
+  flex: none;
+  width: 56px;
+  height: 56px;
+}
+
+.refs__plain li {
+  padding: 2px 0;
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+@media (max-width: 560px) {
+  .refs__item {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
