@@ -685,3 +685,146 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* =====================================================================================
+   Rediseño: trayecto visual y datos del cuerpo como gráficos que se adaptan a la pantalla.
+   ===================================================================================== */
+
+.transit__track {
+  display: grid;
+  grid-template-columns: 34px 1fr 26px;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 18px;
+}
+
+.transit__planet {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 2px solid var(--ink, var(--line));
+}
+
+.transit__planet--earth { background: radial-gradient(circle at 35% 35%, #6fa3e0, var(--blue, #1f57a4)); }
+.transit__planet--mars { background: radial-gradient(circle at 35% 35%, #f08a5d, var(--red, #d6402a)); }
+
+.transit__track-line {
+  position: relative;
+  display: grid;
+  grid-template-columns: 10fr 80fr 10fr;
+  height: 12px;
+  border: 2px solid var(--ink, var(--line));
+}
+
+.transit__seg--departure { background: var(--blue, var(--rust-300)); }
+.transit__seg--cruise {
+  background: repeating-linear-gradient(90deg, var(--ink, var(--line)) 0 6px, transparent 6px 12px);
+  opacity: 0.35;
+}
+.transit__seg--arrival { background: var(--red, var(--rust-500)); }
+
+.transit__ship {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(90deg);
+  font-size: 22px;
+  line-height: 1;
+  color: var(--ink, var(--cream));
+  text-shadow: 0 0 0 var(--paper, #fff);
+  transition: left 0.3s ease;
+}
+
+.transit__meters--visual {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.transit__meters--visual .transit__meter {
+  display: flex;
+  flex-direction: column;
+  border: 2px solid var(--ink, var(--line));
+  background: var(--paper-hi, var(--bg-raised));
+}
+
+.transit__viz {
+  display: grid;
+  place-items: center;
+  min-height: 96px;
+  margin-bottom: 6px;
+}
+
+.transit__bone,
+.transit__gauge {
+  width: 100%;
+  max-width: 220px;
+  height: auto;
+}
+
+.transit__bone-shape {
+  fill: var(--paper-lo, var(--bg-sunken));
+  stroke: var(--ink, var(--text));
+  stroke-width: 2.5;
+}
+
+.transit__bone-fill {
+  fill: #e9dcc0;
+  transition: width 0.3s ease;
+}
+
+.transit__bone-pores circle {
+  fill: var(--ink, var(--text));
+  opacity: 0.18;
+}
+
+.transit__bone-loss {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 13px;
+  fill: var(--red, var(--bad));
+}
+
+.transit__gauge-bg,
+.transit__gauge-arc {
+  fill: none;
+  stroke-width: 12;
+}
+
+.transit__gauge-bg { stroke: var(--line); }
+.transit__gauge-arc { stroke: var(--red, var(--bad)); transition: stroke-dasharray 0.3s ease; }
+
+.transit__gauge-num {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 22px;
+  fill: var(--ink, var(--text));
+}
+
+.transit__gauge-of {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  fill: var(--text-dim);
+}
+
+.transit__ex {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.transit__ex-num {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 34px;
+  line-height: 1;
+}
+
+.transit__ex .glyph-bar {
+  width: 100%;
+}
+
+.transit__meters--visual .transit__meter-value {
+  font-family: var(--font-display);
+  font-weight: 800;
+}

@@ -8,7 +8,8 @@
 import './transit.css';
 import messages from './i18n.js';
 import { submitScore, topScores, ALIAS_MAX } from '../../services/index.js';
-import { REFERENCES, refOf, STAGES, METERS, HAZARDS, SOLO_CHANGES, SOLO_TIPS, ANALOGS, ACTIVITIES } from './data.js';
+import { REFERENCES, refOf, STAGES, METERS, HAZARDS, SOLO_CHANGES, SOLO_TIPS } from './data.js';
+import { CAREER_LIMIT_MSV } from '../../core/journal.js';
 import {
   tripInfo,
   estimates,
@@ -24,7 +25,36 @@ import {
 } from './trip.js';
 import { GAME_ID, TILES, roundSpec, makeSequence, expectedInput, roundPoints } from './game.js';
 
-const TABS = ['trip', 'hazards', 'routine', 'solo', 'games'];
+// Los peligros van al final: primero lo que la persona hace durante el viaje.
+/** Dibujos de los medidores del cuerpo (se rellenan en paint()). */
+const VIZ = {
+  bone: `
+    <svg viewBox="0 0 180 70" class="transit__bone" role="img" aria-hidden="true">
+      <defs><clipPath id="transit-bone-clip">
+        <path d="M30 22a14 14 0 1 1 6-20h108a14 14 0 1 1 6 20 14 14 0 1 1 -6 26H36a14 14 0 1 1 -6-26z" transform="translate(0 10)"/>
+      </clipPath></defs>
+      <path d="M30 22a14 14 0 1 1 6-20h108a14 14 0 1 1 6 20 14 14 0 1 1 -6 26H36a14 14 0 1 1 -6-26z" transform="translate(0 10)" class="transit__bone-shape"/>
+      <g clip-path="url(#transit-bone-clip)">
+        <rect x="20" y="0" width="140" height="70" class="transit__bone-fill"/>
+        <g class="transit__bone-pores">${Array.from({ length: 18 }, (_, i) => `<circle cx="${26 + (i % 9) * 16}" cy="${i < 9 ? 28 : 46}" r="2.4"/>`).join('')}</g>
+      </g>
+      <text x="90" y="40" text-anchor="middle" class="transit__bone-loss"></text>
+    </svg>`,
+  dose: `
+    <svg viewBox="0 0 120 70" class="transit__gauge" role="img" aria-hidden="true">
+      <path d="M10 62 A50 50 0 0 1 110 62" class="transit__gauge-bg"/>
+      <path d="M10 62 A50 50 0 0 1 110 62" class="transit__gauge-arc" stroke-dasharray="0 157"/>
+      <text x="60" y="54" text-anchor="middle" class="transit__gauge-num"></text>
+      <text x="60" y="68" text-anchor="middle" class="transit__gauge-of"></text>
+    </svg>`,
+  exercise: `
+    <div class="transit__ex">
+      <span class="transit__ex-num"></span>
+      <div class="glyph-bar glyph-bar--square" style="--value:0;--tone:var(--red);--dot:10px;--gap:3px"></div>
+    </div>`,
+};
+
+const TABS = ['trip', 'routine', 'solo', 'games', 'hazards'];
 const SAVE_KEY = 'laika2.transit.v1';
 
 // Ritmo del minijuego, en milisegundos.
@@ -132,8 +162,16 @@ const mod = {
           })}</p>`;
 
       panel.innerHTML = `
-        <h2>${t('transit.trip.heading')}</h2>
         ${summary}
+
+        <div class="transit__track" aria-hidden="true">
+          <span class="transit__planet transit__planet--earth"></span>
+          <div class="transit__track-line">
+            ${STAGES.map((stage) => `<span class="transit__seg transit__seg--${stage.id}"></span>`).join('')}
+            <span class="transit__ship">▲</span>
+          </div>
+          <span class="transit__planet transit__planet--mars"></span>
+        </div>
 
         <div class="transit__day">
           <div class="transit__day-head">
@@ -165,16 +203,19 @@ const mod = {
         </ol>
 
         <h3 class="transit__meters-title"></h3>
-        <div class="transit__meters">
-          ${METERS.map(
-            (meter) => `
-            <article class="transit__meter">
+        <div class="transit__meters transit__meters--visual">
+          ${METERS.filter((meter) => meter.id !== 'comms')
+            .map(
+              (meter) => `
+            <article class="transit__meter transit__meter--${meter.id}">
+              <div class="transit__viz" data-viz="${meter.id}">${VIZ[meter.id]}</div>
               <p class="transit__meter-label">${t(`transit.meter.${meter.id}.label`)}</p>
               <p class="transit__meter-value" data-meter="${meter.id}"></p>
               <p class="transit__meter-note">${t(`transit.meter.${meter.id}.note`)}</p>
               ${sources(meter.refs)}
             </article>`,
-          ).join('')}
+            )
+            .join('')}
         </div>
         <p class="transit__fine">${t('transit.trip.metersNote')}</p>
       `;
@@ -195,7 +236,19 @@ const mod = {
         });
         value('dose').textContent = t('transit.meter.dose.value', { dose: whole.format(est.doseMSv) });
         value('exercise').textContent = t('transit.meter.exercise.value', { hours: whole.format(est.exerciseH) });
-        value('comms').textContent = t('transit.meter.comms.value');
+        // Gráficos: trayecto, hueso que se vacía, medidor de radiación y horas de ejercicio.
+        const progress = trip.days ? ui.day / trip.days : 0;
+        panel.querySelector('.transit__ship').style.left = `${(progress * 100).toFixed(2)}%`;
+        const loss = est.boneLossPct[1];
+        panel.querySelector('[data-viz="bone"] .transit__bone-fill').setAttribute('width', String(Math.max(0, 140 * (1 - loss / 20))));
+        panel.querySelector('[data-viz="bone"] .transit__bone-loss').textContent = `−${number.format(est.boneLossPct[0])}–${number.format(loss)} %`;
+        const share = Math.min(1, est.doseMSv / CAREER_LIMIT_MSV);
+        panel.querySelector('[data-viz="dose"] .transit__gauge-arc').setAttribute('stroke-dasharray', `${(share * 157).toFixed(1)} 157`);
+        panel.querySelector('[data-viz="dose"] .transit__gauge-num').textContent = whole.format(est.doseMSv);
+        panel.querySelector('[data-viz="dose"] .transit__gauge-of').textContent = `/ ${CAREER_LIMIT_MSV} mSv`;
+        const ex = panel.querySelector('[data-viz="exercise"] .glyph-bar');
+        ex.style.setProperty('--value', String(progress));
+        panel.querySelector('[data-viz="exercise"] .transit__ex-num').textContent = `${whole.format(est.exerciseH)} h`;
         const current = stageOf(ui.day, trip.days);
         for (const item of panel.querySelectorAll('.transit__stage')) {
           const here = item.dataset.stage === current;
@@ -360,17 +413,6 @@ const mod = {
         <h3>${t('transit.solo.tipsTitle')}</h3>
         <ul class="transit__points">${list(SOLO_TIPS, 'transit.solo.tip')}</ul>
 
-        <h3>${t('transit.solo.analogsTitle')}</h3>
-        <div class="transit__cards">
-          ${ANALOGS.map(
-            (analog) => `
-            <article class="transit__card">
-              <h4>${t(`transit.analog.${analog.id}.name`)}</h4>
-              <p>${t(`transit.analog.${analog.id}.text`)}</p>
-              ${sources(analog.refs)}
-            </article>`,
-          ).join('')}
-        </div>
       `;
     }
 
@@ -420,17 +462,6 @@ const mod = {
           </aside>
         </div>
 
-        <h3>${t('transit.games.activitiesTitle')}</h3>
-        <div class="transit__cards">
-          ${ACTIVITIES.map(
-            (activity) => `
-            <article class="transit__card">
-              <h4>${t(`transit.activity.${activity.id}.name`)}</h4>
-              <p>${t(`transit.activity.${activity.id}.how`)}</p>
-              ${sources(activity.refs)}
-            </article>`,
-          ).join('')}
-        </div>
       `;
 
       const status = panel.querySelector('.transit__status');
