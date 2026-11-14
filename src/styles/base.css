@@ -156,6 +156,7 @@ a:focus-visible {
   font-weight: 700;
   text-decoration: none;
   white-space: nowrap;
+  min-height: var(--tap);
 }
 
 .topbar__brand img {
@@ -193,6 +194,9 @@ a:focus-visible {
 }
 
 .topbar__links a {
+  display: flex;
+  align-items: center;
+  min-height: var(--tap);
   padding: 6px 10px;
   border-radius: 8px;
   color: var(--text);

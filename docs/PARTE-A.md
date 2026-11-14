@@ -173,13 +173,13 @@ el sitio.
 
 ## A5 · Hubs autónomos — `src/modules/hubs/`
 
-- [ ] Paleta de tipos de hub (hábitat, invernadero, planta solar, extracción de hielo, pista de
+- [x] Paleta de tipos de hub (hábitat, invernadero, planta solar, extracción de hielo, pista de
       aterrizaje); cada tipo usa su perfil de pesos de `env.evaluate`.
-- [ ] Colocación estilo juego de estrategia: el hub sigue al cursor o al dedo con una vista previa
+- [x] Colocación estilo juego de estrategia: el hub sigue al cursor o al dedo con una vista previa
       verde, ámbar o roja según el veredicto en ese punto; un toque lo coloca.
-- [ ] Panel del hub: viable / marginal / no viable y todos los porcentajes del cruce de datos.
-- [ ] Lista de hubs colocados, con mover y eliminar; escribe `mission.hubs`.
-- [ ] Reglas entre hubs (por ejemplo distancia máxima al hábitat) si queda tiempo.
+- [x] Panel del hub: viable / marginal / no viable y todos los porcentajes del cruce de datos.
+- [x] Lista de hubs colocados, con mover y eliminar; escribe `mission.hubs`.
+- [x] Reglas entre hubs (por ejemplo distancia máxima al hábitat) si queda tiempo.
 
 **Hecho cuando:** se puede colocar cada tipo de hub en tablet, ver su veredicto con el desglose, y
 los hubs siguen ahí al recargar.
