@@ -118,19 +118,25 @@ Supabase; y la app arranca igual con las variables vacías.
 La Fase 2: los meses de viaje. La duración sale de `mission.departure` y `mission.arrival`; si no
 hay plan, usa un valor por defecto y un aviso que lleve al módulo `hohmann`.
 
-- [ ] Línea de tiempo del viaje con el día actual y lo que le pasa al cuerpo conforme avanza.
-- [ ] Los cinco peligros del vuelo espacial humano según el Human Research Program de la NASA
+- [x] Línea de tiempo del viaje con el día actual y lo que le pasa al cuerpo conforme avanza.
+- [x] Los cinco peligros del vuelo espacial humano según el Human Research Program de la NASA
       (radiación, aislamiento y confinamiento, distancia de la Tierra, gravedad, ambientes hostiles o
       cerrados): una tarjeta por peligro con qué es, qué le hace al cuerpo y cómo se contrarresta.
-- [ ] Rutina de confinamiento: un planificador simple del día (sueño, ejercicio, trabajo, ocio).
-- [ ] Caso "solo": qué cambia cuando la persona se queda sola y qué recomiendan los estudios de
+- [x] Rutina de confinamiento: un planificador simple del día (sueño, ejercicio, trabajo, ocio).
+- [x] Caso "solo": qué cambia cuando la persona se queda sola y qué recomiendan los estudios de
       análogos. Es información general basada en fuentes, no consejo médico: dilo en la pantalla.
-- [ ] Juegos: al menos un minijuego jugable y original (por ejemplo memoria de secuencias o un
+- [x] Juegos: al menos un minijuego jugable y original (por ejemplo memoria de secuencias o un
       rompecabezas de lógica), más fichas de actividades sin pantalla. Puntuaciones a Supabase.
 - [ ] Segundo minijuego si queda tiempo.
 
 **Hecho cuando:** se puede recorrer el viaje, leer los cinco peligros con su fuente y terminar una
 partida que guarde puntuación.
+
+**Estado:** hecho con un minijuego ("Protocolo de guardia"). Las puntuaciones se guardan en este
+navegador y, cuando exista el proyecto de Supabase, también en la nube. Los acumulados del viaje
+(hueso, radiación, ejercicio) son extrapolaciones lineales de promedios de la NASA y así se dice
+en pantalla. La duración por defecto, 259 días, sale de una transferencia de Hohmann con órbitas
+circulares.
 
 **Fuentes:** peligros del HRP de la NASA; análogos HERA y CHAPEA de la NASA; Mars-500; estándares
 de salud de tripulación NASA-STD-3001.

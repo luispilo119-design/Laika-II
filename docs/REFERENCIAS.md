@@ -13,7 +13,7 @@ falta y cambia el estado a "verificada" (y `verified: true` en el código).
 |---|---|---|---|
 | Mapa y mosaicos | NASA Mars Trek | https://trek.nasa.gov/mars/ | mosaicos comprobados en la app |
 | Mapas interactivos | USGS Astrogeology | https://astrogeology-usgs.hub.arcgis.com/pages/interactive-maps-mars | sin abrir |
-| Peligros del vuelo espacial | NASA Human Research Program | https://www.nasa.gov/hrp/hazards/ | sin abrir |
+| Peligros del vuelo espacial | NASA Human Research Program | https://www.nasa.gov/hrp/hazards/ | verificada (Parte B, 2026-11-14); cada peligro tiene su página, ver Parte B |
 
 ## Parte A
 
@@ -41,8 +41,18 @@ falta y cambia el estado a "verificada" (y `verified: true` en el código).
 | Tema | Fuente | Enlace | Estado |
 |---|---|---|---|
 | Imágenes de superficie | NASA, imágenes crudas de Mars 2020 | https://mars.nasa.gov/mars2020/multimedia/raw-images/ | sin abrir |
-| Confinamiento | NASA, análogo CHAPEA | https://www.nasa.gov/humans-in-space/chapea/ | sin abrir |
-| Confinamiento | NASA, análogo HERA | por localizar | sin abrir |
-| Confinamiento | Mars-500 (ESA/IBMP) | por localizar | sin abrir |
+| Confinamiento | NASA, análogo CHAPEA | https://www.nasa.gov/humans-in-space/chapea/ | verificada: 4 personas, hábitat de 1,700 pies cuadrados, misiones de 378 días |
+| Confinamiento | NASA, análogo HERA | https://www.nasa.gov/mission/hera/ | verificada: hábitat de 650 pies cuadrados, misiones de hasta 45 días |
+| Confinamiento | ESA, Mars500: study overview | https://www.esa.int/articles/mars500-study-overview | verificada: 6 personas, 520 días (2010–2011), 20 min de retraso en comunicaciones |
+| Efectos y contramedidas de los cinco peligros | NASA, The Human Body in Space (2021) | https://www.nasa.gov/humans-in-space/the-human-body-in-space/ | verificada: sigla RIDGE, efectos y contramedidas de cada peligro |
+| Radiación espacial | NASA HRP, Hazard: Space Radiation | https://www.nasa.gov/hrp/hazard-space-radiation/ | verificada |
+| Aislamiento | NASA HRP, Hazard: Isolation and Confinement | https://www.nasa.gov/hrp/hazard-isolation-and-confinement/ | verificada |
+| Distancia | NASA HRP, Hazard: Distance From Earth | https://www.nasa.gov/hrp/hazard-distance-from-earth/ | verificada: 140 millones de millas en promedio, hasta 20 min de retraso por trayecto |
+| Gravedad | NASA HRP, Hazard: Gravity Fields | https://www.nasa.gov/hrp/hazard-gravity-fields/ | verificada: 1 % a 1.5 % de densidad mineral ósea al mes |
+| Ambiente cerrado | NASA HRP, Hazard: Hostile/Closed Environments | https://www.nasa.gov/hrp/hazard-hostile-closed-environments/ | verificada |
+| Ejercicio | NASA, Counteracting Bone and Muscle Loss in Microgravity | https://www.nasa.gov/missions/station/iss-research/counteracting-bone-and-muscle-loss-in-microgravity/ | verificada: dos horas de ejercicio al día en promedio |
+| Radiación en tránsito | NASA/JPL (2013), Data From NASA Rover's Voyage to Mars Aids Planning | https://www.jpl.nasa.gov/news/data-from-nasa-rovers-voyage-to-mars-aids-planning/ | verificada: RAD midió en promedio 1.8 mSv por día dentro de la nave |
+| Sueño | NASA OCHMO-TB-041, Sleep Accommodations (resumen técnico de NASA-STD-3001) | https://www.nasa.gov/wp-content/uploads/2023/12/ochmo-tb-041-sleep-accommodations.pdf | verificada: un adulto necesita 7–9 h; en el transbordador y la estación se duermen 6–6.5 h |
+| Duración por defecto del viaje | JPL SSD, elementos orbitales aproximados | https://ssd.jpl.nasa.gov/planets/approx_pos.html | verificada (Parte B): semiejes de la Tierra y Marte; también está en la lista de la Parte A |
 | Inspiración del fondo ASCII | JIN2-ASCII, BLACK-HOLE | https://github.com/JIN2-ASCII/-JIN2-ASCII/tree/main/BLACK-HOLE | verificada. Licencia propia: solo uso personal, no comercial y con crédito a @jin_22ee; **no se reutilizó código**, el fondo se escribió desde cero en JavaScript |
 | Dedicatoria a Laika | NASA History, Dawn of the Space Age | https://www.nasa.gov/history/dawn-of-the-space-age/ | verificada: Sputnik 2 se lanzó el 3 de noviembre de 1957 con la perra Laika. La ficha del catálogo NSSDCA (1957-002A) daba error el 2026-11-14 |
