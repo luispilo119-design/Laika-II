@@ -9,6 +9,7 @@ import L from 'leaflet';
 import './routes.css';
 import messages from './i18n.js';
 import { createMarsMap } from '../../core/marsmap.js';
+import { hubIconSvg } from '../../core/hub-icons.js';
 import { PROFILES, PROFILE_IDS, REFERENCES, refOf } from './profiles.js';
 import {
   MARS_RADIUS_KM,
@@ -149,6 +150,43 @@ const mod = {
         </label>
       </div>`;
 
+    // Puntos de la base (sitio y hubs) para usarlos como origen o destino con un toque.
+    const basePoints = [
+      ...(site ? [{ id: 'site', label: t('routes.base.site'), point: site, icon: '<span class="routes__base-star">★</span>' }] : []),
+      ...(mission.hubs ?? [])
+        .filter((h) => Number.isFinite(h.lat))
+        .map((h, i) => ({
+          id: h.id,
+          label: `${i + 1}. ${t(`hubs.type.${h.type}.name`)}`,
+          point: [h.lat, h.lon],
+          icon: hubIconSvg(h.type, h.verdict ?? 'marginal'),
+        })),
+    ];
+    const samePoint = (a, b) => Math.abs(a[0] - b[0]) < 1e-3 && Math.abs(a[1] - b[1]) < 1e-3;
+    const labelAt = (point) => basePoints.find((b) => samePoint(b.point, point))?.label ?? null;
+
+    function baseList() {
+      if (!basePoints.length) return '';
+      return `
+        <div class="routes__base">
+          <h3>${t('routes.base.title')}</h3>
+          <p class="routes__hint">${t('routes.base.hint')}</p>
+          <ul>
+            ${basePoints
+              .map(
+                (b) => `
+              <li class="routes__base-item" data-base-item="${esc(b.id)}">
+                <span class="routes__base-icon">${b.icon}</span>
+                <span class="routes__base-name">${esc(b.label)}</span>
+                <button type="button" class="routes__base-btn" data-base="${esc(b.id)}" data-as="origin" aria-label="${t('routes.base.asOrigin', { name: esc(b.label) })}">A</button>
+                <button type="button" class="routes__base-btn" data-base="${esc(b.id)}" data-as="destination" aria-label="${t('routes.base.asDestination', { name: esc(b.label) })}">B</button>
+              </li>`,
+              )
+              .join('')}
+          </ul>
+        </div>`;
+    }
+
     el.innerHTML = `
       <div class="routes">
         <div class="routes__map" role="application" aria-label="${t('routes.mapLabel')}"></div>
@@ -164,6 +202,7 @@ const mod = {
             <p class="routes__hint">${t('routes.points.hint')}</p>
             ${pointRow('origin', 'A')}
             ${pointRow('destination', 'B')}
+            ${baseList()}
             <button type="button" class="btn" data-points-reset>${t('routes.points.reset')}</button>
           </section>
 
@@ -236,6 +275,25 @@ const mod = {
     };
     let fitNext = true;
 
+    // Sitio y hubs en el mapa: tocarlos pone ese punto en A o B (el que esté elegido).
+    const baseLayer = L.layerGroup().addTo(map);
+    for (const b of basePoints) {
+      L.marker(b.point, {
+        icon: L.divIcon({ className: 'routes__base-marker', html: b.icon, iconSize: [40, 40], iconAnchor: [20, 20] }),
+        title: b.label,
+        bubblingMouseEvents: false,
+        zIndexOffset: -100,
+      })
+        .bindTooltip(b.label, { direction: 'top', offset: [0, -18] })
+        .on('click', () => {
+          fitNext = true;
+          setPoint(ui.pick, b.point);
+          if (ui.pick === 'origin') ui.pick = 'destination';
+          paintControls();
+        })
+        .addTo(baseLayer);
+    }
+
     function onMapClick(event) {
       setPoint(ui.pick, [event.latlng.lat, event.latlng.lng]);
       if (ui.pick === 'origin') ui.pick = 'destination'; // tras fijar A, lo siguiente suele ser B
@@ -254,6 +312,11 @@ const mod = {
           if (document.activeElement !== input) input.value = String(round4(point[axis]));
         }
         markers[which].setLatLng(point);
+      }
+      for (const item of el.querySelectorAll('[data-base-item]')) {
+        const b = basePoints.find((x) => x.id === item.dataset.baseItem);
+        item.classList.toggle('is-origin', Boolean(b) && samePoint(b.point, origin()));
+        item.classList.toggle('is-destination', Boolean(b) && samePoint(b.point, destination()));
       }
       for (const button of el.querySelectorAll('[data-profile]')) {
         button.setAttribute('aria-pressed', String(button.dataset.profile === ui.profile));
@@ -416,6 +479,7 @@ const mod = {
                   <li>
                     <span>
                       <strong>${esc(t(`routes.profile.${route.profile}.name`))}</strong>
+                      ${route.from || route.to ? `<small class="routes__ends">${esc(t('routes.base.from', { from: route.from ?? '·', to: route.to ?? '·' }))}</small>` : ''}
                       ${t('routes.result.km', { km: num(route.distanceKm) })}${
                         Number.isFinite(route.durationH) ? ` · ${duration(route.durationH)}` : ''
                       }
@@ -438,6 +502,11 @@ const mod = {
         distanceKm: Math.round(current.distanceKm * 10) / 10,
         durationH: Math.round(current.durationH * 100) / 100,
       };
+      // Si los extremos son el sitio o un hub, se guarda su nombre para el tablero y la lista.
+      const fromLabel = labelAt(current.points[0]);
+      const toLabel = labelAt(current.points.at(-1));
+      if (fromLabel) route.from = fromLabel;
+      if (toLabel) route.to = toLabel;
       store.set('mission.routes', [...(store.get().mission.routes ?? []), route]);
       paintSaved();
       savedBox.querySelector(`[data-show="${route.id}"]`)?.focus();
@@ -449,6 +518,15 @@ const mod = {
       const target = event.target;
       const go = target.closest('[data-go]')?.dataset.go;
       if (go) return navigate(go);
+      const baseBtn = target.closest('[data-base]');
+      if (baseBtn) {
+        const b = basePoints.find((x) => x.id === baseBtn.dataset.base);
+        if (b) {
+          fitNext = true;
+          setPoint(baseBtn.dataset.as, b.point);
+        }
+        return undefined;
+      }
       const pick = target.closest('[data-pick]')?.dataset.pick;
       if (pick) {
         ui.pick = pick;

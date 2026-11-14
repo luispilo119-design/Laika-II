@@ -8,7 +8,9 @@
  *     y las del borde exterior (más caras).
  *  3. findPath() busca con A* la ruta más rápida: el costo de cada paso es el tiempo que toma,
  *     según la pendiente; los pasos más empinados que el límite del vehículo no se permiten.
- *  4. smoothPath() quita el zigzag de la rejilla y measureRoute() mide la ruta final.
+ *     Usa 16 direcciones (las 8 vecinas y los saltos de caballo) para no forzar rumbos de 45°.
+ *  4. smoothPath() quita el zigzag de la rejilla, pero solo acepta un atajo recto si no tarda
+ *     más que el tramo que reemplaza; measureRoute() mide la ruta final.
  *  5. describeRoute() saca los tramos de la guía (rodeos de cráteres, pendiente máxima…).
  *
  * Coordenadas: [lat, lon] en grados, lon este-positivo. No maneja rutas que crucen el
@@ -221,7 +223,28 @@ const NEIGHBORS = [
   [-1, 1],
   [1, -1],
   [1, 1],
+  // Saltos de caballo: rumbos de ~26.6° y ~63.4° sin escalones.
+  [-1, -2],
+  [-1, 2],
+  [1, -2],
+  [1, 2],
+  [-2, -1],
+  [-2, 1],
+  [2, -1],
+  [2, 1],
 ];
+
+/** Celdas que atraviesa un paso (además de la de llegada) y que no pueden estar prohibidas. */
+function passedCells(row, col, dr, dc) {
+  const adr = Math.abs(dr);
+  const adc = Math.abs(dc);
+  if (adr + adc < 2) return [];
+  if (adr === 1 && adc === 1) return [[row, col + dc], [row + dr, col]];
+  const sr = Math.sign(dr);
+  const sc = Math.sign(dc);
+  if (adr === 1) return [[row, col + sc], [row + dr, col + sc]];
+  return [[row + sr, col], [row + sr, col + dc]];
+}
 
 /**
  * Ruta más rápida entre dos celdas con A*.
@@ -266,12 +289,32 @@ export function findPath(grid, mask, profile, start, goal) {
       if (r < 0 || c < 0 || r >= height || c >= width) continue;
       const j = r * width + c;
       if (blocked[j] || done[j]) continue;
-      // En diagonal no se "corta la esquina" de una celda prohibida.
-      if (dr !== 0 && dc !== 0 && (blocked[row * width + c] || blocked[r * width + col])) continue;
+      // En diagonal (o salto de caballo) no se "corta la esquina" de una celda prohibida.
+      if (passedCells(row, col, dr, dc).some(([pr, pc]) => blocked[pr * width + pc])) continue;
       const dist = Math.hypot(dr * kmY, dc * (kmX[row] + kmX[r]) * 0.5);
-      const slope = slopeBetween(data[j] - data[i], dist);
-      if (slope > profile.maxSlopeDeg) continue;
-      const next = cost[i] + (dist / speedOnSlope(profile, slope)) * penalty[j];
+      let hours;
+      if (Math.abs(dr) + Math.abs(dc) === 1) {
+        const slope = slopeBetween(data[j] - data[i], dist);
+        if (slope > profile.maxSlopeDeg) continue;
+        hours = dist / speedOnSlope(profile, slope);
+      } else if (Math.abs(dr) === 1 && Math.abs(dc) === 1) {
+        const slope = slopeBetween(data[j] - data[i], dist);
+        if (slope > profile.maxSlopeDeg) continue;
+        hours = dist / speedOnSlope(profile, slope);
+      } else {
+        // Salto de caballo: solo vale si también se podría hacer en dos pasos normales de la
+        // rejilla (por alguna de sus dos celdas intermedias). Así nunca "salta" un escarpe.
+        const stepOk = (r0, c0, r1, c1) => {
+          const d = Math.hypot((r1 - r0) * kmY, (c1 - c0) * (kmX[r0] + kmX[r1]) * 0.5);
+          return slopeBetween(data[r1 * width + c1] - data[r0 * width + c0], d) <= profile.maxSlopeDeg;
+        };
+        const viaOk = passedCells(row, col, dr, dc).some(([pr, pc]) => stepOk(row, col, pr, pc) && stepOk(pr, pc, r, c));
+        if (!viaOk) continue;
+        const slope = slopeBetween(data[j] - data[i], dist);
+        if (slope > profile.maxSlopeDeg) continue;
+        hours = dist / speedOnSlope(profile, slope);
+      }
+      const next = cost[i] + hours * penalty[j];
       if (next < cost[j]) {
         cost[j] = next;
         from[j] = i;
@@ -286,35 +329,52 @@ export function findPath(grid, mask, profile, start, goal) {
   return cells.reverse();
 }
 
-/** true si se puede ir en línea recta entre dos celdas sin tocar obstáculos ni pasarse de pendiente. */
-function segmentClear(grid, mask, profile, a, b) {
+/**
+ * Tiempo (h) para ir en línea recta entre dos posiciones de la rejilla, muestreando cada media
+ * celda. Infinity si toca una celda prohibida o se pasa de la pendiente del vehículo.
+ */
+export function segmentTime(grid, mask, profile, a, b) {
   const steps = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) * 2));
   let prevElev = grid.elevationAt(a[0], a[1]);
   let prevRow = a[0];
   let prevCol = a[1];
+  let hours = 0;
   for (let s = 1; s <= steps; s++) {
     const row = a[0] + ((b[0] - a[0]) * s) / steps;
     const col = a[1] + ((b[1] - a[1]) * s) / steps;
     const i = Math.round(row) * grid.width + Math.round(col);
-    if (mask.blocked[i] || mask.penalty[i] > 1) return false;
+    if (mask.blocked[i]) return Infinity;
     const elev = grid.elevationAt(row, col);
     const dist = Math.hypot((row - prevRow) * grid.kmY, (col - prevCol) * grid.kmX[Math.round(row)]);
-    if (dist > 0 && slopeBetween(elev - prevElev, dist) > profile.maxSlopeDeg) return false;
+    if (dist > 0) {
+      const slope = slopeBetween(elev - prevElev, dist);
+      if (slope > profile.maxSlopeDeg) return Infinity;
+      hours += (dist / speedOnSlope(profile, slope)) * mask.penalty[i];
+    }
     prevElev = elev;
     prevRow = row;
     prevCol = col;
   }
-  return true;
+  return hours;
 }
 
-/** Quita el zigzag de la rejilla: une con rectas los puntos entre los que hay paso libre. */
+/**
+ * Quita el zigzag de la rejilla: une con rectas los puntos entre los que hay paso libre, pero
+ * solo si la recta no tarda más que el tramo de rejilla que reemplaza (una recta por una ladera
+ * puede ser más corta y aun así más lenta).
+ */
 export function smoothPath(grid, mask, profile, cells) {
   if (cells.length <= 2) return cells;
+  const cum = new Float64Array(cells.length);
+  for (let k = 1; k < cells.length; k++) {
+    const step = segmentTime(grid, mask, profile, cells[k - 1], cells[k]);
+    cum[k] = cum[k - 1] + (Number.isFinite(step) ? step : 1e6);
+  }
   const out = [cells[0]];
   let i = 0;
   while (i < cells.length - 1) {
     let j = cells.length - 1;
-    while (j > i + 1 && !segmentClear(grid, mask, profile, cells[i], cells[j])) j--;
+    while (j > i + 1 && !(segmentTime(grid, mask, profile, cells[i], cells[j]) <= cum[j] - cum[i] + 1e-9)) j--;
     out.push(cells[j]);
     i = j;
   }

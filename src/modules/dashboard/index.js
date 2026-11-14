@@ -218,7 +218,7 @@ const mod = {
             <tbody>${routes
               .map(
                 (r, i) =>
-                  `<tr><td>${i + 1}</td><td>${t(`routes.profile.${r.profile}.name`)}</td><td>${n1.format(r.distanceKm ?? 0)} km</td><td>${r.durationH != null ? `${n1.format(r.durationH)} h` : '—'}</td></tr>`,
+                  `<tr><td>${i + 1}</td><td>${t(`routes.profile.${r.profile}.name`)}${r.from || r.to ? `<br><small class="dash__muted">${esc(r.from ?? '·')} → ${esc(r.to ?? '·')}</small>` : ''}</td><td>${n1.format(r.distanceKm ?? 0)} km</td><td>${r.durationH != null ? `${n1.format(r.durationH)} h` : '—'}</td></tr>`,
               )
               .join('')}</tbody>
           </table>`

@@ -12,7 +12,7 @@ import { createMarsMap } from '../../core/marsmap.js';
 import { ENV_REFERENCES, SCORE_SCALES } from '../../core/env.js';
 import { mountClockControl } from '../../core/clock.js';
 import { HUB_TYPES, HUB_REFERENCES, MAX_KM_FROM_HABITAT, hubType, habitatRule, newHubId } from './rules.js';
-import { hubIconSvg, hubIconSize } from './icons.js';
+import { hubIconSvg, hubIconSize } from '../../core/hub-icons.js';
 import { spectrumHtml, radarSvg } from '../../core/viz.js';
 
 const REFERENCES = [...HUB_REFERENCES, ...ENV_REFERENCES];

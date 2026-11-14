@@ -13,6 +13,8 @@ import {
   findPath,
   planRoute,
   speedOnSlope,
+  segmentTime,
+  smoothPath,
 } from '../src/modules/routes/routing.js';
 import { PROFILES, PROFILE_IDS, REFERENCES, refOf } from '../src/modules/routes/profiles.js';
 
@@ -157,4 +159,28 @@ test('perfiles: claves del contrato y fuentes registradas', () => {
     if (p.speedRef) assert.ok(refOf(p.speedRef), `referencia desconocida: ${p.speedRef}`);
   }
   assert.equal(new Set(REFERENCES.map((r) => r.id)).size, REFERENCES.length);
+});
+
+test('terreno plano: una ruta oblicua también sale casi recta (sin escalones de 45°)', () => {
+  const from = [-1.2, -1.5];
+  const to = [0.6, 1.5];
+  const route = planRoute({ origin: from, destination: to, profile: rover, elevation: elevation(BOX, 65), craters: [] });
+  assert.equal(route.ok, true);
+  assert.ok(route.distanceKm < distanceKm(from, to) * 1.01, `${route.distanceKm} vs ${distanceKm(from, to)}`);
+});
+
+test('el suavizado nunca deja la ruta más lenta que el tramo de rejilla que reemplaza', () => {
+  // Una loma suave en medio: la recta la cruza (se puede, pero frena); rodearla es más rápido.
+  const hill = elevation(BOX, 65, (lat, lon) => 2600 * Math.exp(-((lat * lat + lon * lon) / 0.35)));
+  const grid = makeGrid(hill);
+  const mask = craterMask(grid, []);
+  const start = grid.toCell(A);
+  const goal = grid.toCell(B);
+  const cells = findPath(grid, mask, rover, start, goal);
+  assert.ok(cells);
+  const timeOf = (pts) => pts.slice(1).reduce((sum, p, k) => sum + segmentTime(grid, mask, rover, pts[k], p), 0);
+  const smooth = smoothPath(grid, mask, rover, cells);
+  assert.ok(timeOf(smooth) <= timeOf(cells) + 1e-6, `${timeOf(smooth)} > ${timeOf(cells)}`);
+  const straight = segmentTime(grid, mask, rover, start, goal);
+  assert.ok(timeOf(smooth) <= straight + 1e-6, 'no es más lenta que la recta');
 });

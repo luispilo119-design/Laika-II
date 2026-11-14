@@ -36,6 +36,14 @@ export default {
       lon: 'Longitud este',
       reset: 'Volver al sitio de aterrizaje y al primer hub',
     },
+    base: {
+      title: 'Tu base',
+      hint: 'Usa el sitio de aterrizaje o un hub como origen (A) o destino (B). También puedes tocarlos en el mapa.',
+      site: 'Sitio de aterrizaje',
+      asOrigin: 'Usar {name} como origen',
+      asDestination: 'Usar {name} como destino',
+      from: 'De {from} a {to}',
+    },
     vehicle: {
       title: 'Vehículo',
       summary: '{speed} km/h · pendiente máx. {slope}° · evita cráteres de {crater} km o más',
@@ -135,6 +143,14 @@ export default {
       lat: 'Latitude',
       lon: 'East longitude',
       reset: 'Back to the landing site and the first hub',
+    },
+    base: {
+      title: 'Your base',
+      hint: 'Use the landing site or a hub as origin (A) or destination (B). You can also tap them on the map.',
+      site: 'Landing site',
+      asOrigin: 'Use {name} as origin',
+      asDestination: 'Use {name} as destination',
+      from: 'From {from} to {to}',
     },
     vehicle: {
       title: 'Vehicle',

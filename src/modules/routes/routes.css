@@ -368,3 +368,96 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ---------- Tu base: sitio y hubs como extremos ---------- */
+
+.routes__base {
+  margin: 14px 0 10px;
+}
+
+.routes__base h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+
+.routes__base ul {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.routes__base-item {
+  display: grid;
+  grid-template-columns: 40px 1fr var(--tap) var(--tap);
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px 4px 4px;
+  border: 2px solid var(--ink, var(--line));
+  border-radius: var(--radius);
+  background: var(--paper-hi, var(--bg-raised));
+}
+
+.routes__base-icon svg,
+.routes__base-icon .routes__base-star {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+}
+
+.routes__base-star {
+  color: var(--red, var(--rust-500));
+  font-size: 26px;
+}
+
+.routes__base-name {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.routes__base-btn {
+  min-height: var(--tap);
+  border: 2px solid var(--ink, var(--line));
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.routes__base-item.is-origin [data-as='origin'],
+.routes__base-item.is-destination [data-as='destination'] {
+  background: var(--ink, var(--rust-500));
+  color: var(--on-accent, #fff);
+}
+
+.routes__base-item.is-origin,
+.routes__base-item.is-destination {
+  box-shadow: 3px 3px 0 var(--ink, transparent);
+}
+
+.routes__base-marker {
+  background: transparent;
+  border: 0;
+}
+
+.routes__base-marker svg,
+.routes__base-marker .routes__base-star {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5));
+  cursor: pointer;
+}
+
+.routes__ends {
+  display: block;
+  color: var(--text-dim);
+  font-size: 12px;
+}
