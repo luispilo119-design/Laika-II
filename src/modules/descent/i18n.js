@@ -1,7 +1,7 @@
 /** Textos del módulo "descent". Toda clave debe existir en es y en en. */
 export default {
   es: {
-    title: 'Descenso en primera persona',
+    title: 'En sitio',
     desc: 'Baja al sitio de aterrizaje y recorre el terreno a pie.',
     canvasLabel: 'Vista en primera persona del terreno de Marte',
     back: '← Inicio',
@@ -39,7 +39,7 @@ export default {
     },
   },
   en: {
-    title: 'First-person descent',
+    title: 'On site',
     desc: 'Go down to the landing site and explore the terrain on foot.',
     canvasLabel: 'First-person view of the Martian terrain',
     back: '← Start',

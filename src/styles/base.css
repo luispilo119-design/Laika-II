@@ -3,25 +3,58 @@
    por su id (.hohmann__..., .routes__...) para no chocar con otros módulos. */
 
 :root {
-  /* Paleta tomada del logo de LAIKA II */
+  /* Paleta Bauhaus (papel, tinta y primarios) con el terracota del logo de LAIKA II como rojo.
+     Los nombres antiguos (--bg, --cream, --rust-*) se conservan para que los módulos no cambien:
+     --cream ahora es el texto de mayor contraste (tinta) y --on-accent el texto sobre color. */
+  --paper: #efe6d6;
+  --paper-hi: #f7f1e5;
+  --paper-lo: #e4d8c3;
+  --ink: #161412;
+  --ink-soft: #5c5348;
+  --red: #d6402a;
+  --yellow: #eab422;
+  --blue: #1f57a4;
+
+  --rust-700: #a8321f;
+  --rust-500: var(--red);
+  --rust-300: #b4381f;
+  --cream: var(--ink);
+  --on-accent: #fbf6ec;
+  --bg: var(--paper);
+  --bg-raised: var(--paper-hi);
+  --bg-sunken: var(--paper-lo);
+  --line: #cbbda5;
+  --line-strong: var(--ink);
+  --text: var(--ink);
+  --text-dim: var(--ink-soft);
+  --ok: #2f7d4a;
+  --warn: #b07a06;
+  --bad: var(--red);
+
+  --font-ui: 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Archivo', 'Arial Black', system-ui, sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  --radius: 4px;
+  --tap: 44px; /* tamaño mínimo táctil para tablet */
+}
+
+/* Tema oscuro (inicio con el agujero negro y la escena 3D): los mismos tokens con valores nocturnos. */
+.theme-dark,
+.app--fullscreen {
   --rust-700: #96483a;
-  --rust-500: #a5583b;
-  --rust-300: #cf8a63;
+  --rust-500: #c4573a;
+  --rust-300: #e08a63;
   --cream: #fffff3;
-  --bg: #140c0a;
-  --bg-raised: #20130f;
-  --bg-sunken: #0d0706;
-  --line: #3a231c;
+  --on-accent: #fffff3;
+  --bg: #0f0b09;
+  --bg-raised: #1d1411;
+  --bg-sunken: #0a0706;
+  --line: #3a2a22;
   --text: #f6ecdd;
   --text-dim: #b99f8c;
   --ok: #7fc98b;
   --warn: #e8b04a;
   --bad: #e2664f;
-
-  --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: ui-monospace, 'Cascadia Mono', 'SF Mono', Consolas, monospace;
-  --radius: 10px;
-  --tap: 44px; /* tamaño mínimo táctil para tablet */
 }
 
 * {
@@ -106,7 +139,7 @@ a:focus-visible {
 .btn--primary {
   background: var(--rust-500);
   border-color: var(--rust-500);
-  color: var(--cream);
+  color: var(--on-accent);
   font-weight: 700;
   letter-spacing: 0.08em;
 }
@@ -118,7 +151,7 @@ a:focus-visible {
 .btn.is-active {
   background: var(--rust-700);
   border-color: var(--rust-500);
-  color: var(--cream);
+  color: var(--on-accent);
 }
 
 .badge {
@@ -210,7 +243,7 @@ a:focus-visible {
 
 .topbar__links a.is-active {
   background: var(--rust-700);
-  color: var(--cream);
+  color: var(--on-accent);
 }
 
 .topbar__tools {
@@ -368,4 +401,181 @@ a:focus-visible {
 .leaflet-container {
   background: var(--bg-sunken);
   font-family: var(--font-ui);
+}
+
+/* =====================================================================================
+   Sistema visual Bauhaus + glifos (inspirado en carteles Bauhaus y en interfaces de puntos).
+   Va al final para ganar a las reglas anteriores sin tocar cada módulo.
+   ===================================================================================== */
+
+body {
+  font-family: var(--font-ui);
+  background:
+    linear-gradient(var(--bg), var(--bg)) padding-box;
+}
+
+h1,
+h2 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+h1 {
+  font-size: clamp(28px, 3.4vw, 44px);
+}
+
+h3 {
+  font-weight: 700;
+}
+
+a {
+  text-underline-offset: 3px;
+}
+
+/* Botones: planos, borde de tinta, sin sombras. */
+.btn {
+  border-radius: var(--radius);
+  border: 2px solid var(--line-strong, var(--line));
+  background: var(--bg-raised);
+  font-weight: 600;
+  transition: transform 0.08s ease, background 0.15s ease;
+}
+
+.btn:hover {
+  border-color: var(--line-strong, var(--rust-500));
+  background: var(--bg);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn--primary {
+  background: var(--red, var(--rust-500));
+  border-color: var(--line-strong, var(--rust-500));
+  color: var(--on-accent);
+  text-transform: uppercase;
+}
+
+.btn--primary:hover {
+  background: var(--rust-700);
+}
+
+.btn.is-active {
+  background: var(--line-strong, var(--rust-700));
+  color: var(--on-accent);
+}
+
+.app--fullscreen .btn {
+  border-width: 1px;
+}
+
+/* Barra superior: papel, filete grueso de tinta, pestaña activa en bloque rojo. */
+.topbar {
+  background: var(--paper-hi, var(--bg-sunken));
+  border-bottom: 3px solid var(--line-strong, var(--line));
+  padding: 6px 16px;
+}
+
+.topbar__brand {
+  gap: 10px;
+  color: var(--ink, var(--cream));
+}
+
+.topbar__brand img {
+  width: 40px;
+  height: 40px;
+}
+
+.topbar__brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+}
+
+.topbar__brand-team {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 22px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.topbar__brand-app {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-top: 3px;
+}
+
+.topbar__phase {
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+.topbar__links a {
+  border-radius: var(--radius);
+  font-weight: 600;
+}
+
+.topbar__links a:hover {
+  background: var(--paper-lo, var(--bg-raised));
+}
+
+.topbar__links a.is-active {
+  background: var(--red, var(--rust-700));
+  color: var(--on-accent);
+}
+
+/* Barras tipo glifo: el relleno se dibuja como una fila de puntos (o celdas) sobre una retícula.
+   Uso: <div class="glyph-bar" style="--value: 0.62; --tone: var(--ok)"></div> */
+.glyph-bar {
+  --dot: 8px;
+  --gap: 3px;
+  position: relative;
+  height: var(--dot);
+  background-image: radial-gradient(circle, var(--line) 0 calc(var(--dot) / 2 - 0.5px), transparent calc(var(--dot) / 2));
+  background-size: calc(var(--dot) + var(--gap)) var(--dot);
+  background-repeat: repeat-x;
+}
+
+.glyph-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: calc(var(--value, 0) * 100%);
+  background-image: radial-gradient(circle, var(--tone, var(--ink)) 0 calc(var(--dot) / 2 - 0.5px), transparent calc(var(--dot) / 2));
+  background-size: calc(var(--dot) + var(--gap)) var(--dot);
+  background-repeat: repeat-x;
+  transition: width 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.glyph-bar--square {
+  background-image: linear-gradient(90deg, var(--line) 0 var(--dot), transparent var(--dot));
+}
+
+.glyph-bar--square::after {
+  background-image: linear-gradient(90deg, var(--tone, var(--ink)) 0 var(--dot), transparent var(--dot));
+}
+
+/* Leyenda o etiqueta pequeña estilo cartel. */
+.kicker {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+@media print {
+  .topbar {
+    display: none;
+  }
+  body {
+    background: #fff;
+  }
 }

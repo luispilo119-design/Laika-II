@@ -4,7 +4,7 @@
  */
 export default {
   es: {
-    title: 'Tránsito y confinamiento',
+    title: 'El viaje',
     desc: 'Los meses de viaje: peligros para el cuerpo, rutina, aislamiento y juegos.',
     tabsLabel: 'Secciones del tránsito',
     tab: {
@@ -238,7 +238,7 @@ export default {
   },
 
   en: {
-    title: 'Transit and confinement',
+    title: 'The journey',
     desc: 'The months of travel: hazards to the body, routine, isolation and games.',
     tabsLabel: 'Transit sections',
     tab: {

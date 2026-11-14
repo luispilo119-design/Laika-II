@@ -34,7 +34,9 @@ function buildTopbar(active) {
   const logo = el('img');
   logo.src = './laika-logo.png';
   logo.alt = 'LAIKA II';
-  brand.append(logo, el('span', null, t('core.appName')));
+  const brandText = el('span', 'topbar__brand-text');
+  brandText.append(el('span', 'topbar__brand-team', 'LAIKA II'), el('span', 'topbar__brand-app', t('core.appName')));
+  brand.append(logo, brandText);
   bar.append(brand);
 
   const nav = el('nav', 'topbar__nav');

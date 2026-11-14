@@ -75,7 +75,7 @@
 .transit__tab[aria-selected='true'] {
   border-color: var(--rust-300);
   background: var(--rust-700);
-  color: var(--cream);
+  color: var(--on-accent);
   font-weight: 600;
 }
 
@@ -314,7 +314,7 @@
   height: 44px;
   border-radius: 8px;
   background: var(--rust-700);
-  color: var(--cream);
+  color: var(--on-accent);
   font-family: var(--font-mono);
   font-size: 22px;
   font-weight: 700;
@@ -551,7 +551,7 @@
   border-color: var(--cream);
   border-width: 4px;
   background: var(--rust-500);
-  color: var(--cream);
+  color: var(--on-accent);
 }
 
 .transit__tile.is-lit .transit__tile-name {

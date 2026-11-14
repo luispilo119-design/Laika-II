@@ -130,7 +130,7 @@
 .home__item--primary {
   border-color: var(--rust-500);
   background: var(--rust-500);
-  color: var(--cream);
+  color: var(--on-accent);
   font-weight: 700;
 }
 
@@ -193,7 +193,7 @@
 .home__lang-btn[aria-pressed='true'] {
   border-color: var(--rust-300);
   background: var(--rust-700);
-  color: var(--cream);
+  color: var(--on-accent);
 }
 
 /* ---------- Pie: estado del guardado y dedicatoria ---------- */

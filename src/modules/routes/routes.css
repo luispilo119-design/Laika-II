@@ -96,7 +96,7 @@
 .routes__profile[aria-pressed='true'] {
   border-color: var(--rust-300);
   background: var(--rust-700);
-  color: var(--cream);
+  color: var(--on-accent);
 }
 
 .routes__letter,

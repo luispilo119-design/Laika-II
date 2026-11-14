@@ -9,7 +9,7 @@ const STORAGE_KEY = 'laika2.state.v1';
 /** @returns {import('./types.js').AppState} */
 export function initialState() {
   return {
-    lang: 'es',
+    lang: 'en',
     clock: { sol: 0, localHour: 12, ls: 0 },
     mission: {
       name: '',
