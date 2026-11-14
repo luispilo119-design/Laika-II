@@ -143,20 +143,27 @@ de salud de tripulación NASA-STD-3001.
 
 ## B4 · Rutas de conducción — `src/modules/routes/`
 
-- [ ] Mapa con `createMarsMap()`; la persona marca origen y destino (por defecto, el sitio de
+- [x] Mapa con `createMarsMap()`; la persona marca origen y destino (por defecto, el sitio de
       aterrizaje y el primer hub).
-- [ ] Rejilla de costo a partir de `env.elevationGrid(bbox, size)` (pendiente) y
+- [x] Rejilla de costo a partir de `env.elevationGrid(bbox, size)` (pendiente) y
       `env.craters(bbox, minDiameterKm)` (zonas prohibidas o caras alrededor de cráteres grandes).
-- [ ] Búsqueda de ruta A* sobre esa rejilla; si no hay ruta posible, decirlo.
-- [ ] Perfiles de vehículo (rover presurizado, rover ligero, a pie) con pendiente máxima, velocidad
+- [x] Búsqueda de ruta A* sobre esa rejilla; si no hay ruta posible, decirlo.
+- [x] Perfiles de vehículo (rover presurizado, rover ligero, a pie) con pendiente máxima, velocidad
       y diámetro de cráter que evitan. Las cifras de cada perfil llevan referencia o se etiquetan
       como supuestos del equipo.
-- [ ] Resultado: la ruta dibujada, distancia, tiempo estimado, perfil de elevación y guía por tramos
+- [x] Resultado: la ruta dibujada, distancia, tiempo estimado, perfil de elevación y guía por tramos
       ("rodea el cráter por el norte", "pendiente máxima en el km 12").
-- [ ] Guardar en `mission.routes`.
+- [x] Guardar en `mission.routes`.
 
 **Hecho cuando:** entre dos puntos cualesquiera sale una ruta que rodea los cráteres grandes, con
 distancia y tiempo, y cambia al cambiar de perfil.
+
+**Estado:** hecho. Con fuente de la NASA: la velocidad del rover presurizado (concepto SEV, unos
+10 km/h) y la del rover ligero (promedio real del rover lunar de Apollo, unos 8 km/h). **Supuestos
+del equipo**, marcados así en pantalla: la velocidad a pie, las pendientes máximas, el tamaño de
+cráter que evita cada vehículo y cuánto frena la pendiente. Mientras `env.isMock` sea `true`, el
+relieve y los cráteres son de relleno y no coinciden con el mosaico del mapa. No maneja rutas que
+crucen el meridiano ±180°.
 
 **Fuentes:** recorridos y velocidades reales de Curiosity y Perseverance (NASA/JPL); base de
 cráteres de Robbins y Hynek; MOLA.
