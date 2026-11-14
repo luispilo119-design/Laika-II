@@ -55,6 +55,7 @@
   --ok: #7fc98b;
   --warn: #e8b04a;
   --bad: #e2664f;
+  color: var(--text);
 }
 
 * {

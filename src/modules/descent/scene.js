@@ -49,6 +49,29 @@ const PERSON_RADIUS = 0.45;
 const SLOPE_SLOW = 0.55; // en una pendiente fuerte se camina a ~45 % de la velocidad
 const BOB_M = 0.045;
 
+// Rover manejable. Valores de juego, no de un vehículo real (el concepto SEV de la NASA va a ~10 km/h):
+// aquí se puede ir más rápido para recorrer el terreno. Se dice así en pantalla.
+export const ROVER = {
+  maxSpeed: 8, // m/s (~29 km/h)
+  reverseSpeed: 3,
+  accel: 2.4, // m/s²
+  coast: 0.7, // frenado al soltar el acelerador, 1/s
+  turnRate: 0.85, // rad/s a toda velocidad
+  length: 5.2,
+  width: 2.9,
+  radius: 3.2,
+  boardDistance: 11, // m: a qué distancia se puede subir
+  gravity: 3.71, // m/s², gravedad de Marte (NSSDCA Mars Fact Sheet)
+  energyPerM: 0.00004, // fracción de batería por metro en llano (~25 km con carga completa)
+  climbEnergy: 0.0004, // extra por metro y por unidad de pendiente de subida
+  idleDrain: 0.00002, // por segundo
+  solarCharge: 0.0005, // por segundo a pleno sol, detenido
+  crashSpeed: 1.2, // m/s: desde aquí un choque hace daño
+  crashDamage: 0.035, // daño por m/s de impacto
+  maxTiltDeg: 28,
+  tiltDamage: 0.06, // daño por segundo inclinado de más
+};
+
 function seeded(seed) {
   let s = seed >>> 0;
   return () => {
@@ -63,10 +86,11 @@ function seeded(seed) {
  * @param {object} opts
  * @param {HTMLCanvasElement} opts.canvas
  * @param {ReturnType<import('./terrain.js').makeHeightField>} opts.field
+ * @param {number} [opts.seed]  semilla de los cráteres decorativos (cambia con el lugar)
  * @param {{ groundDark: string, groundMid: string, groundLight: string, rock: string, sky: string, dust: string, night: string, sun: string }} opts.palette
  *   colores CSS (#rrggbb)
  */
-export function createScene({ canvas, field, palette }) {
+export function createScene({ canvas, field, palette, seed = 1114 }) {
   const renderer = new WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
 
@@ -87,7 +111,7 @@ export function createScene({ canvas, field, palette }) {
   // ---------- Cráteres pequeños (decorativos) ----------
   // La rejilla de elevación tiene ~15 km por celda: los cráteres de decenas o cientos de metros no
   // salen en los datos. Se agregan aquí para que el paisaje se lea como Marte; no son reales.
-  const craterRand = seeded(1114);
+  const craterRand = seeded(seed);
   const craters = [];
   while (craters.length < CRATERS) {
     const r = 30 + Math.pow(craterRand(), 1.8) * 360;
@@ -246,7 +270,9 @@ export function createScene({ canvas, field, palette }) {
   const mast = cyl(0.06, 0.06, 1.6, white, 6);
   mast.position.set(-1.6, 4.1, 0.8);
   rover.add(mast);
-  place(rover, 10, -26, -0.9, 3.4);
+  place(rover, 10, -26, -0.9, ROVER.radius);
+  const roverObstacle = obstacles[obstacles.length - 1];
+  rover.rotation.order = 'YXZ';
 
   // Hábitat inflable con esclusa.
   const habitat = new Group();
@@ -311,6 +337,7 @@ export function createScene({ canvas, field, palette }) {
     const sun = sunState(hour);
     const dustiness = Math.min(1, Math.max(0, tau / 1.5));
     sunDir.set(sun.dir[0], sun.dir[1], sun.dir[2]);
+    daylight = sun.daylight * (1 - 0.5 * dustiness);
     skyNow.lerpColors(skyClear, skyDusty, dustiness);
     skyNow.lerpColors(skyNight, skyNow.clone(), sun.daylight);
     scene.background.copy(skyNow);
@@ -327,6 +354,120 @@ export function createScene({ canvas, field, palette }) {
 
   // ---------- Cámara ----------
   const view = { x: 0, z: 0, yaw: 0, pitch: LOOK_DOWN, mode: 'above', progress: 0, bob: 0 };
+  const vehicle = { x: 10, z: -26, heading: -0.9, speed: 0, battery: 1, damage: 0, odometer: 0, tilt: 0, grade: 0, warn: null, chaseYaw: 0 };
+  const track = [[0, 0]]; // recorrido (x, z) para el mini mapa
+  let daylight = 1;
+
+  function pushTrack(x, z) {
+    const lastPt = track[track.length - 1];
+    if (Math.hypot(x - lastPt[0], z - lastPt[1]) > 8) {
+      track.push([x, z]);
+      if (track.length > 1500) track.splice(1, 1);
+    }
+  }
+
+  /** Mueve el rover un paso: acelerador, dirección, pendiente, choques, batería y daño. */
+  function drive(dt, input) {
+    const v = vehicle;
+    const disabled = v.battery <= 0 || v.damage >= 1;
+    const throttle = disabled ? 0 : input.forward;
+    const steer = Math.max(-1, Math.min(1, input.strafe + input.turn));
+    const fx = Math.cos(v.heading);
+    const fz = -Math.sin(v.heading);
+    // Pendiente en la dirección de avance: frena de subida y empuja de bajada.
+    v.grade = (heightAt(v.x + fx * 3, v.z + fz * 3) - heightAt(v.x - fx * 3, v.z - fz * 3)) / 6;
+    if (throttle !== 0) v.speed += throttle * ROVER.accel * dt;
+    else v.speed -= v.speed * ROVER.coast * dt;
+    v.speed -= ROVER.gravity * Math.sin(Math.atan(v.grade)) * dt * 0.6;
+    const top = ROVER.maxSpeed * (input.run ? 1.4 : 1) * (1 - 0.6 * v.damage);
+    v.speed = Math.max(-ROVER.reverseSpeed, Math.min(top, v.speed));
+    if (disabled && Math.abs(v.speed) < 0.05) v.speed = 0;
+    v.heading -= steer * ROVER.turnRate * dt * Math.max(-1, Math.min(1, v.speed / 3));
+
+    const step = v.speed * dt;
+    v.x = field.clampToArea(v.x + Math.cos(v.heading) * step);
+    v.z = field.clampToArea(v.z - Math.sin(v.heading) * step);
+    v.odometer += Math.abs(step);
+
+    // Choques con rocas grandes y equipo.
+    v.warn = null;
+    for (const o of obstacles) {
+      if (o === roverObstacle) continue;
+      const dx = v.x - o.x;
+      const dz = v.z - o.z;
+      const min = o.r + ROVER.radius * 0.8;
+      const d2 = dx * dx + dz * dz;
+      if (d2 >= min * min || d2 === 0) continue;
+      const impact = Math.abs(v.speed);
+      if (impact > ROVER.crashSpeed) {
+        v.damage = Math.min(1, v.damage + impact * ROVER.crashDamage);
+        v.warn = 'crash';
+      }
+      v.speed = -v.speed * 0.25;
+      const d = Math.sqrt(d2);
+      v.x = o.x + (dx / d) * min;
+      v.z = o.z + (dz / d) * min;
+    }
+    roverObstacle.x = v.x;
+    roverObstacle.z = v.z;
+
+    // Inclinación según el terreno bajo las ruedas.
+    const hl = ROVER.length / 2;
+    const hw = ROVER.width / 2;
+    const rx = Math.sin(v.heading); // derecha del rover (perpendicular al avance)
+    const rz = Math.cos(v.heading);
+    const front = heightAt(v.x + fx * hl, v.z + fz * hl);
+    const back = heightAt(v.x - fx * hl, v.z - fz * hl);
+    const right = heightAt(v.x + rx * hw, v.z + rz * hw);
+    const left = heightAt(v.x - rx * hw, v.z - rz * hw);
+    const pitch = Math.atan2(front - back, ROVER.length);
+    const roll = Math.atan2(right - left, ROVER.width);
+    v.tilt = (Math.max(Math.abs(pitch), Math.abs(roll)) * 180) / Math.PI;
+    if (v.tilt > ROVER.maxTiltDeg) {
+      v.damage = Math.min(1, v.damage + ROVER.tiltDamage * dt);
+      v.warn = v.warn ?? 'tilt';
+    }
+
+    // Batería: avanzar gasta (más de subida); detenido y con sol, se recarga.
+    const climb = Math.max(0, v.speed >= 0 ? v.grade : -v.grade);
+    v.battery -= Math.abs(step) * (ROVER.energyPerM + ROVER.climbEnergy * climb) + ROVER.idleDrain * dt;
+    if (Math.abs(v.speed) < 0.2) v.battery += ROVER.solarCharge * daylight * dt;
+    v.battery = Math.max(0, Math.min(1, v.battery));
+    if (v.battery <= 0) v.warn = 'battery';
+    else if (v.damage >= 1) v.warn = 'broken';
+    else if (!v.warn && v.battery < 0.15) v.warn = 'low';
+
+    rover.position.set(v.x, (front + back + left + right) / 4, v.z);
+    rover.rotation.set(-roll, v.heading, pitch);
+    pushTrack(v.x, v.z);
+  }
+
+  function canBoard() {
+    return view.mode === 'ground' && Math.hypot(view.x - vehicle.x, view.z - vehicle.z) < ROVER.boardDistance;
+  }
+
+  function board() {
+    if (!canBoard()) return false;
+    view.mode = 'driving';
+    vehicle.chaseYaw = 0;
+    return true;
+  }
+
+  function exitVehicle() {
+    if (view.mode !== 'driving') return;
+    vehicle.speed = 0;
+    // Bajarse por el lado izquierdo del rover, mirando hacia donde apuntaba.
+    view.x = field.clampToArea(vehicle.x - Math.sin(vehicle.heading) * 3.6);
+    view.z = field.clampToArea(vehicle.z - Math.cos(vehicle.heading) * 3.6);
+    view.yaw = vehicle.heading - Math.PI / 2;
+    view.pitch = 0;
+    view.mode = 'ground';
+  }
+
+  function repair() {
+    vehicle.damage = 0;
+    vehicle.warn = null;
+  }
 
   /** Saca a la persona de las rocas y vehículos con los que choca. */
   function resolveCollisions() {
@@ -374,6 +515,17 @@ export function createScene({ canvas, field, palette }) {
         view.mode = 'ground';
         view.pitch = 0;
       }
+    } else if (view.mode === 'driving') {
+      drive(dt, input);
+      vehicle.chaseYaw = (vehicle.chaseYaw - input.lookX * LOOK_SENSITIVITY) * (input.lookX ? 1 : 1 - Math.min(1, dt * 0.8));
+      const back = vehicle.heading + Math.PI + vehicle.chaseYaw;
+      const cx = vehicle.x + Math.cos(back) * 13;
+      const cz = vehicle.z - Math.sin(back) * 13;
+      const groundCam = heightAt(cx, cz);
+      camera.position.set(cx, Math.max(groundCam + 2, rover.position.y + 5.5), cz);
+      camera.lookAt(vehicle.x + Math.cos(vehicle.heading) * 6, rover.position.y + 1.6, vehicle.z - Math.sin(vehicle.heading) * 6);
+      sunDisc.position.copy(camera.position).addScaledVector(sunDir, 9000);
+      return;
     } else {
       view.yaw -= input.turn * TURN_RPS * dt + input.lookX * LOOK_SENSITIVITY;
       view.pitch = Math.min(1.2, Math.max(-1.2, view.pitch - input.lookY * LOOK_SENSITIVITY));
@@ -390,6 +542,7 @@ export function createScene({ canvas, field, palette }) {
       view.x = field.clampToArea(view.x + dirX * speed);
       view.z = field.clampToArea(view.z + dirZ * speed);
       resolveCollisions();
+      pushTrack(view.x, view.z);
       const moving = Math.abs(input.forward) + Math.abs(input.strafe) > 0;
       view.bob = moving ? view.bob + dt * (input.run ? 14 : 8) : view.bob * 0.9;
       altitude += moving ? Math.sin(view.bob) * BOB_M : 0;
@@ -410,11 +563,28 @@ export function createScene({ canvas, field, palette }) {
     setEnvironment,
     startDescent,
     ascend,
+    board,
+    exitVehicle,
+    repair,
+    canBoard,
+    /** Datos para el mini mapa: cráteres, equipo y recorrido, en metros locales. */
+    mapData: () => ({ craters, track, vehicle: { x: vehicle.x, z: vehicle.z, heading: vehicle.heading } }),
     update,
     resize,
     render: () => renderer.render(scene, camera),
     /** Dónde está la persona y en qué fase de la bajada. */
-    state: () => ({ x: view.x, z: view.z, mode: view.mode, headingDeg: (((-view.yaw * 180) / Math.PI) % 360 + 360) % 360 }),
+    state: () => {
+      const driving = view.mode === 'driving';
+      const yaw = driving ? vehicle.heading - Math.PI / 2 : view.yaw;
+      return {
+        x: driving ? vehicle.x : view.x,
+        z: driving ? vehicle.z : view.z,
+        mode: view.mode,
+        headingDeg: (((-yaw * 180) / Math.PI) % 360 + 360) % 360,
+        canBoard: canBoard(),
+        vehicle: { ...vehicle },
+      };
+    },
     /** Libera la memoria de la escena y el contexto WebGL. */
     dispose() {
       geometry.dispose();

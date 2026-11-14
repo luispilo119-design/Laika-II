@@ -8,7 +8,9 @@
  */
 import './descent.css';
 import messages from './i18n.js';
+import L from 'leaflet';
 import { AREA_M, GRID, areaBBox, makeHeightField, toLatLon } from './terrain.js';
+import { createMarsMap } from '../../core/marsmap.js';
 
 // Punto de ejemplo para cuando todavía no hay sitio de aterrizaje (el mismo que usa "routes").
 const EXAMPLE_SITE = { lat: 1.0, lon: 3.0 };
@@ -27,7 +29,7 @@ const REFERENCES = [
 ];
 
 /** Hora elegida en la vista previa (null = la del reloj de la misión). No se escribe en el store. */
-const ui = { hour: null };
+const ui = { hour: null, place: null };
 
 /** @type {import('../../core/types.js').ModuleDef} */
 const mod = {
@@ -46,7 +48,9 @@ const mod = {
       new Intl.NumberFormat(locale, { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(value);
 
     const hasSite = Boolean(mission.site && Number.isFinite(mission.site.lat) && Number.isFinite(mission.site.lon));
-    const site = hasSite ? { lat: mission.site.lat, lon: mission.site.lon, name: mission.site.name } : EXAMPLE_SITE;
+    const landing = hasSite ? { lat: mission.site.lat, lon: mission.site.lon, name: mission.site.name } : EXAMPLE_SITE;
+    // Se puede explorar otra zona sin cambiar el sitio de aterrizaje de la misión.
+    let site = ui.place ?? landing;
     const hour = () => ui.hour ?? clock.localHour;
     const coords = (lat, lon) =>
       `${num(Math.abs(lat), 3)}° ${t(lat >= 0 ? 'descent.card.n' : 'descent.card.s')}, ${num(Math.abs(lon), 3)}° ${t(
@@ -59,7 +63,7 @@ const mod = {
     const nextModule = modules.find((m) => m.id === 'hubs') ? 'hubs' : 'home';
     const prevModule = modules.find((m) => m.id === 'transit') ? 'transit' : 'home';
 
-    const READOUTS = ['temperature', 'pressure', 'radiation', 'elevation', 'slope', 'dust', 'position'];
+    const READOUTS = ['temperature', 'pressure', 'radiation', 'elevation', 'slope', 'dust', 'position', 'distance'];
 
     el.innerHTML = `
       <div class="descent">
@@ -69,6 +73,7 @@ const mod = {
           <button type="button" class="btn" data-go="${prevModule}">${t('descent.prev', { name: t(`${prevModule}.title`) })}</button>
           <button type="button" class="btn" data-go="map">${t('descent.toMap')}</button>
           <button type="button" class="btn" data-ascend hidden>${t('descent.ascend')}</button>
+          <button type="button" class="btn" data-place-open>${t('descent.place.open')}</button>
           <button type="button" class="btn" data-go="${nextModule}">${t('descent.next', { name: t(`${nextModule}.title`) })}</button>
           ${env.isMock ? `<span class="badge badge--warn">${t('core.mockBadge')}</span>` : ''}
         </div>
@@ -99,13 +104,57 @@ const mod = {
           <p class="descent__note">${t('descent.decorNote', { km: num(AREA_M / 1000) })}</p>
         </div>
 
+        <section class="descent__vehicle" hidden aria-label="${t('descent.rover.title')}">
+          <h2>${t('descent.rover.title')}</h2>
+          <div class="descent__gauge-row">
+            <div class="descent__speed"><strong data-veh="speed">0</strong><span>km/h</span></div>
+            <div class="descent__veh-bars">
+              <p><span>${t('descent.rover.battery')}</span><b data-veh="battery"></b></p>
+              <div class="glyph-bar glyph-bar--square" data-veh-bar="battery" style="--tone:#7fc98b;--value:1"></div>
+              <p><span>${t('descent.rover.damage')}</span><b data-veh="damage"></b></p>
+              <div class="glyph-bar glyph-bar--square" data-veh-bar="damage" style="--tone:#e2664f;--value:0"></div>
+            </div>
+          </div>
+          <dl class="descent__veh-list">
+            <div><dt>${t('descent.rover.odometer')}</dt><dd data-veh="odometer"></dd></div>
+            <div><dt>${t('descent.rover.tilt')}</dt><dd data-veh="tilt"></dd></div>
+            <div><dt>${t('descent.rover.grade')}</dt><dd data-veh="grade"></dd></div>
+          </dl>
+          <p class="descent__veh-warn" data-veh="warn" role="status"></p>
+          <div class="descent__veh-actions">
+            <button type="button" class="btn" data-repair hidden>${t('descent.rover.repair')}</button>
+          </div>
+          <p class="descent__note">${t('descent.rover.note')}</p>
+        </section>
+
+        <canvas class="descent__minimap" width="180" height="180" hidden aria-label="${t('descent.minimap')}"></canvas>
+
+        <div class="descent__board">
+          <button type="button" class="btn btn--primary" data-board hidden>${t('descent.rover.board')}</button>
+          <button type="button" class="btn btn--primary" data-exit hidden>${t('descent.rover.exit')}</button>
+        </div>
+
+        <div class="descent__place" hidden role="dialog" aria-modal="true" aria-label="${t('descent.place.title')}">
+          <div class="descent__place-box">
+            <div class="descent__place-head">
+              <h2>${t('descent.place.title')}</h2>
+              <button type="button" class="btn" data-place-close>${t('descent.place.close')}</button>
+            </div>
+            <p class="descent__note">${t('descent.place.hint')}</p>
+            <div class="descent__place-map"></div>
+            <div class="descent__place-actions">
+              <button type="button" class="btn" data-place-landing>${t('descent.place.landing')}</button>
+            </div>
+          </div>
+        </div>
+
         <div class="descent__stick" hidden aria-hidden="true"><span class="descent__knob"></span></div>
         <p class="descent__hint" hidden>${t('descent.hint')}</p>
       </div>
     `;
 
     const root = el.querySelector('.descent');
-    const canvas = el.querySelector('.descent__canvas');
+    let canvas = el.querySelector('.descent__canvas');
     const intro = el.querySelector('.descent__intro');
     const status = el.querySelector('.descent__status');
     const descendBtn = el.querySelector('[data-descend]');
@@ -116,6 +165,15 @@ const mod = {
     const read = (id) => el.querySelector(`[data-read="${id}"]`);
     const modeledNote = el.querySelector('[data-modeled]');
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const vehPanel = el.querySelector('.descent__vehicle');
+    const veh = (id) => el.querySelector(`[data-veh="${id}"]`);
+    const vehBar = (id) => el.querySelector(`[data-veh-bar="${id}"]`);
+    const boardBtn = el.querySelector('[data-board]');
+    const exitBtn = el.querySelector('[data-exit]');
+    const repairBtn = el.querySelector('[data-repair]');
+    const minimap = el.querySelector('.descent__minimap');
+    const placeBox = el.querySelector('.descent__place');
+    let placeMap = null;
 
     let alive = true;
     let scene = null;
@@ -128,7 +186,7 @@ const mod = {
     // ---------- HUD: lo que mide el entorno donde está la persona ----------
 
     function paintHud() {
-      const where = scene ? scene.state() : { x: 0, z: 0 };
+      const where = scene ? scene.state() : { x: 0, z: 0, mode: 'above' };
       const { lat, lon } = toLatLon(site, where.x, where.z);
       const sample = env.sample(lat, lon, { ...clock, localHour: hour() });
       // Los campos que salen de un modelo (no de una medición) llevan un asterisco y su nota.
@@ -142,8 +200,82 @@ const mod = {
       read('dust').textContent = t('descent.unit.tau', { v: num(sample.dustOpacity, 2) }) + mark('dustOpacity');
       modeledNote.hidden = modeled.length === 0;
       read('position').textContent = coords(lat, lon);
+      read('distance').textContent = t('descent.unit.km', { v: num(Math.hypot(where.x, where.z) / 1000, 2) });
+      paintVehicle(where);
+      drawMinimap();
       read('hour').textContent = clockText(hour());
       return sample;
+    }
+
+    function paintVehicle(where) {
+      const mode = where.mode;
+      const driving = mode === 'driving';
+      vehPanel.hidden = !driving;
+      boardBtn.hidden = !(mode === 'ground' && where.canBoard);
+      exitBtn.hidden = !driving;
+      minimap.hidden = !(mode === 'ground' || driving);
+      if (landed) hint.hidden = mode !== 'ground';
+      if (!where.vehicle) return;
+      const v = where.vehicle;
+      veh('speed').textContent = num(Math.abs(v.speed) * 3.6);
+      veh('battery').textContent = `${num(v.battery * 100)} %`;
+      veh('damage').textContent = `${num(v.damage * 100)} %`;
+      vehBar('battery').style.setProperty('--value', v.battery.toFixed(3));
+      vehBar('battery').style.setProperty('--tone', v.battery < 0.15 ? '#e2664f' : v.battery < 0.4 ? '#e8b04a' : '#7fc98b');
+      vehBar('damage').style.setProperty('--value', v.damage.toFixed(3));
+      veh('odometer').textContent = t('descent.unit.km', { v: num(v.odometer / 1000, 2) });
+      veh('tilt').textContent = t('descent.unit.degrees', { v: num(v.tilt, 1) });
+      veh('grade').textContent = `${num(v.grade * 100)} %`;
+      veh('warn').textContent = v.warn ? t(`descent.rover.warn.${v.warn}`) : '';
+      veh('warn').dataset.level = v.warn ?? '';
+      repairBtn.hidden = v.damage <= 0;
+    }
+
+    /** Mini mapa del área: cráteres, equipo, recorrido y posición. */
+    function drawMinimap() {
+      if (!scene || minimap.hidden) return;
+      const g = minimap.getContext('2d');
+      const W = minimap.width;
+      const k = W / AREA_M;
+      const P = (x, z) => [W / 2 + x * k, W / 2 + z * k];
+      const data = scene.mapData();
+      const where = scene.state();
+      g.clearRect(0, 0, W, W);
+      g.fillStyle = 'rgba(20, 12, 10, 0.78)';
+      g.fillRect(0, 0, W, W);
+      g.strokeStyle = 'rgba(255, 220, 190, 0.45)';
+      g.lineWidth = 1;
+      for (const c of data.craters) {
+        const [cx, cy] = P(c.x, c.z);
+        g.beginPath();
+        g.arc(cx, cy, Math.max(1.5, c.r * k), 0, Math.PI * 2);
+        g.stroke();
+      }
+      g.strokeStyle = '#fffff3';
+      g.beginPath();
+      g.arc(W / 2, W / 2, 75 * k + 2, 0, Math.PI * 2);
+      g.stroke();
+      g.strokeStyle = '#e8b04a';
+      g.lineWidth = 1.5;
+      g.beginPath();
+      data.track.forEach(([x, z], i) => {
+        const [px, py] = P(x, z);
+        if (i) g.lineTo(px, py);
+        else g.moveTo(px, py);
+      });
+      g.stroke();
+      const [vx, vy] = P(data.vehicle.x, data.vehicle.z);
+      g.fillStyle = '#7fc98b';
+      g.fillRect(vx - 3, vy - 3, 6, 6);
+      const [px, py] = P(where.x, where.z);
+      const a = (where.headingDeg * Math.PI) / 180;
+      g.fillStyle = '#e2664f';
+      g.beginPath();
+      g.moveTo(px + Math.sin(a) * 7, py - Math.cos(a) * 7);
+      g.lineTo(px + Math.sin(a + 2.5) * 5, py - Math.cos(a + 2.5) * 5);
+      g.lineTo(px + Math.sin(a - 2.5) * 5, py - Math.cos(a - 2.5) * 5);
+      g.closePath();
+      g.fill();
     }
 
     function applyEnvironment() {
@@ -158,7 +290,19 @@ const mod = {
     const pad = { x: 0, y: 0, pointer: null };
     const MOVE_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ShiftLeft', 'ShiftRight']);
 
+    function toggleVehicle() {
+      if (!scene) return;
+      const st = scene.state();
+      if (st.mode === 'driving') scene.exitVehicle();
+      else if (st.canBoard) scene.board();
+      lastHud = 0;
+    }
+
     function onKeyDown(event) {
+      if (event.code === 'KeyE' && !event.target.closest?.('input, textarea, select')) {
+        if (!event.repeat) toggleVehicle();
+        return;
+      }
       if (!MOVE_KEYS.has(event.code) || event.target.closest?.('input, textarea, select')) return;
       if (event.code.startsWith('Arrow')) event.preventDefault(); // que las flechas no desplacen la página
       keys.add(event.code);
@@ -268,6 +412,7 @@ const mod = {
 
     async function load() {
       try {
+        intro.querySelector('.descent__site').textContent = `${site.name ? `${site.name} · ` : ''}${coords(site.lat, site.lon)}`;
         await env.ready();
         const elevation = await env.elevationGrid(areaBBox(site), GRID);
         if (!alive) return;
@@ -280,6 +425,7 @@ const mod = {
         scene = createScene({
           canvas,
           field,
+          seed: Math.round((site.lat + 90) * 100) * 40000 + Math.round((site.lon + 180) * 100),
           // Colores aproximados, tomados de la paleta de la app; no son una medición del color real.
           palette: {
             groundDark: color('--rust-700', '#96483a'),
@@ -313,9 +459,78 @@ const mod = {
 
     // ---------- Eventos de la interfaz ----------
 
+    async function reloadAt(place) {
+      ui.place = place;
+      site = place ?? landing;
+      cancelAnimationFrame(raf);
+      raf = 0;
+      resizeObserver.disconnect();
+      scene?.dispose();
+      scene = null;
+      field = null;
+      landed = false;
+      root.classList.remove('is-landed');
+      stick.hidden = true;
+      hint.hidden = true;
+      el.querySelector('[data-ascend]').hidden = true;
+      // El contexto WebGL anterior quedó liberado: se usa un canvas nuevo.
+      const fresh = canvas.cloneNode(false);
+      canvas.replaceWith(fresh);
+      canvas = fresh;
+      bindCanvas();
+      intro.hidden = false;
+      descendBtn.disabled = true;
+      descendBtn.hidden = false;
+      status.textContent = t('descent.loading');
+      paintHud();
+      await load();
+    }
+
+    function openPlace() {
+      placeBox.hidden = false;
+      if (!placeMap) {
+        placeMap = createMarsMap(el.querySelector('.descent__place-map'), { basemap: 'mola', center: [site.lat, site.lon], zoom: 3 });
+        const star = L.divIcon({ className: 'descent__place-star', html: '<span>★</span>', iconSize: [28, 28], iconAnchor: [14, 14] });
+        L.marker([landing.lat, landing.lon], { icon: star, interactive: false }).addTo(placeMap.map);
+        for (const h of store.get().mission.hubs ?? []) {
+          L.circleMarker([h.lat, h.lon], { radius: 6, color: '#161412', weight: 2, fillColor: '#eab422', fillOpacity: 1 })
+            .bindTooltip(t(`hubs.type.${h.type}.name`))
+            .on('click', () => {
+              placeBox.hidden = true;
+              reloadAt({ lat: h.lat, lon: h.lon, name: t(`hubs.type.${h.type}.name`) });
+            })
+            .addTo(placeMap.map);
+        }
+        placeMap.map.on('click', (e) => {
+          placeBox.hidden = true;
+          reloadAt({ lat: Math.max(-85, Math.min(85, e.latlng.lat)), lon: e.latlng.lng });
+        });
+      }
+      setTimeout(() => placeMap.map.invalidateSize(), 50);
+    }
+
     function onClick(event) {
       const go = event.target.closest('[data-go]')?.dataset.go;
       if (go) return navigate(go);
+      if (event.target.closest('[data-place-open]')) return openPlace();
+      if (event.target.closest('[data-place-close]')) {
+        placeBox.hidden = true;
+        return undefined;
+      }
+      if (event.target.closest('[data-place-landing]')) {
+        placeBox.hidden = true;
+        return reloadAt(null);
+      }
+      if (event.target.closest('[data-board]') || event.target.closest('[data-exit]')) {
+        toggleVehicle();
+        canvas.focus({ preventScroll: true });
+        return undefined;
+      }
+      if (event.target.closest('[data-repair]') && scene) {
+        scene.repair();
+        lastHud = 0;
+        return undefined;
+      }
       if (event.target.closest('[data-ascend]') && scene) {
         scene.ascend();
         landed = false;
@@ -341,10 +556,14 @@ const mod = {
 
     el.addEventListener('click', onClick);
     hourSlider.addEventListener('input', onHour);
-    canvas.addEventListener('pointerdown', onLookDown);
-    canvas.addEventListener('pointermove', onLookMove);
-    canvas.addEventListener('pointerup', onLookUp);
-    canvas.addEventListener('pointercancel', onLookUp);
+    function bindCanvas() {
+      canvas.addEventListener('pointerdown', onLookDown);
+      canvas.addEventListener('pointermove', onLookMove);
+      canvas.addEventListener('pointerup', onLookUp);
+      canvas.addEventListener('pointercancel', onLookUp);
+      canvas.tabIndex = 0;
+    }
+    bindCanvas();
     stick.addEventListener('pointerdown', onPadDown);
     stick.addEventListener('pointermove', onPadMove);
     stick.addEventListener('pointerup', onPadUp);
@@ -370,6 +589,7 @@ const mod = {
       document.removeEventListener('visibilitychange', syncLoop);
       scene?.dispose(); // libera el contexto WebGL
       scene = null;
+      placeMap?.destroy();
     };
   },
 };

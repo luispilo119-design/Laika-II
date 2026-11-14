@@ -233,3 +233,202 @@
     display: none;
   }
 }
+
+/* =====================================================================================
+   Rover manejable, mini mapa y selector de lugar.
+   ===================================================================================== */
+
+.descent__vehicle {
+  position: absolute;
+  left: 172px;
+  bottom: 16px;
+  width: min(330px, calc(100% - 190px));
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--rust-500);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--bg-sunken) 90%, transparent);
+  color: var(--text);
+}
+
+.descent__vehicle h2 {
+  margin: 0 0 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--rust-300);
+}
+
+.descent__gauge-row {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.descent__speed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  border: 3px solid var(--cream);
+  border-radius: 50%;
+}
+
+.descent__speed strong {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.descent__speed span {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.descent__veh-bars p {
+  display: flex;
+  justify-content: space-between;
+  margin: 4px 0 3px;
+  font-size: 13px;
+}
+
+.descent__veh-bars b {
+  font-family: var(--font-mono);
+}
+
+.descent__veh-bars .glyph-bar {
+  --dot: 9px;
+  --gap: 2px;
+  --line: rgba(255, 240, 220, 0.18);
+}
+
+.descent__veh-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin: 10px 0 4px;
+}
+
+.descent__veh-list dt {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.descent__veh-list dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
+.descent__veh-warn {
+  min-height: 1.3em;
+  margin: 4px 0;
+  font-weight: 700;
+  color: var(--warn);
+}
+
+.descent__veh-warn[data-level='crash'],
+.descent__veh-warn[data-level='broken'],
+.descent__veh-warn[data-level='battery'],
+.descent__veh-warn[data-level='tilt'] {
+  color: var(--bad);
+}
+
+.descent__minimap {
+  position: absolute;
+  right: 12px;
+  bottom: 16px;
+  width: 180px;
+  height: 180px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.descent__board {
+  position: absolute;
+  left: 50%;
+  bottom: 92px;
+  transform: translateX(-50%);
+}
+
+.descent__board .btn {
+  min-height: 52px;
+  padding: 0 22px;
+  font-size: 16px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+.descent__place {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.descent__place[hidden] {
+  display: none;
+}
+
+.descent__place-box {
+  width: min(900px, 100%);
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-sunken);
+}
+
+.descent__place-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.descent__place-head h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.descent__place-map {
+  height: min(60vh, 520px);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.descent__place-star span {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #d6402a;
+  color: #fff;
+  border: 2px solid #fff;
+}
+
+@media (max-width: 760px) {
+  .descent__vehicle {
+    left: 12px;
+    bottom: 160px;
+    width: calc(100% - 24px);
+  }
+  .descent__minimap {
+    width: 120px;
+    height: 120px;
+    top: 68px;
+    bottom: auto;
+    left: 12px;
+    right: auto;
+  }
+}
