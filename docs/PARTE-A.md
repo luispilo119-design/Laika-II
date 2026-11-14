@@ -68,9 +68,18 @@ el plan queda guardado en el store; las pruebas de `orbit.js` pasan con los valo
 **Fuentes:** elementos orbitales aproximados (JPL SSD), algoritmo de Mars24 (NASA GISS), material
 educativo de JPL sobre ventanas de lanzamiento a Marte.
 
-- [ ] `orbit.js` con pruebas
-- [ ] Diagrama animado por fases
-- [ ] Ventanas, resumen y guardado del plan
+- [x] `orbit.js` con pruebas (`tests/orbit.test.js`): reproduce los dos ejemplos resueltos de Mars24,
+      las oposiciones de Marte y cae a menos de 20 días de cinco lanzamientos reales.
+- [x] Diagrama animado por fases
+- [x] Ventanas, resumen y guardado del plan
+
+**Cómo quedó:** las ventanas no usan el ángulo de fase fijo de libro sino la condición equivalente
+con posiciones reales (Marte debe estar a 180° de donde salió la Tierra cuando llegue la nave), y la
+media elipse va de la distancia real de la Tierra al salir a la de Marte al llegar. Por eso cada
+ventana da una duración distinta (entre unos 236 y 282 días). Los valores de libro se muestran en
+"Cómo se calcula".
+
+**Pendiente menor (pasa a A6):** en tablet, el título y los pasos quedan debajo del diagrama.
 
 ## A2 · Mapa con capas — `src/modules/map/`
 
