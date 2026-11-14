@@ -541,6 +541,9 @@ export function joinLegs(legs) {
     if (!lowest || leg.lowest.elevM < lowest.elevM) lowest = { elevM: leg.lowest.elevM, km: leg.lowest.km + kmOffset };
     for (const step of leg.steps) {
       if (step.type === 'arrive' && i < legs.length - 1) continue;
+      // "Sale del cráter" solo al principio y "entra en el cráter" solo al final, no en cada parada.
+      if (step.type === 'exit' && i > 0) continue;
+      if (step.type === 'enter' && i < legs.length - 1) continue;
       if (step.type === 'depart' && i > 0) {
         steps.push({ type: 'stop', n: i, km: kmOffset, dir: step.dir });
         continue;
@@ -553,9 +556,13 @@ export function joinLegs(legs) {
     kmOffset += leg.distanceKm;
     hours += leg.durationH;
   });
-  const arrive = steps.pop(); // el 'arrive' del último tramo
+  const arriveAt = steps.findIndex((step) => step.type === 'arrive');
+  const [arrive] = steps.splice(arriveAt, 1); // el 'arrive' del último tramo
+  const enters = steps.filter((step) => step.type === 'enter');
+  for (const step of enters) steps.splice(steps.indexOf(step), 1);
   if (maxSlope.deg >= 1) steps.push({ type: 'slope', km: maxSlope.km, deg: maxSlope.deg });
   steps.sort((a, b) => a.km - b.km || (a.type === 'depart' ? -1 : 0));
+  for (const step of enters) steps.push({ ...step, km: kmOffset });
   steps.push({ ...arrive, km: kmOffset, hours });
   const inside = { origin: legs[0].inside?.origin ?? [], destination: legs[legs.length - 1].inside?.destination ?? [] };
   return { ok: true, points, samples, steps, avoided, inside, distanceKm: kmOffset, durationH: hours, maxSlope, highest, lowest };

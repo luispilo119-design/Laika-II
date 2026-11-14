@@ -218,3 +218,28 @@ test('paradas intermedias: los tramos se unen en una sola ruta con distancias ac
   assert.equal(types.filter((x) => x === 'arrive').length, 1);
   assert.ok(joined.samples.every((s, i) => i === 0 || s.km >= joined.samples[i - 1].km), 'km crecientes');
 });
+
+test('paradas: los avisos de salir o entrar en un cráter solo van al principio y al final', () => {
+  const leg = (from, to, exit, enter) => ({
+    ok: true,
+    points: [from, to],
+    samples: [{ km: 0, elevM: 0, point: from }, { km: 10, elevM: 0, point: to }],
+    steps: [
+      { type: 'depart', km: 0, dir: 'e' },
+      ...(exit ? [{ type: 'exit', km: 0, diameterKm: 40 }] : []),
+      ...(enter ? [{ type: 'enter', km: 10, diameterKm: 40 }] : []),
+      { type: 'arrive', km: 10, hours: 1 },
+    ],
+    avoided: [],
+    inside: { origin: [], destination: [] },
+    distanceKm: 10,
+    durationH: 1,
+    maxSlope: { deg: 0, km: 0 },
+    highest: { elevM: 0, km: 0 },
+    lowest: { elevM: 0, km: 0 },
+  });
+  const j = joinLegs([leg([0, 0], [0, 1], true, true), leg([0, 1], [0, 2], true, true)]);
+  const types = j.steps.map((s) => s.type);
+  assert.deepEqual(types, ['depart', 'exit', 'stop', 'enter', 'arrive']);
+  assert.equal(j.steps.find((s) => s.type === 'enter').km, 20);
+});
