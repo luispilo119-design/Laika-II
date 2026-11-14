@@ -151,6 +151,7 @@
 
 .mapview__map {
   position: absolute;
+  z-index: 0; /* contexto propio: los controles de Leaflet no tapan paneles ni fichas */
   inset: 0;
   background: var(--bg-sunken);
 }
