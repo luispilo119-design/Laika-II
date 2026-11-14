@@ -44,4 +44,5 @@ falta y cambia el estado a "verificada" (y `verified: true` en el código).
 | Confinamiento | NASA, análogo CHAPEA | https://www.nasa.gov/humans-in-space/chapea/ | sin abrir |
 | Confinamiento | NASA, análogo HERA | por localizar | sin abrir |
 | Confinamiento | Mars-500 (ESA/IBMP) | por localizar | sin abrir |
-| Inspiración del fondo ASCII | JIN2-ASCII, BLACK-HOLE | https://github.com/JIN2-ASCII/-JIN2-ASCII/tree/main/BLACK-HOLE | sin abrir; revisar licencia |
+| Inspiración del fondo ASCII | JIN2-ASCII, BLACK-HOLE | https://github.com/JIN2-ASCII/-JIN2-ASCII/tree/main/BLACK-HOLE | verificada. Licencia propia: solo uso personal, no comercial y con crédito a @jin_22ee; **no se reutilizó código**, el fondo se escribió desde cero en JavaScript |
+| Dedicatoria a Laika | NASA History, Dawn of the Space Age | https://www.nasa.gov/history/dawn-of-the-space-age/ | verificada: Sputnik 2 se lanzó el 3 de noviembre de 1957 con la perra Laika. La ficha del catálogo NSSDCA (1957-002A) daba error el 2026-11-14 |

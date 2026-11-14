@@ -53,16 +53,16 @@ ahí, pídelo o mándalo en un commit aparte que solo toque ese archivo.
 
 Entrada tipo videojuego. Hoy hay una versión mínima que funciona; se reemplaza.
 
-- [ ] Fondo animado en ASCII: un agujero negro con disco de acreción, dibujado con caracteres sobre
+- [x] Fondo animado en ASCII: un agujero negro con disco de acreción, dibujado con caracteres sobre
       un `<canvas>` o un `<pre>`. La referencia visual es el proyecto BLACK-HOLE de JIN2-ASCII, que
       está en Python para terminal: aquí se **reescribe en JavaScript**. Revisa la licencia de ese
       repositorio antes de reutilizar cualquier fragmento, y da crédito en la pantalla de referencias.
-- [ ] Menú: INICIAR (lleva a `hohmann`), CONTINUAR si ya hay una misión guardada, ÍNDICE con todos
+- [x] Menú: INICIAR (lleva a `hohmann`), CONTINUAR si ya hay una misión guardada, ÍNDICE con todos
       los módulos agrupados por fase (se arma con `ctx.modules` y `ctx.phases`), selector de idioma.
-- [ ] Créditos: logo y nombre del equipo, y la dedicatoria a Laika.
-- [ ] La animación se pausa con la pestaña oculta, no pasa de 30 cuadros por segundo, y con
+- [x] Créditos: logo y nombre del equipo, y la dedicatoria a Laika.
+- [x] La animación se pausa con la pestaña oculta, no pasa de 30 cuadros por segundo, y con
       `prefers-reduced-motion` muestra un cuadro fijo. La limpieza de `mount` detiene todo.
-- [ ] Navegable con teclado y con toque; legible a 768 px.
+- [x] Navegable con teclado y con toque; legible a 768 px.
 
 **Hecho cuando:** la app abre en esta pantalla, la animación corre fluida en tablet y se puede llegar
 a cualquier módulo desde el índice.
@@ -72,7 +72,7 @@ a cualquier módulo desde el índice.
 **Paso de la persona (no del agente):** crear el proyecto en Supabase, activar el inicio de sesión
 anónimo, y copiar la URL y la llave `anon` a `.env.local`. Compartirlas con la persona A en privado.
 
-- [ ] Migración SQL en `supabase/migrations/` con seguridad por filas activada en todas las tablas.
+- [x] Migración SQL en `supabase/migrations/` con seguridad por filas activada en todas las tablas.
       Punto de partida:
 
 ```sql
@@ -100,14 +100,18 @@ create policy "leer puntuaciones" on public.scores for select using (true);
 create policy "insertar propias" on public.scores for insert with check (owner = auth.uid());
 ```
 
-- [ ] `src/services/supabase.js`: crea el cliente solo si existen las dos variables de entorno.
-- [ ] `src/services/index.js` → `init(ctx)`: sesión anónima, carga la última misión guardada y se
+- [x] `src/services/supabase.js`: crea el cliente solo si existen las dos variables de entorno.
+- [x] `src/services/index.js` → `init(ctx)`: sesión anónima, carga la última misión guardada y se
       suscribe al store para guardar con retardo (debounce) cada cambio de `mission`.
-- [ ] Funciones exportadas para los módulos: guardar y listar misiones, enviar y leer puntuaciones.
-- [ ] Sin `.env.local`, o sin red, todo sigue funcionando con localStorage y sin errores en consola.
+- [x] Funciones exportadas para los módulos: guardar y listar misiones, enviar y leer puntuaciones.
+- [x] Sin `.env.local`, o sin red, todo sigue funcionando con localStorage y sin errores en consola.
 
 **Hecho cuando:** elegir un sitio en una computadora, recargar y ver que sigue ahí viniendo de
 Supabase; y la app arranca igual con las variables vacías.
+
+**Estado:** el código y la migración están listos y probados con un cliente simulado
+(`tests/services.test.js`). Falta el paso de la persona (crear el proyecto, ver
+[supabase/README.md](../supabase/README.md)) y probar contra el proyecto real.
 
 ## B3 · Tránsito y confinamiento — `src/modules/transit/`
 
@@ -185,9 +189,9 @@ del color del cielo y del suelo.
 
 ## B7 · Pantalla de referencias — `src/modules/references/`
 
-- [ ] Reúne `references` de todos los módulos de `ctx.modules`, agrupadas por fase y sin duplicados.
-- [ ] Cada entrada: título, organización, año, enlace y si está verificada.
-- [ ] Sección de créditos: equipo, mosaicos de Mars Trek, bibliotecas usadas, inspiración del fondo ASCII.
+- [x] Reúne `references` de todos los módulos de `ctx.modules`, agrupadas por fase y sin duplicados.
+- [x] Cada entrada: título, organización, año, enlace y si está verificada.
+- [x] Sección de créditos: equipo, mosaicos de Mars Trek, bibliotecas usadas, inspiración del fondo ASCII.
 
 **Hecho cuando:** toda referencia registrada en cualquier módulo aparece aquí sin tocar esta pantalla.
 
