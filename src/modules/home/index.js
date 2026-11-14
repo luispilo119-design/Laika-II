@@ -45,6 +45,19 @@ function holeLayout(width, height) {
   return { fx: 0.69, fy: 0.47, unit: Math.min((width * 0.74) / 25, (height * 0.95) / 12) };
 }
 
+/** Miniaturas de la galería del índice (SVG geométrico por módulo; nada de imágenes externas). */
+const THUMBS = {
+  hohmann: '<circle cx="50" cy="50" r="8" fill="#eab422"/><circle cx="50" cy="50" r="22" fill="none" stroke="#6fb1e8" stroke-width="2"/><circle cx="50" cy="50" r="36" fill="none" stroke="#d6402a" stroke-width="2"/><path d="M72 50 A36 30 0 0 0 14 50" fill="none" stroke="#fffff3" stroke-width="2.5" stroke-dasharray="5 4"/><circle cx="72" cy="50" r="4" fill="#6fb1e8"/><circle cx="14" cy="50" r="4" fill="#d6402a"/>',
+  map: '<rect x="12" y="18" width="76" height="64" fill="#c2532f"/><path d="M12 60 Q35 40 55 58 T88 50 V82 H12Z" fill="#8f3a22"/><circle cx="62" cy="38" r="9" fill="#eab422"/><path d="M62 30 l3 6 6 1-4 5 1 6-6-3-6 3 1-6-4-5 6-1z" fill="#161412"/>',
+  transit: '<circle cx="16" cy="50" r="9" fill="#1f57a4"/><circle cx="86" cy="50" r="7" fill="#d6402a"/><path d="M27 50 H76" stroke="#fffff3" stroke-width="2" stroke-dasharray="4 4"/><path d="M48 42 L62 50 L48 58 Z" fill="#eab422"/>',
+  descent: '<rect x="0" y="0" width="100" height="100" fill="#d98a5c"/><path d="M0 70 L25 55 L45 66 L70 48 L100 62 V100 H0Z" fill="#8f3a22"/><rect x="58" y="60" width="18" height="9" fill="#e9e4da"/><circle cx="61" cy="71" r="3" fill="#161412"/><circle cx="73" cy="71" r="3" fill="#161412"/>',
+  hubs: '<circle cx="38" cy="46" r="18" fill="#efe9dc" stroke="#161412" stroke-width="3"/><circle cx="38" cy="46" r="5" fill="#d6402a"/><g fill="#1f3f7a">' + [0, 1, 2].map((r) => [0, 1].map((c) => `<rect x="${64 + c * 13}" y="${26 + r * 16}" width="11" height="12"/>`).join('')).join('') + '</g>',
+  routes: '<circle cx="18" cy="76" r="7" fill="#fffff3"/><circle cx="82" cy="22" r="7" fill="#d6402a"/><path d="M18 76 C40 70 30 40 52 44 S70 30 82 22" fill="none" stroke="#eab422" stroke-width="4"/><circle cx="52" cy="44" r="5" fill="#fffff3"/>',
+  guides: '<path d="M14 24 H48 V80 H14Z" fill="#efe9dc"/><path d="M52 24 H86 V80 H52Z" fill="#fffff3"/><path d="M50 22 V82" stroke="#161412" stroke-width="3"/><circle cx="30" cy="44" r="8" fill="#d6402a"/><rect x="60" y="36" width="18" height="4" fill="#161412"/><rect x="60" y="46" width="14" height="4" fill="#161412"/><rect x="60" y="56" width="18" height="4" fill="#161412"/>',
+  dashboard: '<rect x="14" y="58" width="14" height="24" fill="#d6402a"/><rect x="34" y="40" width="14" height="42" fill="#eab422"/><rect x="54" y="26" width="14" height="56" fill="#1f57a4"/><rect x="74" y="48" width="14" height="34" fill="#fffff3"/>',
+  references: '<rect x="20" y="16" width="56" height="70" fill="#fffff3"/><g fill="#161412">' + [0, 1, 2, 3, 4].map((i) => `<rect x="28" y="${28 + i * 11}" width="${i % 2 ? 30 : 40}" height="4"/>`).join('') + '</g><circle cx="74" cy="76" r="12" fill="#d6402a"/>',
+};
+
 /** @type {import('../../core/types.js').ModuleDef} */
 const mod = {
   id: 'home',
@@ -120,7 +133,15 @@ const mod = {
 
           <footer class="home__foot">
             <p class="home__sync" role="status"></p>
-            <p class="home__dedication">${t('home.credit')}</p>
+            <figure class="home__tribute">
+              <img src="./laika-logo.png" alt="" width="96" height="96" />
+              <figcaption>
+                <span class="home__tribute-kicker">${t('home.tribute.kicker')}</span>
+                <strong class="home__tribute-name">LAIKA</strong>
+                <span class="home__tribute-date">${t('home.tribute.date')}</span>
+                <span class="home__dedication">${t('home.credit')}</span>
+              </figcaption>
+            </figure>
           </footer>
         </div>
 
@@ -129,26 +150,18 @@ const mod = {
             <h2 id="home-index-title">${t('home.index')}</h2>
             <button type="button" class="btn" data-action="close">${t('home.back')}</button>
           </div>
-          <div class="home__phases">
+          <div class="home__gallery">
             ${groups
-              .map(
-                (g) => `
-              <section class="home__phase">
-                <h3>${g.label}</h3>
-                <ul>
-                  ${g.mods
-                    .map(
-                      (m) => `
-                    <li>
-                      <a class="home__link" href="#/${m.id}">
-                        <strong>${t(`${m.id}.title`)}</strong>
-                        <span>${t(`${m.id}.desc`)}</span>
-                      </a>
-                    </li>`,
-                    )
-                    .join('')}
-                </ul>
-              </section>`,
+              .flatMap((g) =>
+                g.mods.map(
+                  (m) => `
+                <a class="home__link home__card" href="#/${m.id}">
+                  <svg class="home__thumb" viewBox="0 0 100 100" aria-hidden="true">${THUMBS[m.id] ?? '<circle cx="50" cy="50" r="20" fill="#d6402a"/>'}</svg>
+                  <span class="home__card-phase">${g.label}</span>
+                  <strong>${t(`${m.id}.title`)}</strong>
+                  <span class="home__card-desc">${t(`${m.id}.desc`)}</span>
+                </a>`,
+                ),
               )
               .join('')}
           </div>

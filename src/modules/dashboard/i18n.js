@@ -2,6 +2,7 @@
 export default {
   es: {
     title: 'Reporte de misión',
+    desc: 'Tablero con todo lo de la misión y reporte para imprimir o guardar en PDF.',
     kicker: 'Tablero de la misión',
     namePlaceholder: 'Nombre de la misión',
     nameLabel: 'Nombre de la misión',
@@ -87,6 +88,7 @@ export default {
   },
   en: {
     title: 'Mission report',
+    desc: 'Dashboard with everything about the mission and a report to print or save as PDF.',
     kicker: 'Mission dashboard',
     namePlaceholder: 'Mission name',
     nameLabel: 'Mission name',

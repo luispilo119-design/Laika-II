@@ -247,7 +247,7 @@
   inset: 0;
   overflow-y: auto;
   padding: clamp(20px, 4vh, 40px) clamp(20px, 5vw, 64px);
-  background: color-mix(in srgb, var(--bg-sunken) 94%, transparent);
+  background: color-mix(in srgb, var(--bg-sunken) 98%, transparent);
 }
 
 .home__panel[hidden] {
@@ -353,4 +353,129 @@
     font-size: clamp(36px, 9vw, 64px);
     margin-bottom: 20px;
   }
+}
+
+/* ---------- Homenaje a Laika ---------- */
+
+.home__foot {
+  max-width: 560px;
+}
+
+.home__tribute {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 16px;
+  align-items: center;
+  margin: 10px 0 0;
+  padding: 14px 16px;
+  border-left: 6px solid var(--rust-500);
+  background: color-mix(in srgb, var(--bg-sunken) 80%, transparent);
+}
+
+.home__tribute img {
+  width: 96px;
+  height: 96px;
+  filter: drop-shadow(0 0 16px rgba(224, 138, 99, 0.35));
+}
+
+.home__tribute figcaption {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.home__tribute-kicker {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--rust-300);
+}
+
+.home__tribute-name {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(36px, 4.5vw, 56px);
+  line-height: 0.95;
+  letter-spacing: 0.08em;
+  color: var(--cream);
+}
+
+.home__tribute-date {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text);
+}
+
+.home__tribute .home__dedication {
+  margin-top: 4px;
+  font-size: 15px;
+  line-height: 1.35;
+  color: var(--text);
+}
+
+/* ---------- Índice como galería ---------- */
+
+.home__gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+  max-width: 1100px;
+  margin: 0 auto 24px;
+}
+
+.home__card {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 4px;
+  padding: 0 0 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+  overflow: hidden;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.home__card:hover,
+.home__card:focus-visible {
+  transform: translateY(-3px);
+  border-color: var(--rust-300);
+  background: var(--bg-raised);
+}
+
+.home__thumb {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  display: block;
+  margin-bottom: 8px;
+  background: #0a0706;
+  border-bottom: 1px solid var(--line);
+}
+
+.home__card > span,
+.home__card > strong {
+  padding: 0 14px;
+}
+
+.home__card-phase {
+  font-family: var(--font-mono);
+  font-size: 11px !important;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rust-300) !important;
+}
+
+.home__card strong {
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.home__card-desc {
+  font-size: 13px;
+}
+
+.home__team {
+  white-space: nowrap;
+  font-size: clamp(22px, 2.6vw, 34px);
 }

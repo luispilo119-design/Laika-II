@@ -18,6 +18,7 @@ export default {
       offline: 'Sin conexión con la nube: la misión se guarda en este dispositivo',
     },
     credit: 'En honor a Laika, la perra que viajó al espacio a bordo del Sputnik 2 en 1957.',
+    tribute: { kicker: 'En memoria', date: 'Sputnik 2 · 3 de noviembre de 1957' },
   },
   en: {
     title: 'Start',
@@ -37,5 +38,6 @@ export default {
       offline: 'Cloud unreachable: the mission is saved on this device',
     },
     credit: 'In honor of Laika, the dog who flew to space aboard Sputnik 2 in 1957.',
+    tribute: { kicker: 'In memoriam', date: 'Sputnik 2 · 3 November 1957' },
   },
 };

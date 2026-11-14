@@ -2,7 +2,7 @@
 export default {
   es: {
     title: 'En sitio',
-    desc: 'Baja al sitio de aterrizaje y recorre el terreno a pie.',
+    desc: 'Baja al sitio de aterrizaje y recorre el terreno a pie o manejando el rover.',
     canvasLabel: 'Vista en primera persona del terreno de Marte',
     back: '← Inicio',
     prev: '← {name}',
@@ -43,7 +43,7 @@ export default {
   },
   en: {
     title: 'On site',
-    desc: 'Go down to the landing site and explore the terrain on foot.',
+    desc: 'Go down to the landing site and explore the terrain on foot or driving the rover.',
     canvasLabel: 'First-person view of the Martian terrain',
     back: '← Start',
     prev: '← {name}',
