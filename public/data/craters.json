@@ -1,0 +1,8 @@
+{
+ "generated": "2026-11-14",
+ "source": "Robbins y Hynek (2012), base global de cr\u00e1teres de Marte, v\u00eda USGS Astrogeology",
+ "url": "https://astrogeology.usgs.gov/pygeoapi/collections/mars/robbinsv1",
+ "minDiameterKm": 5,
+ "count": 47598,
+ "record": "int16 lat x 100, int16 lon x 100 (este positivo), uint16 di\u00e1metro km x 10; little-endian"
+}

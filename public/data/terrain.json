@@ -1,0 +1,26 @@
+{
+ "generated": "2026-11-14",
+ "source": "MGS MOLA MEGDR, 16 p\u00edxeles por grado (megt90n000eb.img), NASA PDS Geosciences Node",
+ "url": "https://pds-geosciences.wustl.edu/mgs/mgs-m-mola-5-megdr-l3-v1/mgsl_300x/meg016/megt90n000eb.img",
+ "elevation": {
+  "file": "elevation.bin",
+  "dtype": "int16",
+  "unit": "m sobre el areoide",
+  "nLat": 720,
+  "nLon": 1440,
+  "step": 0.25,
+  "north": 90,
+  "west": -180
+ },
+ "slope": {
+  "file": "slope.bin",
+  "dtype": "uint8",
+  "unit": "grados = valor / 5",
+  "nLat": 360,
+  "nLon": 720,
+  "step": 0.5,
+  "north": 90,
+  "west": -180,
+  "baselineKm": 3.7
+ }
+}

@@ -151,6 +151,7 @@
 
 .mapview__map {
   position: absolute;
+  z-index: 0; /* contexto propio: los controles de Leaflet no tapan paneles ni fichas */
   inset: 0;
   background: var(--bg-sunken);
 }
@@ -231,4 +232,310 @@
 
 .mapview .leaflet-control-attribution a {
   color: var(--rust-300);
+}
+
+/* Capas con escala numérica y condiciones del punto (A3) */
+.mapview__model {
+  color: var(--warn);
+}
+
+.mapview__best-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.mapview__best-actions .btn:first-child {
+  flex: 1;
+}
+
+/* Marcadores: mejores zonas y sitio elegido */
+.mapview__best span,
+.mapview__site span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 2px solid var(--cream);
+  background: var(--bg-sunken);
+  color: var(--cream);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+.mapview__best.is-viable span {
+  background: #2f6b3a;
+}
+
+.mapview__best.is-marginal span {
+  background: #8a6416;
+}
+
+.mapview__best.is-not_viable span {
+  background: #8a3324;
+}
+
+.mapview__site span {
+  background: var(--rust-500);
+  font-size: 18px;
+}
+
+/* ---------- Ficha de zona (A4) ---------- */
+
+.mapview__sheet {
+  position: absolute;
+  z-index: 550;
+  top: 10px;
+  right: 10px;
+  bottom: 10px;
+  width: min(400px, calc(100% - 20px));
+  overflow-y: auto;
+  padding: 16px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.6);
+}
+
+.mapview__sheet[hidden] {
+  display: none;
+}
+
+.zone h2 {
+  font-size: 20px;
+  margin: 0;
+}
+
+.zone h3 {
+  font-size: 12px;
+  font-family: var(--font-mono);
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin: 22px 0 8px;
+}
+
+.zone h4 {
+  font-size: 14px;
+  margin: 0 0 4px;
+  color: var(--cream);
+}
+
+.zone p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.zone small a,
+.zone__scale a,
+.zone__note a {
+  color: var(--rust-300);
+}
+
+.zone__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.zone__coords {
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+}
+
+.zone__score {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--bg-raised);
+  border-left-width: 6px;
+}
+
+.zone__score > strong {
+  font-family: var(--font-mono);
+  font-size: 40px;
+  line-height: 1;
+  color: var(--cream);
+}
+
+.zone__score div {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.zone__verdict {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.zone__score.is-viable {
+  border-left-color: var(--ok);
+}
+.zone__score.is-viable .zone__verdict {
+  color: var(--ok);
+}
+.zone__score.is-marginal {
+  border-left-color: var(--warn);
+}
+.zone__score.is-marginal .zone__verdict {
+  color: var(--warn);
+}
+.zone__score.is-not_viable {
+  border-left-color: var(--bad);
+}
+.zone__score.is-not_viable .zone__verdict {
+  color: var(--bad);
+}
+
+.zone__model {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--warn);
+  border: 1px solid var(--warn);
+  border-radius: 999px;
+  padding: 0 6px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.zone__compare-head {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--text-dim);
+  padding-bottom: 6px;
+}
+
+.zone__compare-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+
+.zone__compare-row h4 {
+  grid-column: 1 / -1;
+}
+
+.zone__note {
+  color: var(--text-dim);
+  font-size: 13px !important;
+  margin-bottom: 10px !important;
+}
+
+.zone__factor {
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+
+.zone__factor.is-nodata {
+  color: var(--text-dim);
+}
+
+.zone__factor-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.zone__factor-head strong {
+  font-family: var(--font-mono);
+  color: var(--cream);
+}
+
+.zone__bar {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
+  margin: 6px 0;
+  overflow: hidden;
+}
+
+.zone__bar i {
+  display: block;
+  height: 100%;
+  background: var(--rust-300);
+}
+
+.zone__factor p,
+.zone__scale {
+  font-size: 13px !important;
+  color: var(--text-dim);
+}
+
+.zone__landing {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+}
+
+.zone__landing li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+}
+
+.zone__landing li span:nth-child(2) {
+  flex: 1;
+}
+
+.zone__landing strong {
+  font-family: var(--font-mono);
+}
+
+.zone__mark {
+  width: 22px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.zone__landing .is-ok .zone__mark {
+  color: var(--ok);
+}
+
+.zone__landing .is-bad .zone__mark,
+.zone__landing .is-bad strong {
+  color: var(--bad);
+}
+
+.zone__actions {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.zone__chosen {
+  color: var(--ok);
+  font-weight: 700;
+}
+
+/* En pantallas angostas la ficha sube desde abajo y deja ver el mapa arriba */
+@media (max-width: 700px) {
+  .mapview__sheet {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-height: 62%;
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
 }

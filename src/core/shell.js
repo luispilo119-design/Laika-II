@@ -111,11 +111,35 @@ export function startShell(root) {
     }
   }
 
-  window.addEventListener('hashchange', render);
-  store.subscribe((_state, path) => {
-    if (path === 'lang') render();
+  // Los módulos muestrean el entorno de forma síncrona: antes de montar nada se cargan las rejillas.
+  let dataReady = false;
+  function boot() {
+    root.className = 'app';
+    root.replaceChildren(el('p', 'app__loading', t('core.loading')));
+    env
+      .ready()
+      .then(() => {
+        dataReady = true;
+        render();
+      })
+      .catch((err) => {
+        console.error('[shell] no se pudieron cargar los datos', err);
+        const box = el('div', 'app__loading');
+        const retry = el('button', 'btn btn--primary', t('core.retry'));
+        retry.type = 'button';
+        retry.addEventListener('click', boot);
+        box.append(el('p', null, t('core.loadError')), retry);
+        root.replaceChildren(box);
+      });
+  }
+
+  window.addEventListener('hashchange', () => {
+    if (dataReady) render();
   });
-  render();
+  store.subscribe((_state, path) => {
+    if (path === 'lang' && dataReady) render();
+  });
+  boot();
 
   return ctx;
 }
