@@ -14,7 +14,7 @@ export default {
     fallback: 'Este dispositivo no puede mostrar la vista 3D. A la derecha están las condiciones del sitio.',
     descend: 'Bajar al sitio',
     decorNote:
-      'La forma del terreno ({km} km de lado) sale de la rejilla de elevación. El relieve fino, las rocas y los colores son decorativos, no datos.',
+      'La forma del terreno ({km} km de lado) sale de la rejilla de elevación, que tiene celdas de unos 15 km: a esta escala llega interpolada. El relieve fino, las rocas y los colores son decorativos, no datos.',
     hint: 'Muévete con W, A, S, D o las flechas (Mayús para correr) y arrastra para mirar. En tablet, usa la palanca de la izquierda.',
     hud: {
       title: 'Condiciones en tu posición',
@@ -25,6 +25,7 @@ export default {
       slope: 'Pendiente',
       dust: 'Polvo',
       position: 'Posición',
+      modeled: '* Valor de un modelo, no de una medición.',
       hour: 'Hora local',
       hourNote: 'Vista previa: mueve la hora para ver el cielo; no cambia el reloj de la misión. La posición del Sol es aproximada.',
     },
@@ -51,7 +52,7 @@ export default {
     fallback: 'This device cannot show the 3D view. The site conditions are on the right.',
     descend: 'Go down to the site',
     decorNote:
-      'The shape of the terrain ({km} km across) comes from the elevation grid. Fine relief, rocks and colors are decorative, not data.',
+      'The shape of the terrain ({km} km across) comes from the elevation grid, whose cells are about 15 km: at this scale it arrives interpolated. Fine relief, rocks and colors are decorative, not data.',
     hint: 'Move with W, A, S, D or the arrow keys (Shift to run) and drag to look around. On a tablet, use the stick on the left.',
     hud: {
       title: 'Conditions at your position',
@@ -62,6 +63,7 @@ export default {
       slope: 'Slope',
       dust: 'Dust',
       position: 'Position',
+      modeled: '* Value from a model, not a measurement.',
       hour: 'Local time',
       hourNote: 'Preview: move the hour to see the sky; it does not change the mission clock. The Sun’s position is approximate.',
     },

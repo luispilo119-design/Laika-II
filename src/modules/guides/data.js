@@ -158,6 +158,23 @@ export const GUIDES = [
 
 /**
  * Necesidades diarias del cuerpo. Los VALORES no están aquí: los entrega la Parte A en
- * `src/core/human-needs.js` (ver needs.js). Mientras no exista, cada tarjeta dice "sin datos".
+ * `src/core/human-needs.js` (ver needs.js). Los ids son los de ese archivo.
+ * NEED_ORDER es el orden en pantalla; las de ESSENTIAL_NEEDS se muestran siempre, con
+ * "sin datos" si el archivo no las trae. Cualquier otra que traiga el archivo se añade al final.
  */
-export const NEED_IDS = ['water', 'oxygen', 'food', 'pressure', 'temperature', 'radiation'];
+export const NEED_ORDER = [
+  'potableWater',
+  'drinkingWater',
+  'foodWater',
+  'oxygen',
+  'carbonDioxide',
+  'food',
+  'foodEnergy',
+  'metabolicHeat',
+  'cabinPressure',
+  'oxygenPressure',
+  'temperature',
+  'careerRadiation',
+];
+
+export const ESSENTIAL_NEEDS = ['potableWater', 'oxygen', 'food', 'cabinPressure', 'temperature', 'careerRadiation'];

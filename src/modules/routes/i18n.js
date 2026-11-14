@@ -71,7 +71,7 @@ export default {
       markNote: 'La línea vertical marca el punto de mayor pendiente.',
       stepsTitle: 'Guía por tramos',
       save: 'Guardar ruta',
-      gridNote: 'Calculada sobre una rejilla de {n} × {n} celdas (unos {km} km por celda): no ve obstáculos más pequeños que eso.',
+      gridNote: 'Calculada sobre una rejilla de {n} × {n} celdas (unos {km} km por celda). Los datos de elevación tienen celdas de unos 15 km y el catálogo solo incluye cráteres de 5 km o más: la ruta no ve obstáculos más pequeños.',
     },
     step: {
       depart: 'Km 0 · Sal hacia el {dir}.',
@@ -171,7 +171,7 @@ export default {
       markNote: 'The vertical line marks the steepest point.',
       stepsTitle: 'Leg-by-leg guide',
       save: 'Save route',
-      gridNote: 'Computed on a grid of {n} × {n} cells (about {km} km per cell): it cannot see obstacles smaller than that.',
+      gridNote: 'Computed on a grid of {n} × {n} cells (about {km} km per cell). Elevation data has cells of about 15 km and the catalog only includes craters 5 km or larger: the route cannot see smaller obstacles.',
     },
     step: {
       depart: 'Km 0 · Head {dir}.',

@@ -7,12 +7,14 @@
  */
 import './guides.css';
 import messages from './i18n.js';
-import { REFERENCES, refOf, GUIDES, NEED_IDS } from './data.js';
+import { REFERENCES, refOf, GUIDES, NEED_ORDER, ESSENTIAL_NEEDS } from './data.js';
 import { readNeeds } from './needs.js';
 
 // Si la Parte A todavía no creó el archivo, esto devuelve un objeto vacío (no falla al compilar).
 const needsModule = Object.values(import.meta.glob('../../core/human-needs.js', { eager: true }))[0];
 const NEEDS = readNeeds(needsModule);
+// Las fuentes de esos valores también cuentan como referencias de este módulo.
+const NEED_REFERENCES = Array.isArray(needsModule?.HUMAN_REFERENCES) ? needsModule.HUMAN_REFERENCES : [];
 
 const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ESCAPES[ch]);
@@ -27,16 +29,18 @@ const mod = {
   owner: 'B',
   task: 'B6',
   messages,
-  references: REFERENCES,
+  references: [...REFERENCES, ...NEED_REFERENCES],
   mount(el, ctx) {
     const { t, store, navigate, modules } = ctx;
     const { lang } = store.get();
     const locale = lang === 'es' ? 'es-MX' : 'en-US';
     const num = new Intl.NumberFormat(locale, { maximumFractionDigits: 2 });
-    const allRefs = new Map(modules.flatMap((m) => m.references ?? []).map((ref) => [ref.id, ref]));
 
     const link = (ref) =>
       `<a href="${esc(ref.url)}" target="_blank" rel="noopener noreferrer">${esc([ref.org, ref.title].filter(Boolean).join(' — '))}</a>`;
+    // En las tarjetas de necesidades la misma fuente se repite: basta la organización como enlace.
+    const shortLink = (ref) =>
+      `<a href="${esc(ref.url)}" target="_blank" rel="noopener noreferrer" title="${esc(ref.title)}">${esc(ref.org || ref.title)}</a>`;
     const sources = (refIds, label = t('guides.source')) => `
       <p class="guides__src"><span>${label}:</span>${refIds.map((id) => link(refOf(id))).join('')}</p>`;
 
@@ -44,9 +48,9 @@ const mod = {
 
     function needCard(id) {
       const need = NEEDS.get(id);
-      const known = NEED_IDS.includes(id);
+      const known = NEED_ORDER.includes(id);
       const name = known ? t(`guides.need.${id}.name`) : esc(id);
-      const why = known ? `<p class="guides__need-why">${t(`guides.need.${id}.why`)}</p>` : '';
+      const why = ESSENTIAL_NEEDS.includes(id) ? `<p class="guides__need-why">${t(`guides.need.${id}.why`)}</p>` : '';
       if (!need) {
         return `
           <article class="guides__need">
@@ -55,25 +59,34 @@ const mod = {
             ${why}
           </article>`;
       }
-      const value = Array.isArray(need.value)
-        ? t('guides.needs.range', { low: num.format(need.value[0]), high: num.format(need.value[1]) })
-        : typeof need.value === 'number'
-          ? num.format(need.value)
-          : esc(need.value);
-      const note = typeof need.note === 'string' ? need.note : (need.note?.[lang] ?? need.note?.es ?? '');
-      const ref = need.ref ?? (need.refId ? allRefs.get(need.refId) : null);
+      const unit = esc(need.unit);
+      const limits =
+        need.min !== null && need.max !== null
+          ? t('guides.needs.range', { low: num.format(need.min), high: num.format(need.max), unit })
+          : need.max !== null
+            ? t('guides.needs.max', { v: num.format(need.max), unit })
+            : need.min !== null
+              ? t('guides.needs.min', { v: num.format(need.min), unit })
+              : '';
+      // Con valor nominal, los límites van debajo; sin él, el límite es el dato principal.
+      const main = need.value !== null ? `${num.format(need.value)} <span>${unit}</span>` : limits;
       return `
         <article class="guides__need">
           <h3>${name}</h3>
-          <p class="guides__need-value">${value} <span>${esc(need.unit)}</span></p>
+          <p class="guides__need-value">${main}</p>
+          ${need.value !== null && limits ? `<p class="guides__need-note">${limits}</p>` : ''}
           ${why}
-          ${note ? `<p class="guides__need-note">${esc(note)}</p>` : ''}
-          ${ref?.url ? `<p class="guides__src"><span>${t('guides.source')}:</span>${link(ref)}</p>` : ''}
+          ${need.where ? `<p class="guides__need-note">${t('guides.needs.where', { where: esc(need.where) })}</p>` : ''}
+          ${need.ref ? `<p class="guides__src"><span>${t('guides.source')}:</span>${shortLink(need.ref)}</p>` : ''}
         </article>`;
     }
 
-    // Primero las seis previstas; después, cualquier otra que traiga el archivo de la Parte A.
-    const needIds = [...NEED_IDS, ...[...NEEDS.keys()].filter((id) => !NEED_IDS.includes(id))];
+    // Primero el orden previsto (las esenciales siempre; las demás, solo si hay dato) y después
+    // cualquier otra necesidad que traiga el archivo de la Parte A.
+    const needIds = [
+      ...NEED_ORDER.filter((id) => ESSENTIAL_NEEDS.includes(id) || NEEDS.has(id)),
+      ...[...NEEDS.keys()].filter((id) => !NEED_ORDER.includes(id)),
+    ];
 
     el.innerHTML = `
       <div class="guides">

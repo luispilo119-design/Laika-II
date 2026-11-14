@@ -74,6 +74,7 @@ const mod = {
           <dl>
             ${READOUTS.map((id) => `<div><dt>${t(`descent.hud.${id}`)}</dt><dd data-read="${id}">—</dd></div>`).join('')}
           </dl>
+          <p class="descent__note" data-modeled hidden>${t('descent.hud.modeled')}</p>
           <label class="descent__hour">
             <span>${t('descent.hud.hour')} <output data-read="hour"></output></span>
             <input type="range" min="0" max="24" step="0.5" value="${hour()}" data-hour />
@@ -110,6 +111,7 @@ const mod = {
     const hint = el.querySelector('.descent__hint');
     const hourSlider = el.querySelector('[data-hour]');
     const read = (id) => el.querySelector(`[data-read="${id}"]`);
+    const modeledNote = el.querySelector('[data-modeled]');
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
     let alive = true;
@@ -126,12 +128,16 @@ const mod = {
       const where = scene ? scene.state() : { x: 0, z: 0 };
       const { lat, lon } = toLatLon(site, where.x, where.z);
       const sample = env.sample(lat, lon, { ...clock, localHour: hour() });
-      read('temperature').textContent = t('descent.unit.celsius', { v: num(sample.temperatureC) });
-      read('pressure').textContent = t('descent.unit.pascal', { v: num(sample.pressurePa) });
-      read('radiation').textContent = t('descent.unit.msvDay', { v: num(sample.radiationMSvDay, 2) });
+      // Los campos que salen de un modelo (no de una medición) llevan un asterisco y su nota.
+      const modeled = sample.modeled ?? [];
+      const mark = (field) => (modeled.includes(field) ? ' *' : '');
+      read('temperature').textContent = t('descent.unit.celsius', { v: num(sample.temperatureC) }) + mark('temperatureC');
+      read('pressure').textContent = t('descent.unit.pascal', { v: num(sample.pressurePa) }) + mark('pressurePa');
+      read('radiation').textContent = t('descent.unit.msvDay', { v: num(sample.radiationMSvDay, 2) }) + mark('radiationMSvDay');
       read('elevation').textContent = t('descent.unit.meters', { v: num(field ? field.elevationAt(where.x, where.z) : sample.elevationM) });
       read('slope').textContent = t('descent.unit.degrees', { v: num(sample.slopeDeg, 1) });
-      read('dust').textContent = t('descent.unit.tau', { v: num(sample.dustOpacity, 2) });
+      read('dust').textContent = t('descent.unit.tau', { v: num(sample.dustOpacity, 2) }) + mark('dustOpacity');
+      modeledNote.hidden = modeled.length === 0;
       read('position').textContent = coords(lat, lon);
       read('hour').textContent = clockText(hour());
       return sample;

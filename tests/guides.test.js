@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readNeeds } from '../src/modules/guides/needs.js';
-import { REFERENCES, refOf, GUIDES, NEED_IDS } from '../src/modules/guides/data.js';
+import { REFERENCES, refOf, GUIDES, NEED_ORDER, ESSENTIAL_NEEDS } from '../src/modules/guides/data.js';
 import messages from '../src/modules/guides/i18n.js';
 
 const REF = { title: 'NASA-STD-3001', org: 'NASA', url: 'https://www.nasa.gov/x' };
@@ -13,25 +13,44 @@ test('sin archivo de la Parte A no hay valores: todo queda como "sin datos"', ()
   assert.equal(readNeeds({ default: 'texto' }).size, 0);
 });
 
-test('acepta una lista, un objeto por id o un export default', () => {
-  const list = readNeeds({ HUMAN_NEEDS: [{ id: 'water', value: 3.5, unit: 'L', ref: REF }] });
-  assert.deepEqual(list.get('water'), { id: 'water', value: 3.5, unit: 'L', note: null, ref: REF, refId: null });
-
-  const byId = readNeeds({ HUMAN_NEEDS: { oxygen: { value: [0.8, 0.9], unit: 'kg', refId: 'std3001' } } });
-  assert.deepEqual(byId.get('oxygen').value, [0.8, 0.9]);
-  assert.equal(byId.get('oxygen').refId, 'std3001');
-
-  const asDefault = readNeeds({ default: [{ id: 'food', value: 'ver la norma', note: { es: 'nota', en: 'note' } }] });
-  assert.equal(asDefault.get('food').value, 'ver la norma');
-  assert.deepEqual(asDefault.get('food').note, { es: 'nota', en: 'note' });
+test('lee el formato de src/core/human-needs.js: valor, límites, origen y referencia por id', () => {
+  const needs = readNeeds({
+    HUMAN_NEEDS: {
+      oxygen: { id: 'oxygen', value: 0.82, unit: 'kg/d', refId: 'bvad', where: 'Tabla 3-33' },
+      cabinPressure: { id: 'cabinPressure', value: 101, min: 48, max: 102.7, unit: 'kPa', refId: 'bvad', where: 'Tabla 4-1' },
+      careerRadiation: { id: 'careerRadiation', max: 600, unit: 'mSv', refId: 'no-registrada', where: 'V1 4030' },
+    },
+    HUMAN_REFERENCES: [{ id: 'bvad', ...REF }],
+  });
+  assert.deepEqual(needs.get('oxygen'), { id: 'oxygen', value: 0.82, min: null, max: null, unit: 'kg/d', where: 'Tabla 3-33', ref: REF });
+  assert.deepEqual([needs.get('cabinPressure').min, needs.get('cabinPressure').max], [48, 102.7]);
+  const career = needs.get('careerRadiation');
+  assert.deepEqual([career.value, career.max], [null, 600], 'un límite sin valor nominal también es un dato');
+  assert.equal(career.ref, null, 'una referencia que no está registrada no se inventa');
 });
 
-test('un valor ausente o inválido no se muestra como cifra', () => {
+test('el archivo real de la Parte A trae las seis necesidades esenciales con su fuente', async () => {
+  const needs = readNeeds(await import('../src/core/human-needs.js'));
+  for (const id of ESSENTIAL_NEEDS) {
+    assert.ok(needs.has(id), `falta ${id}`);
+    assert.ok(needs.get(id).ref?.url, `${id} sin referencia`);
+  }
+  for (const id of needs.keys()) assert.ok(NEED_ORDER.includes(id), `sin nombre en pantalla: ${id}`);
+});
+
+test('acepta también una lista, un par [mínimo, máximo] y un export default', () => {
+  const list = readNeeds({ HUMAN_NEEDS: [{ id: 'oxygen', value: 0.8, unit: 'kg/d', ref: REF }] });
+  assert.equal(list.get('oxygen').ref.url, REF.url);
+  const pair = readNeeds({ default: { temperature: { value: [18, 27], unit: '°C' } } });
+  assert.deepEqual([pair.get('temperature').value, pair.get('temperature').min, pair.get('temperature').max], [null, 18, 27]);
+});
+
+test('una necesidad sin ningún número no se muestra como cifra', () => {
   const needs = readNeeds({
     HUMAN_NEEDS: [
       { id: 'water', value: null },
       { id: 'oxygen', value: NaN },
-      { id: 'food', value: [1] },
+      { id: 'food', value: 'mucho' },
       { id: 'pressure' },
       { value: 5 },
       null,
@@ -64,11 +83,14 @@ test('cada guía tiene hechos con fuente, pasos y textos en los dos idiomas', ()
       assert.equal(Object.keys(text.step).length, guide.steps, `${lang} ${guide.id}: número de pasos`);
     }
   }
-  for (const id of NEED_IDS) for (const lang of ['es', 'en']) assert.ok(messages[lang].need[id].name && messages[lang].need[id].why);
+  for (const lang of ['es', 'en']) {
+    for (const id of NEED_ORDER) assert.ok(messages[lang].need[id].name, `${lang}: falta el nombre de ${id}`);
+    for (const id of ESSENTIAL_NEEDS) assert.ok(messages[lang].need[id].why, `${lang}: falta el porqué de ${id}`);
+  }
 });
 
 test('las tarjetas de necesidades no traen cifras escritas a mano', () => {
   for (const lang of ['es', 'en']) {
-    for (const id of NEED_IDS) assert.doesNotMatch(messages[lang].need[id].why, /\d/, `${lang}.need.${id}`);
+    for (const id of NEED_ORDER) assert.doesNotMatch(JSON.stringify(messages[lang].need[id]), /\d/, `${lang}.need.${id}`);
   }
 });
