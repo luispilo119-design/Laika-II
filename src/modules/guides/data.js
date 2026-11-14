@@ -89,6 +89,31 @@ export const REFERENCES = [
     url: 'https://www.nasa.gov/humans-in-space/chapea/',
     verified: true,
   },
+  {
+    // Diario: un adulto promedio necesita de 7 a 9 h de sueño. Mismo id que en el módulo transit.
+    id: 'nasa-sleep-brief',
+    title: 'NASA-STD-3001 Technical Brief: Sleep Accommodations (OCHMO-TB-041)',
+    org: 'NASA Office of the Chief Health and Medical Officer',
+    url: 'https://www.nasa.gov/wp-content/uploads/2023/12/ochmo-tb-041-sleep-accommodations.pdf',
+    verified: true,
+  },
+  {
+    // Diario: las tripulaciones de la estación hacen en promedio dos horas de ejercicio al día.
+    id: 'nasa-bone-muscle',
+    title: 'Counteracting Bone and Muscle Loss in Microgravity',
+    org: 'NASA',
+    url: 'https://www.nasa.gov/missions/station/iss-research/counteracting-bone-and-muscle-loss-in-microgravity/',
+    verified: true,
+  },
+  {
+    // Diario: RAD midió en promedio 1.8 mSv por día dentro de la nave rumbo a Marte.
+    id: 'jpl-rad-cruise',
+    title: "Data From NASA Rover's Voyage to Mars Aids Planning",
+    org: 'NASA/JPL',
+    url: 'https://www.jpl.nasa.gov/news/data-from-nasa-rovers-voyage-to-mars-aids-planning/',
+    year: 2013,
+    verified: true,
+  },
 ];
 
 const byId = new Map(REFERENCES.map((ref) => [ref.id, ref]));

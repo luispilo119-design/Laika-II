@@ -31,6 +31,16 @@ export function isEmptyMission(mission) {
   );
 }
 
+const CONFIG_HINT =
+  'Revisa en el panel de Supabase: Authentication → Sign In / Providers → "Allow anonymous sign-ins".';
+
+/** true si el error es de configuración del proyecto (no de red): reintentar no lo arregla. */
+export function isConfigError(err) {
+  const code = err?.code ?? err?.error_code;
+  if (code === 'anonymous_provider_disabled' || code === 'signup_disabled') return true;
+  return [400, 401, 403, 422].includes(err?.status);
+}
+
 /** Abre la sesión anónima si todavía no hay una. Lanza si no se pudo. */
 export async function ensureSession(client) {
   const current = await client.auth.getSession();
@@ -58,6 +68,7 @@ export function createMissionSync({ client, store, storage, delayMs = 1500, onSt
   let saving = null;
   let queued = false;
   let unsubscribe = null;
+  let blocked = null; // error de configuración del proyecto: no se reintenta hasta recargar
 
   const localHash = () => missionHash(store.get().mission);
   const isDirty = () => meta.syncedHash !== localHash();
@@ -137,6 +148,7 @@ export function createMissionSync({ client, store, storage, delayMs = 1500, onSt
   function connect() {
     if (connecting) return connecting;
     connecting = (async () => {
+      if (blocked) return false;
       if (!isOnline()) {
         onStatus('offline');
         return false;
@@ -155,7 +167,11 @@ export function createMissionSync({ client, store, storage, delayMs = 1500, onSt
         }
         onStatus('synced');
         return true;
-      } catch {
+      } catch (err) {
+        if (isConfigError(err)) {
+          blocked = err;
+          console.warn(`[sync] Supabase rechazó la sesión (${err.code ?? err.status}): ${err.message}. ${CONFIG_HINT}`);
+        }
         onStatus('offline');
         return false;
       } finally {

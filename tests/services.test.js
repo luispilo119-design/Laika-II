@@ -298,3 +298,34 @@ test('una llave de servidor nunca se acepta en el navegador', () => {
   assert.equal(isServerKey(jwt({ role: 'anon' })), false);
   assert.equal(isServerKey('sb_publishable_abc'), false);
 });
+
+test('login anónimo desactivado en Supabase: avisa una vez y no reintenta en cada cambio', async () => {
+  let signIns = 0;
+  const err = Object.assign(new Error('Anonymous sign-ins are disabled'), { code: 'anonymous_provider_disabled', status: 422 });
+  const client = {
+    auth: {
+      getSession: async () => ({ data: { session: null }, error: null }),
+      signInAnonymously: async () => {
+        signIns++;
+        return { data: null, error: err };
+      },
+    },
+  };
+  const warn = console.warn;
+  const warnings = [];
+  console.warn = (msg) => warnings.push(String(msg));
+  try {
+    const { store, sync, statuses } = setup({ client });
+    assert.equal(await sync.start(), false);
+    store.set('mission.site', SITE);
+    store.set('mission.name', 'Prueba');
+    await wait(40);
+    assert.equal(await sync.flush(), false);
+    assert.equal(signIns, 1, 'un solo intento');
+    assert.equal(statuses.at(-1), 'offline');
+    assert.equal(warnings.length, 1);
+    assert.match(warnings[0], /anonymous/i);
+  } finally {
+    console.warn = warn;
+  }
+});
