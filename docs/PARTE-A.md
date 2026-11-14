@@ -83,12 +83,20 @@ ventana da una duración distinta (entre unos 236 y 282 días). Los valores de l
 
 ## A2 · Mapa con capas — `src/modules/map/`
 
-- [x] Mapa base con dos mosaicos de Mars Trek (imagen Viking y topografía MOLA).
-- [ ] Registro de capas dentro del módulo: cada capa es una entrada con nombre, tipo, leyenda y
-      referencia. Selector con opacidad.
-- [ ] Capas superpuestas: hielo subterráneo (SWIM), temperatura, radiación, polvo, cráteres grandes,
-      sitios de aterrizaje históricos y recorridos de Curiosity y Perseverance.
-- [ ] Leyenda por capa con unidades y fuente.
+- [x] Mapas base de Mars Trek: MOLA en color, Viking, MOLA + HRSC (200 m) y THEMIS de día (100 m).
+- [x] Registro de capas en `layers.js`: cada capa es una entrada con su id de Trek, zoom nativo,
+      leyenda y referencia. Selector con opacidad.
+- [x] Capas de datos de Trek: inercia térmica, cobertura de polvo, albedo, rugosidad e infrarrojo
+      nocturno. Leyenda relativa y fuente por capa (Trek no publica la escala numérica).
+- [x] Sitios de aterrizaje (`sites.js`, coordenadas del catálogo NSSDCA) y recorridos reales de
+      Perseverance y Curiosity (`tools/build_rovers.py` → `public/data/rovers.json`).
+- [ ] Pasan a A3 porque necesitan la rejilla de datos: hielo subterráneo (SWIM), temperatura por
+      hora, radiación y cráteres grandes.
+
+**Notas:** `trekLayer(trekId, opts)` en `src/core/marsmap.js` añade cualquier capa del catálogo de
+Trek (https://trek.nasa.gov/tiles/apidoc/trekAPI.html?body=mars); la Parte B puede usarlo.
+Para actualizar los recorridos: `python tools/build_rovers.py`. El mosaico CTX de 5 m no se
+integró: se sirve con otro esquema de teselas (512 px) y queda en el backlog.
 
 **Hecho cuando:** se pueden encender y apagar las capas en tablet y cada una muestra su leyenda y
 su fuente.

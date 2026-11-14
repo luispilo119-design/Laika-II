@@ -19,6 +19,11 @@ falta y cambia el estado a "verificada" (y `verified: true` en el código).
 
 | Tema | Fuente | Enlace | Estado |
 |---|---|---|---|
+| Catálogo de capas y mosaicos | NASA Mars Trek, API WMTS | https://trek.nasa.gov/tiles/apidoc/trekAPI.html?body=mars | verificada 2026-11-14 |
+| Inercia térmica, polvo, albedo, rugosidad, infrarrojo | Resúmenes de producto de Mars Trek (MGS TES, MGS MOLA, Odyssey THEMIS) | https://trek.nasa.gov/mars/TrekWS/rest/cat/abstract?label=TES_Thermal_Inertia (y uno por capa, ver `src/modules/map/layers.js`) | verificada 2026-11-14 |
+| Sitios de aterrizaje | NASA NSSDCA Master Catalog | https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=1975-075C (y uno por misión, ver `src/modules/map/sites.js`) | verificada 2026-11-14; InSight no trae coordenadas |
+| Recorrido de Perseverance | NASA/JPL, datos del mapa "Where is Perseverance?" | https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json | verificada 2026-11-14 |
+| Recorrido de Curiosity | NASA/JPL, datos del mapa "Where is Curiosity?" | https://mars.nasa.gov/mmgis-maps/MSL/Layers/json/MSL_waypoints.json | verificada 2026-11-14 |
 | Posición de los planetas | JPL SSD, elementos orbitales aproximados (Tabla 1, 1800–2050) | https://ssd.jpl.nasa.gov/planets/approx_pos.html | verificada 2026-11-14 |
 | Tiempo y estación marciana (Ls) | NASA GISS, algoritmo de Mars24 (Allison y McEwen, 2000) | https://www.giss.nasa.gov/tools/mars24/help/algorithm.html | verificada 2026-11-14 |
 | Estaciones de Marte según Ls | NASA GISS, notas técnicas de Mars24 | https://www.giss.nasa.gov/tools/mars24/help/notes.html | verificada 2026-11-14 |
