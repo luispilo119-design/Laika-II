@@ -435,10 +435,11 @@ export function measureRoute(grid, mask, profile, points) {
 
 /**
  * Tramos de la guía, ordenados por kilómetro.
- * @returns {{ type: 'depart'|'crater'|'slope'|'high'|'arrive', km: number, [key: string]: any }[]}
+ * @returns {{ type: 'depart'|'exit'|'crater'|'slope'|'high'|'enter'|'arrive', km: number, [key: string]: any }[]}
  */
-export function describeRoute(route, points, craters) {
+export function describeRoute(route, points, craters, inside = { origin: [], destination: [] }) {
   const steps = [{ type: 'depart', km: 0, dir: compass8(bearingDeg(points[0], points[1])) }];
+  for (const crater of inside.origin) steps.push({ type: 'exit', km: 0, diameterKm: crater.diameterKm });
   for (const crater of craters) {
     const center = [crater.lat, crater.lon];
     const radius = crater.diameterKm / 2;
@@ -465,6 +466,7 @@ export function describeRoute(route, points, craters) {
   if (route.highest.km > 0 && route.highest.km < route.distanceKm) {
     steps.push({ type: 'high', km: route.highest.km, elevM: route.highest.elevM });
   }
+  for (const crater of inside.destination) steps.push({ type: 'enter', km: route.distanceKm, diameterKm: crater.diameterKm });
   steps.push({ type: 'arrive', km: route.distanceKm, hours: route.durationH });
   return steps.sort((a, b) => a.km - b.km);
 }
@@ -477,19 +479,33 @@ export function describeRoute(route, points, craters) {
  * @param {{ speedKmh: number, maxSlopeDeg: number, avoidCraterKm: number }} input.profile
  * @param {import('../../core/types.js').ElevationGrid} input.elevation
  * @param {{ lat: number, lon: number, diameterKm: number }[]} input.craters
- * @returns {{ ok: true, points: [number, number][], steps: any[], avoided: any[], distanceKm: number, durationH: number,
- *   samples: any[], maxSlope: any, highest: any, lowest: any } | { ok: false, reason: 'origin_blocked'|'destination_blocked'|'no_path' }}
+ * @returns {{ ok: true, points: [number, number][], steps: any[], avoided: any[], inside: { origin: any[], destination: any[] },
+ *   distanceKm: number, durationH: number, samples: any[], maxSlope: any, highest: any, lowest: any }
+ *   | { ok: false, reason: 'origin_blocked'|'destination_blocked'|'no_path', avoided: any[], inside: { origin: any[], destination: any[] } }}
+ *   `avoided` = cráteres que la ruta rodea; `inside` = cráteres que contienen el origen o el destino.
  */
 export function planRoute({ origin, destination, profile, elevation, craters }) {
   const grid = makeGrid(elevation);
-  const avoided = craters.filter((crater) => crater.diameterKm >= profile.avoidCraterKm);
+  const candidates = craters.filter((crater) => crater.diameterKm >= profile.avoidCraterKm);
+  // Muchos sitios de aterrizaje están dentro de un cráter (Jezero, Gale). Un cráter que contiene
+  // el origen o el destino no se puede "evitar": se deja libre y la guía avisa que se sale o se
+  // entra en él. Su borde solo cuenta por la pendiente que marque la rejilla de elevación.
+  const contains = (crater, point) =>
+    distanceKm([crater.lat, crater.lon], point) <= (crater.diameterKm / 2) * CRATER_BLOCK_FACTOR;
+  const inside = {
+    origin: candidates.filter((crater) => contains(crater, origin)),
+    destination: candidates.filter((crater) => contains(crater, destination)),
+  };
+  const exempt = new Set([...inside.origin, ...inside.destination]);
+  const avoided = candidates.filter((crater) => !exempt.has(crater));
   const mask = craterMask(grid, avoided);
   const start = grid.toCell(origin);
   const goal = grid.toCell(destination);
-  if (mask.blocked[start[0] * grid.width + start[1]]) return { ok: false, reason: 'origin_blocked' };
-  if (mask.blocked[goal[0] * grid.width + goal[1]]) return { ok: false, reason: 'destination_blocked' };
+  // Solo puede pasar por el redondeo a celdas, cuando el punto queda pegado al borde de otro cráter.
+  if (mask.blocked[start[0] * grid.width + start[1]]) return { ok: false, reason: 'origin_blocked', avoided, inside };
+  if (mask.blocked[goal[0] * grid.width + goal[1]]) return { ok: false, reason: 'destination_blocked', avoided, inside };
   const cells = findPath(grid, mask, profile, start, goal);
-  if (!cells) return { ok: false, reason: 'no_path' };
+  if (!cells) return { ok: false, reason: 'no_path', avoided, inside };
   const smooth = smoothPath(grid, mask, profile, cells);
   const points = smooth.map((cell) => grid.toPoint(cell));
   // Los extremos son los puntos exactos que marcó la persona, no el centro de su celda.
@@ -497,5 +513,5 @@ export function planRoute({ origin, destination, profile, elevation, craters }) 
   if (points.length === 1) points.push(destination);
   else points[points.length - 1] = destination;
   const measured = measureRoute(grid, mask, profile, points);
-  return { ok: true, points, avoided, steps: describeRoute(measured, points, avoided), ...measured };
+  return { ok: true, points, avoided, inside, steps: describeRoute(measured, points, avoided, inside), ...measured };
 }

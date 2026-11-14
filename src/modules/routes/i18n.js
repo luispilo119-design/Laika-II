@@ -83,6 +83,8 @@ export default {
     },
     step: {
       depart: 'Km 0 · Sal hacia el {dir}.',
+      exit: 'Km 0 · El origen está dentro de un cráter de {size} km de diámetro: la ruta sale de él.',
+      enter: 'Km {km} · El destino está dentro de un cráter de {size} km de diámetro: la ruta entra en él.',
       crater: 'Km {km} · Rodea por el {side} un cráter de {size} km de diámetro.',
       slope: 'Km {km} · Pendiente máxima de la ruta: {deg}°.',
       high: 'Km {km} · Punto más alto: {elev} m.',
@@ -91,8 +93,8 @@ export default {
     fail: {
       same: 'El origen y el destino están en el mismo lugar: marca dos puntos distintos.',
       data: 'No se pudieron cargar los datos del terreno. Vuelve a intentarlo.',
-      origin_blocked: 'El origen está dentro de un cráter que este vehículo ({vehicle}) evita. Muévelo o cambia de vehículo.',
-      destination_blocked: 'El destino está dentro de un cráter que este vehículo ({vehicle}) evita. Muévelo o cambia de vehículo.',
+      origin_blocked: 'El origen queda pegado al borde de un cráter que este vehículo ({vehicle}) evita. Muévelo un poco o cambia de vehículo.',
+      destination_blocked: 'El destino queda pegado al borde de un cráter que este vehículo ({vehicle}) evita. Muévelo un poco o cambia de vehículo.',
       no_path: 'No hay ruta posible con este vehículo ({vehicle}): los cráteres o las pendientes cierran el paso. Prueba con otro vehículo o mueve un punto.',
     },
     saved: {
@@ -105,7 +107,7 @@ export default {
       title: 'Cómo se calcula',
       grid: 'La ruta más rápida se busca con el algoritmo A* sobre una rejilla de elevación del terreno entre los dos puntos.',
       slope: 'Supuesto del equipo: la pendiente frena de forma gradual, hasta el {percent} % de la velocidad en la pendiente máxima del vehículo. Un tramo más empinado no se cruza.',
-      crater: 'Supuesto del equipo: no se entra a menos de {block} radios del centro de un cráter que el vehículo evita, y hasta {ring} radios el avance cuesta {penalty} veces más tiempo.',
+      crater: 'Supuesto del equipo: no se entra a menos de {block} radios del centro de un cráter que el vehículo evita, y hasta {ring} radios el avance cuesta {penalty} veces más tiempo. Si el origen o el destino están dentro de un cráter, ese cráter no se evita: su borde solo cuenta por la pendiente de los datos de elevación.',
       radius: 'Las distancias se miden sobre una esfera con el radio medio de Marte, {radius} km.',
       rover: 'Como referencia, el rover Perseverance avanza como máximo 152 metros por hora, y sus conductores evitan terrenos que lo inclinen más de 30°.',
     },
@@ -191,6 +193,8 @@ export default {
     },
     step: {
       depart: 'Km 0 · Head {dir}.',
+      exit: 'Km 0 · The origin is inside a crater {size} km across: the route drives out of it.',
+      enter: 'Km {km} · The destination is inside a crater {size} km across: the route drives into it.',
       crater: 'Km {km} · Go around a crater {size} km across, passing on its {side} side.',
       slope: 'Km {km} · Steepest slope of the route: {deg}°.',
       high: 'Km {km} · Highest point: {elev} m.',
@@ -199,8 +203,8 @@ export default {
     fail: {
       same: 'The origin and the destination are in the same place: mark two different points.',
       data: 'The terrain data could not be loaded. Try again.',
-      origin_blocked: 'The origin is inside a crater this vehicle ({vehicle}) avoids. Move it or change vehicle.',
-      destination_blocked: 'The destination is inside a crater this vehicle ({vehicle}) avoids. Move it or change vehicle.',
+      origin_blocked: 'The origin sits right at the rim of a crater this vehicle ({vehicle}) avoids. Move it a little or change vehicle.',
+      destination_blocked: 'The destination sits right at the rim of a crater this vehicle ({vehicle}) avoids. Move it a little or change vehicle.',
       no_path: 'There is no possible route with this vehicle ({vehicle}): craters or slopes block the way. Try another vehicle or move a point.',
     },
     saved: {
@@ -213,7 +217,7 @@ export default {
       title: 'How it is computed',
       grid: 'The fastest route is found with the A* algorithm on an elevation grid of the terrain between the two points.',
       slope: 'Team assumption: slope slows the vehicle gradually, down to {percent}% of its speed at the vehicle’s maximum slope. A steeper stretch is not crossed.',
-      crater: 'Team assumption: the route stays at least {block} radii from the center of a crater the vehicle avoids, and out to {ring} radii progress takes {penalty} times longer.',
+      crater: 'Team assumption: the route stays at least {block} radii from the center of a crater the vehicle avoids, and out to {ring} radii progress takes {penalty} times longer. If the origin or the destination is inside a crater, that crater is not avoided: its rim only counts through the slope in the elevation data.',
       radius: 'Distances are measured on a sphere with the mean radius of Mars, {radius} km.',
       rover: 'For reference, the Perseverance rover moves at most 152 meters per hour, and its drivers avoid terrain that would tilt it more than 30°.',
     },

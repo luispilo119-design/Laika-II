@@ -364,7 +364,6 @@ const mod = {
         if (!alive || id !== runId) return;
         cellKm = ((bbox.north - bbox.south) / (GRID_SIZE - 1)) * KM_PER_DEG;
         result = planRoute({ origin: from, destination: to, profile, elevation, craters });
-        result.craters = craters.filter((crater) => crater.diameterKm >= profile.avoidCraterKm);
       } catch {
         if (!alive || id !== runId) return;
         resultBox.innerHTML = `<p class="routes__fail">${t('routes.fail.data')}</p>`;
@@ -373,11 +372,21 @@ const mod = {
 
       // Cráteres que este vehículo evita, haya ruta o no: explican por dónde no se pasa.
       cratersLayer.clearLayers();
-      for (const crater of result.craters) {
+      for (const crater of result.avoided) {
         L.polygon(craterOutline(crater, CRATER_BLOCK_FACTOR), {
           color: COLORS.crater,
           weight: 1,
           fillOpacity: 0.25,
+          interactive: false,
+        }).addTo(cratersLayer);
+      }
+      // Cráteres donde está el origen o el destino: no se rodean, solo se dibuja su contorno.
+      for (const crater of new Set([...result.inside.origin, ...result.inside.destination])) {
+        L.polygon(craterOutline(crater), {
+          color: COLORS.route,
+          weight: 1,
+          dashArray: '4 6',
+          fill: false,
           interactive: false,
         }).addTo(cratersLayer);
       }
@@ -393,7 +402,8 @@ const mod = {
       current = { ...result, profile: ui.profile };
       const line = L.polyline(result.points, { color: COLORS.route, weight: 4, interactive: false }).addTo(routeLayer);
       if (fitNext) {
-        map.fitBounds(line.getBounds(), { padding: [40, 40], maxZoom: 8 });
+        // Sin animación: si la persona cambia de módulo a media animación, Leaflet falla al desmontar.
+        map.fitBounds(line.getBounds(), { padding: [40, 40], maxZoom: 8, animate: false });
         fitNext = false;
       }
       paintResult(result, cellKm);
@@ -437,6 +447,8 @@ const mod = {
       if (step.type === 'crater') {
         return t('routes.step.crater', { km, side: t(`routes.dir.${step.side}`), size: num(step.diameterKm) });
       }
+      if (step.type === 'exit') return t('routes.step.exit', { size: num(step.diameterKm) });
+      if (step.type === 'enter') return t('routes.step.enter', { km, size: num(step.diameterKm) });
       if (step.type === 'slope') return t('routes.step.slope', { km, deg: num(step.deg, 1) });
       if (step.type === 'high') return t('routes.step.high', { km, elev: num(step.elevM) });
       return t('routes.step.arrive', { km, time: duration(step.hours) });
@@ -552,7 +564,7 @@ const mod = {
       const show = target.closest('[data-show]')?.dataset.show;
       if (show) {
         const route = store.get().mission.routes.find((r) => r.id === show);
-        if (route) map.fitBounds(L.latLngBounds(route.points), { padding: [40, 40], maxZoom: 8 });
+        if (route) map.fitBounds(L.latLngBounds(route.points), { padding: [40, 40], maxZoom: 8, animate: false });
         return undefined;
       }
       const remove = target.closest('[data-delete]')?.dataset.delete;
@@ -590,6 +602,7 @@ const mod = {
       el.removeEventListener('click', onClick);
       el.removeEventListener('change', onChange);
       map.off('click', onMapClick);
+      map.stop(); // corta cualquier desplazamiento en curso antes de quitar el mapa
       mars.destroy();
     };
   },

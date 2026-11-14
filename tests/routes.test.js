@@ -62,8 +62,13 @@ test('los cráteres se piden en un recuadro más amplio que el de trabajo', () =
 
 test('un cráter con el centro fuera del recuadro también bloquea su borde', () => {
   const crater = { lat: 0, lon: -2.3, diameterKm: 60 }; // centro al oeste del recuadro (west = -2)
+  const mask = craterMask(makeGrid(elevation(BOX, 65)), [crater]);
+  const blockedCells = mask.blocked.reduce((sum, v) => sum + v, 0);
+  assert.ok(blockedCells > 0, 'la parte del cráter que entra al recuadro queda prohibida');
+  // Un origen dentro de ese cráter no queda atrapado: el cráter pasa a "inside".
   const route = planRoute({ origin: [0, -1.9], destination: B, profile: rover, elevation: elevation(BOX, 65), craters: [crater] });
-  assert.deepEqual(route, { ok: false, reason: 'origin_blocked' });
+  assert.equal(route.ok, true);
+  assert.deepEqual(route.inside.origin, [crater]);
 });
 
 test('terreno plano y sin cráteres: ruta casi recta', () => {
@@ -108,23 +113,31 @@ test('si no hay paso, lo dice en vez de inventar una ruta', () => {
   const wall = [];
   for (let lat = -2.5; lat <= 2.5; lat += 0.4) wall.push({ lat, lon: 0, diameterKm: 40 });
   const blocked = planRoute({ origin: A, destination: B, profile: rover, elevation: elevation(BOX, 65), craters: wall });
-  assert.deepEqual(blocked, { ok: false, reason: 'no_path' });
+  assert.deepEqual([blocked.ok, blocked.reason], [false, 'no_path']);
+  assert.equal(blocked.avoided.length, wall.length, 'aun sin ruta, dice qué cráteres cierran el paso');
 
-  const inside = planRoute({
-    origin: A,
-    destination: [0, 0],
-    profile: rover,
-    elevation: elevation(BOX, 65),
-    craters: [{ lat: 0, lon: 0, diameterKm: 50 }],
-  });
-  assert.deepEqual(inside, { ok: false, reason: 'destination_blocked' });
+});
+
+test('un sitio dentro de un cráter (como Jezero) no queda atrapado: la ruta sale y lo avisa', () => {
+  const home = { lat: 0, lon: -1.5, diameterKm: 50 }; // el origen A está en su centro
+  const other = { lat: 0.1, lon: 0.3, diameterKm: 40 }; // este sí se rodea
+  const route = planRoute({ origin: A, destination: B, profile: rover, elevation: elevation(BOX, 65), craters: [home, other] });
+  assert.equal(route.ok, true);
+  assert.deepEqual(route.inside.origin, [home]);
+  assert.deepEqual(route.avoided, [other], 'el cráter del origen no cuenta como obstáculo');
+  assert.deepEqual(route.steps.map((s) => s.type), ['depart', 'exit', 'crater', 'arrive']);
+  assert.equal(route.steps[1].diameterKm, 50);
+
+  const into = planRoute({ origin: B, destination: A, profile: rover, elevation: elevation(BOX, 65), craters: [home] });
+  assert.equal(into.ok, true);
+  assert.deepEqual(into.steps.map((s) => s.type), ['depart', 'enter', 'arrive']);
 });
 
 test('una pendiente mayor que el límite del vehículo no se cruza', () => {
   // Escarpe de norte a sur en lon = 0: 3 km de desnivel en un tramo corto.
   const cliff = elevation(BOX, 65, (_lat, lon) => (lon > 0 ? 3000 : 0));
   const route = planRoute({ origin: A, destination: B, profile: rover, elevation: cliff, craters: [] });
-  assert.deepEqual(route, { ok: false, reason: 'no_path' });
+  assert.deepEqual([route.ok, route.reason], [false, 'no_path']);
 
   // Una rampa suave sí se sube, y la guía dice dónde está la pendiente máxima.
   const ramp = elevation(BOX, 65, (_lat, lon) => (lon + 2) * 1500);
