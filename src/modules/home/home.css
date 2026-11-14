@@ -54,17 +54,19 @@
 }
 
 .home__mark {
-  width: 56px;
-  height: 56px;
+  width: 72px;
+  height: 72px;
 }
 
 .home__team {
   margin: 0;
-  font-family: var(--font-mono);
-  font-size: 13px;
-  letter-spacing: 0.14em;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(26px, 3vw, 38px);
+  line-height: 1;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--text);
+  color: var(--cream);
 }
 
 .home__main {

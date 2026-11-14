@@ -272,6 +272,10 @@ export function createBlackHole(canvas, getLayout) {
   let elapsed = 4; // se arranca con el disco ya "en marcha"
   let resizeTimer = 0;
   let destroyed = false;
+  let lensed = null; // brillo después del remolino del puntero
+  // Puntero en px del canvas. `x/y` es lo suavizado que se dibuja; `tx/ty` adonde va.
+  const pointer = { x: -1e4, y: -1e4, tx: -1e4, ty: -1e4, active: 0, target: 0 };
+  const waves = []; // ondas de clic: { x, y, t0 }
 
   function rebuild() {
     width = canvas.clientWidth;
@@ -297,13 +301,78 @@ export function createBlackHole(canvas, getLayout) {
       unit: layout.unit,
     });
     out = new Float32Array(cols * rows);
+    lensed = new Float32Array(cols * rows);
     draw();
+  }
+
+  /**
+   * Interacción: alrededor del puntero el brillo se toma de un punto girado (un remolino que
+   * arrastra los caracteres, como un agujero negro pequeño) y se aclara un poco; cada clic
+   * deja una onda que se expande. Trabaja en celdas, sobre el resultado de shade().
+   */
+  function applyPointer(src, dst, cols, rows) {
+    pointer.x += (pointer.tx - pointer.x) * 0.18;
+    pointer.y += (pointer.ty - pointer.y) * 0.18;
+    pointer.active += (pointer.target - pointer.active) * 0.08;
+    const pcx = pointer.x / charW;
+    const pcy = pointer.y / lineH;
+    const radius = Math.max(8, cols / 9); // en columnas
+    const aspect = lineH / charW;
+    const strength = 2.4 * pointer.active;
+    for (let i = 0; i < waves.length; i++) if (elapsed - waves[i].t0 > 2.2) waves.splice(i--, 1);
+    dst.set(src);
+    if (pointer.active < 0.01 && waves.length === 0) return;
+    const r0 = Math.max(0, Math.floor(pcy - radius / aspect - 1));
+    const r1 = Math.min(rows - 1, Math.ceil(pcy + radius / aspect + 1));
+    const c0 = Math.max(0, Math.floor(pcx - radius - 1));
+    const c1 = Math.min(cols - 1, Math.ceil(pcx + radius + 1));
+    if (pointer.active >= 0.01) {
+      for (let row = r0; row <= r1; row++) {
+        const dy = (row - pcy) * aspect;
+        for (let col = c0; col <= c1; col++) {
+          const dx = col - pcx;
+          const d = Math.hypot(dx, dy) / radius;
+          if (d >= 1) continue;
+          const fall = (1 - d) * (1 - d);
+          const ang = strength * fall + elapsed * 0.6 * fall;
+          const ca = Math.cos(ang);
+          const sa = Math.sin(ang);
+          const sx = Math.round(pcx + dx * ca - dy * sa);
+          const sy = Math.round(pcy + (dx * sa + dy * ca) / aspect);
+          const from = sx >= 0 && sx < cols && sy >= 0 && sy < rows ? src[sy * cols + sx] : 0;
+          // Centro oscuro (horizonte) y un anillo brillante alrededor.
+          const ring = Math.exp(-Math.pow((d - 0.32) / 0.09, 2)) * 0.55;
+          const hole = d < 0.12 ? 0 : 1;
+          dst[row * cols + col] = clamp((from + ring * pointer.active) * (hole || 1 - pointer.active), 0, 1);
+        }
+      }
+    }
+    for (const w of waves) {
+      const age = elapsed - w.t0;
+      const wr = age * cols * 0.35; // radio en columnas
+      const wcx = w.x / charW;
+      const wcy = w.y / lineH;
+      const fade = 1 - age / 2.2;
+      const rr0 = Math.max(0, Math.floor(wcy - (wr + 3) / aspect));
+      const rr1 = Math.min(rows - 1, Math.ceil(wcy + (wr + 3) / aspect));
+      for (let row = rr0; row <= rr1; row++) {
+        const dy = (row - wcy) * aspect;
+        for (let col = 0; col < cols; col++) {
+          const d = Math.abs(Math.hypot(col - wcx, dy) - wr);
+          if (d > 2.5) continue;
+          const i = row * cols + col;
+          dst[i] = clamp(dst[i] + (1 - d / 2.5) * 0.7 * fade, 0, 1);
+        }
+      }
+    }
   }
 
   function draw() {
     if (!field) return;
     shade(field, elapsed, out);
     const { cols, rows } = field;
+    applyPointer(out, lensed, cols, rows);
+    const out2 = lensed;
     const top = RAMP.length - 1;
     ctx.clearRect(0, 0, width, height);
     const lines = new Array(BUCKETS);
@@ -312,7 +381,7 @@ export function createBlackHole(canvas, getLayout) {
       lines.fill('');
       used.fill(false);
       for (let col = 0; col < cols; col++) {
-        const v = out[row * cols + col];
+        const v = out2[row * cols + col];
         const ci = Math.round(Math.pow(v, 0.8) * top);
         const bucket = ci === 0 ? -1 : Math.min(BUCKETS - 1, (v * BUCKETS) | 0);
         for (let b = 0; b < BUCKETS; b++) lines[b] += b === bucket ? RAMP[ci] : ' ';
@@ -356,6 +425,35 @@ export function createBlackHole(canvas, getLayout) {
     }
   }
 
+  function toCanvas(event) {
+    const rect = canvas.getBoundingClientRect();
+    return { x: event.clientX - rect.left, y: event.clientY - rect.top, inside: event.clientY >= rect.top && event.clientY <= rect.bottom };
+  }
+  function onMove(event) {
+    const p = toCanvas(event);
+    if (pointer.target === 0) {
+      pointer.x = p.x;
+      pointer.y = p.y;
+    }
+    pointer.tx = p.x;
+    pointer.ty = p.y;
+    pointer.target = p.inside ? 1 : 0;
+    if (!raf) draw();
+  }
+  function onLeave() {
+    pointer.target = 0;
+  }
+  function onDown(event) {
+    // Los clics en botones y enlaces no hacen onda.
+    if (event.target.closest?.('button, a, input, label')) return;
+    const p = toCanvas(event);
+    waves.push({ x: p.x, y: p.y, t0: elapsed });
+    if (waves.length > 4) waves.shift();
+  }
+  window.addEventListener('pointermove', onMove, { passive: true });
+  window.addEventListener('pointerdown', onDown, { passive: true });
+  document.documentElement.addEventListener('pointerleave', onLeave);
+
   const observer = new ResizeObserver(() => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(rebuild, 120);
@@ -372,6 +470,9 @@ export function createBlackHole(canvas, getLayout) {
     stop();
     clearTimeout(resizeTimer);
     observer.disconnect();
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerdown', onDown);
+    document.documentElement.removeEventListener('pointerleave', onLeave);
     document.removeEventListener('visibilitychange', sync);
     reduced.removeEventListener('change', sync);
   };
