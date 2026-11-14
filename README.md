@@ -51,5 +51,7 @@ public/data/    rejillas ya procesadas que carga la web                         
 ## Datos
 
 Solo se usan fuentes de la NASA u otras fuentes científicas confiables, y cada cifra enlaza a su
-referencia dentro de la app. Mientras la insignia **"Datos simulados"** esté visible, los valores
-ambientales son de relleno y no deben citarse.
+referencia dentro de la app. Los datos ambientales son reales: elevación de MOLA, hielo de SWIM,
+cráteres de Robbins y Hynek, y clima de Mars Climate Database. Lo que sale de un modelo (clima,
+presión, radiación) se marca como tal en la interfaz. De dónde sale cada archivo y cómo regenerarlo
+está en [tools/README.md](tools/README.md).

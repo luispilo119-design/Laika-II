@@ -24,10 +24,12 @@ cambio aquí afecta a la Parte B, se avisa y se anota en el registro al final de
 
 - [x] Esqueleto: Vite, shell con barra de fases, store, idiomas, registro de módulos, módulos
       provisionales, entorno de relleno, mapa base con mosaicos de Mars Trek, prueba de idiomas.
-- [ ] Flujo de GitHub Actions que construye y publica en GitHub Pages en cada push a `main`
-      (`.github/workflows/deploy.yml`). Requiere activar Pages en el repositorio (PLAN.md §9).
-- [ ] Variables `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` como variables del repositorio para
-      el build publicado, cuando la persona B las tenga.
+- [x] Flujo de GitHub Actions que construye y publica en GitHub Pages en cada push a `main`
+      (`.github/workflows/deploy.yml`). **Falta que una persona active Pages** en el repositorio:
+      Settings → Pages → Source: GitHub Actions (PLAN.md §9). Hasta entonces el flujo falla al publicar.
+- [ ] Variables `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` como variables del repositorio
+      (Settings → Secrets and variables → Actions → Variables) para el build publicado, cuando la
+      persona B las tenga. El flujo ya las lee.
 
 **Hecho cuando:** el enlace público abre la app en una tablet.
 
@@ -90,8 +92,8 @@ ventana da una duración distinta (entre unos 236 y 282 días). Los valores de l
       nocturno. Leyenda relativa y fuente por capa (Trek no publica la escala numérica).
 - [x] Sitios de aterrizaje (`sites.js`, coordenadas del catálogo NSSDCA) y recorridos reales de
       Perseverance y Curiosity (`tools/build_rovers.py` → `public/data/rovers.json`).
-- [ ] Pasan a A3 porque necesitan la rejilla de datos: hielo subterráneo (SWIM), temperatura por
-      hora, radiación y cráteres grandes.
+- [x] Hechas en A3 con la rejilla de datos: hielo subterráneo (SWIM), temperatura por hora,
+      radiación y cráteres (`envlayers.js`, con escala numérica).
 
 **Notas:** `trekLayer(trekId, opts)` en `src/core/marsmap.js` añade cualquier capa del catálogo de
 Trek (https://trek.nasa.gov/tiles/apidoc/trekAPI.html?body=mars); la Parte B puede usarlo.
@@ -107,21 +109,39 @@ su fuente.
 
 Reemplaza el relleno de `env` por datos reales **sin cambiar las firmas** de CONTRATOS.md §5.
 
-- [ ] `tools/`: scripts de Python que descargan y reducen cada producto a una rejilla global ligera
-      (por ejemplo 1° o 0.5°) en `public/data/`, con un `README` que diga de dónde salió cada archivo.
-- [ ] Elevación y pendiente desde MOLA.
-- [ ] Índice de hielo desde SWIM (con `null` donde el mapa no cubre).
-- [ ] Cráteres desde la base de Robbins y Hynek, filtrados por diámetro.
-- [ ] Temperatura mínima, máxima y por hora según latitud, estación (Ls) y hora local, y opacidad de
-      polvo por estación. Preferencia: rejillas de Mars Climate Database; si no da tiempo, un modelo
-      analítico ajustado a mediciones de REMS/MEDA y **etiquetado como modelo** en `modeled`.
-- [ ] Presión a partir de la elevación; radiación en superficie a partir de la medición de RAD
-      ajustada por elevación (etiquetada como modelo).
-- [ ] `env.isMock = false` y cada factor con su `refId` real.
-- [ ] Control de reloj marciano en el shell o en el mapa: sol, hora local y estación; escribe `clock`.
-- [ ] `src/core/human-needs.js`: necesidades diarias del cuerpo humano (agua, oxígeno, alimento,
-      presión, temperatura, límites de radiación) con su referencia. Lo usa A4 y lo lee la Parte B
+- [x] `tools/`: scripts de Python que descargan y reducen cada producto a una rejilla global ligera
+      en `public/data/`, con [tools/README.md](../tools/README.md) que dice de dónde salió cada archivo.
+- [x] Elevación (0.25°) y pendiente media (0.5°) desde MOLA MEGDR a 16 píxeles por grado.
+- [x] Índice de hielo desde SWIM4MIM, 0–5 m (con `null` fuera de 60° S–60° N).
+- [x] Cráteres de 5 km o más desde la base de Robbins y Hynek (47 598).
+- [x] Temperatura del aire por hora, mínima y máxima, irradiancia, presión y opacidad de polvo desde
+      Mars Climate Database v6.2 (12 estaciones × 12 horas), **etiquetadas como modelo** en `modeled`.
+- [x] Presión ajustada a la elevación MOLA de cada punto; radiación a partir de la medición de RAD
+      en Gale ajustada por presión (etiquetada como modelo).
+- [x] `env.isMock = false` y cada factor con su `refId` real.
+- [x] Control de reloj marciano (`src/core/clock.js`, montado en el panel del mapa): sol, hora local
+      y estación; escribe `clock`.
+- [x] `src/core/human-needs.js`: necesidades diarias del cuerpo humano (agua, oxígeno, alimento,
+      presión, temperatura, límite de radiación) con su referencia. Lo usa A4 y lo lee la Parte B
       para las guías (B6).
+
+**Cómo quedó:**
+
+- Las firmas de `env` no cambiaron. Dos añadidos: los factores de `evaluate` traen `noData` y
+  `modeled`, y un factor sin dato (hielo fuera de la cobertura de SWIM) queda con peso 0 y su peso
+  se reparte entre los demás, en vez de contar como cero.
+- El shell espera a `env.ready()` antes de montar el primer módulo, así que `sample` y `evaluate`
+  siempre tienen datos. Si la carga falla se muestra un aviso con botón de reintentar.
+- Las escalas de puntaje (`SCORE_SCALES` en `env.js`) son criterios de diseño de la app, no datos de
+  la NASA; A4 las muestra en la ficha.
+- La pendiente es la media a una línea base de 3.7 km, no la pendiente a escala de metros.
+- La radiación extiende a todo el planeta una relación medida solo en Gale: es una extrapolación.
+- Al tocar el mapa ya se ven las condiciones del punto; la ficha completa con el cruce contra las
+  necesidades humanas es A4.
+- `tests/env.test.js` comprueba el entorno contra hechos conocidos (Olympus Mons, Hellas, presión y
+  temperaturas en Gale, hielo en Arcadia, cráter Gale).
+- Sin abrir todavía: el artículo original de Hassler et al. (2014); la cifra de RAD se tomó de
+  Guo et al. (2015), del mismo equipo.
 
 **Hecho cuando:** la insignia "Datos simulados" desaparece, mover el reloj cambia las temperaturas en
 el mapa, y cada número de `env.sample` se puede rastrear hasta un archivo y una referencia.
@@ -131,12 +151,22 @@ Climate Database, REMS y MEDA en el PDS, RAD (Hassler et al. 2014), NASA-STD-300
 
 ## A4 · Ficha de zona y sitio de aterrizaje — `src/modules/map/`
 
-- [ ] Al tocar un punto se abre la ficha: condiciones del lugar en el instante del reloj y, al lado,
+- [x] Al tocar un punto se abre la ficha: condiciones del lugar en el instante del reloj y, al lado,
       lo que necesita el cuerpo humano. Un porcentaje por factor y el puntaje global.
-- [ ] Desglose visible de la fórmula: valor, puntaje, peso y fuente de cada factor.
-- [ ] Restricciones de aterrizaje aparte de la viabilidad (elevación, pendiente, latitud) con su fuente.
-- [ ] Botón "Elegir como sitio de aterrizaje": escribe `mission.site`.
-- [ ] Mejores zonas: recorrer la rejilla y marcar las de mayor puntaje para el instante actual.
+- [x] Desglose visible de la fórmula: valor, puntaje, peso y fuente de cada factor.
+- [x] Restricciones de aterrizaje aparte de la viabilidad (elevación, pendiente, latitud) con su fuente.
+- [x] Botón "Elegir como sitio de aterrizaje": escribe `mission.site`.
+- [x] Mejores zonas: recorrer la rejilla y marcar las de mayor puntaje para el instante actual.
+
+**Cómo quedó:** la lógica y el HTML de la ficha están en `src/modules/map/zone.js`. La ficha usa el
+perfil `habitat` y se repinta al mover el reloj. Las restricciones de aterrizaje son las preliminares
+de la NASA para zonas de exploración humana (latitud ±50°, elevación hasta +2 km, pendientes de 5°;
+Bussey y Hoffman, 2016). "Mejores zonas" recorre el planeta cada 2°, descarta lo que no cumple esas
+restricciones y marca las 8 de mayor puntaje separadas al menos 15°. El sitio elegido se guarda como
+`{ lat, lon }` sin nombre y se marca con una estrella.
+
+**Pendiente menor (pasa a A6):** probar la ficha en una tablet real; a menos de 700 px de ancho sube
+desde abajo y ocupa hasta el 62 % del alto.
 
 **Hecho cuando:** se puede tocar cualquier punto, entender por qué es viable o no, y dejar elegido
 el sitio.

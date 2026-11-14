@@ -77,8 +77,8 @@ export default {
 
 | Función | Devuelve |
 |---|---|
-| `env.isMock` | `true` mientras los datos sean de relleno |
-| `await env.ready()` | Termina cuando las rejillas están cargadas |
+| `env.isMock` | `true` mientras los datos sean de relleno. Desde A3 es `false` |
+| `await env.ready()` | Termina cuando las rejillas están cargadas. El shell ya lo espera antes de montar cualquier módulo |
 | `env.sample(lat, lon, clock)` | `EnvSample`: elevación, pendiente, temperatura actual/mín/máx, presión, índice de hielo, radiación, polvo, irradiancia |
 | `env.evaluate(lat, lon, clock, profile)` | `Evaluation`: puntaje 0–100, veredicto y factores con su peso |
 | `await env.craters(bbox, minDiameterKm)` | Lista de `{ lat, lon, diameterKm }` |
@@ -89,7 +89,14 @@ export default {
 - `iceIndex` puede ser `null` (sin datos). Trátalo como "sin datos", no como cero.
 - Veredictos: `'viable'` (≥ 65), `'marginal'` (≥ 40), `'not_viable'`. Los umbrales y los pesos por
   perfil están exportados en `src/core/env.js` y se muestran en la interfaz.
-- Mientras `env.isMock` sea `true` los números son inventados: sirven para programar, no para citar.
+- Cada muestra trae `modeled`: la lista de campos que salen de un modelo (clima, presión, radiación)
+  y no de una medición. La interfaz debe decirlo junto al número.
+- Cada factor de `evaluate` trae además `noData` y `modeled`. Un factor sin dato tiene `value: null`,
+  `score: 0` y `weight: 0`; su peso se reparte entre los demás, así que los pesos siguen sumando 1.
+- `env.craters` solo tiene cráteres de 5 km o más, ordenados de mayor a menor.
+- `env.elevationGrid` sale de una rejilla de 0.25° (unos 15 km): un recuadro más pequeño sale
+  interpolado, sin detalle nuevo.
+- Las referencias de cada dato están en `ENV_REFERENCES` de `src/core/env.js`.
 
 ## 6. Textos
 
@@ -119,6 +126,14 @@ mars.destroy();           // llamar en la limpieza del módulo
 
 Es la única excepción a "no importar de fuera de tu módulo": `src/core/` se puede importar siempre.
 
+Otras piezas de `src/core/` que cualquier módulo puede usar:
+
+- `mountClockControl(el, ctx)` de `core/clock.js`: el control del reloj marciano (sol, hora local,
+  estación). Devuelve la función de limpieza. Escribe `clock`; los módulos se enteran con
+  `store.subscribe`.
+- `HUMAN_NEEDS` y `HUMAN_REFERENCES` de `core/human-needs.js`: necesidades diarias del cuerpo humano
+  y límite de radiación, cada valor con su tabla de origen.
+
 ## 9. Servicios y Supabase
 
 - `src/services/index.js` exporta `init(ctx)`; `main.js` lo llama una vez al arrancar.
@@ -135,3 +150,6 @@ de la Parte A; los módulos nunca las cargan por su cuenta.
 ## Registro de cambios de contrato
 
 - 2026-11-14 — Versión inicial.
+- 2026-11-14 — A3: `env` con datos reales (`isMock = false`), sin cambio de firmas. Se añaden
+  `noData` y `modeled` a los factores de `evaluate`; un factor sin dato ya no cuenta como cero. El
+  shell espera a `env.ready()`. Nuevos `core/clock.js` y `core/human-needs.js`.
