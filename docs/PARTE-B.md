@@ -170,19 +170,27 @@ cráteres de Robbins y Hynek; MOLA.
 
 ## B5 · Descenso en primera persona — `src/modules/descent/`
 
-- [ ] Escena Three.js con el terreno alrededor de `mission.site`, construido con
+- [x] Escena Three.js con el terreno alrededor de `mission.site`, construido con
       `env.elevationGrid`. Sin sitio elegido, usa uno por defecto y avisa.
-- [ ] Secuencia de "bajar": la cámara desciende desde la vista de mapa hasta el suelo.
-- [ ] Caminar: teclado y ratón en computadora, joystick táctil en tablet.
-- [ ] Cielo y luz según `clock.localHour` y el polvo; HUD con temperatura, presión, radiación y
+- [x] Secuencia de "bajar": la cámara desciende desde la vista de mapa hasta el suelo.
+- [x] Caminar: teclado y ratón en computadora, joystick táctil en tablet.
+- [x] Cielo y luz según `clock.localHour` y el polvo; HUD con temperatura, presión, radiación y
       elevación desde `env.sample`.
-- [ ] El módulo puede ponerse `fullscreen: true`; debe ofrecer un botón para volver.
-- [ ] La limpieza libera el contexto WebGL.
+- [x] El módulo puede ponerse `fullscreen: true`; debe ofrecer un botón para volver.
+- [x] La limpieza libera el contexto WebGL.
 
 **Hecho cuando:** desde el sitio elegido se puede bajar y caminar en tablet a una velocidad fluida.
 
 **Línea de corte:** si no da tiempo, una vista fija del sitio con su HUD y fotos reales del rover
 más cercano.
+
+**Estado:** hecho con la escena completa. La forma del terreno (6 km de lado) sale de
+`env.elevationGrid`; el relieve fino, las rocas y los colores son decorativos y así se dice en
+pantalla. La posición del Sol es una aproximación que no usa la latitud ni la estación. El control
+de hora del HUD es solo una vista previa: no escribe `clock`. Si el dispositivo no tiene WebGL
+queda la vista fija con el HUD (sin fotos). Three.js se carga aparte, solo al abrir este módulo.
+Probado en el navegador de escritorio a 768 × 1024 con eventos táctiles simulados; falta probarlo
+en una tablet real.
 
 **Fuentes:** MOLA para el relieve; imágenes crudas de Mars 2020 (NASA/JPL) para referencia visual
 del color del cielo y del suelo.
