@@ -1,0 +1,13 @@
+{
+ "generated": "2026-11-14",
+ "source": "SWIM4MIM, mapas combinados de consistencia de hielo 0-1 m y 1-5 m (PSI/NASA)",
+ "url": "https://swim.psi.edu/SWIM4MIMProducts.php",
+ "file": "ice.bin",
+ "dtype": "uint8",
+ "encoding": "255 = sin datos; Ci = (valor - 100) / 100; se usa el mayor de los dos mapas",
+ "nLat": 360,
+ "nLon": 720,
+ "step": 0.5,
+ "north": 90,
+ "west": -180
+}
