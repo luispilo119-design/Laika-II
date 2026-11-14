@@ -189,14 +189,22 @@ del color del cielo y del suelo.
 
 ## B6 · Guías de supervivencia — `src/modules/guides/`
 
-- [ ] Lo que necesita el cuerpo humano cada día. Los valores vienen de `src/core/human-needs.js`,
+- [x] Lo que necesita el cuerpo humano cada día. Los valores vienen de `src/core/human-needs.js`,
       que entrega la Parte A en el punto I2; mientras tanto arma la pantalla con la estructura y
       deja los valores vacíos. **No escribas cifras de memoria.**
-- [ ] Guías por situación: fallo de presión, tormenta de polvo, evento de radiación solar, pérdida
+- [x] Guías por situación: fallo de presión, tormenta de polvo, evento de radiación solar, pérdida
       de comunicación, quedarse sin energía. Cada una con pasos y fuente.
-- [ ] Enlace cruzado: desde cada guía, a la capa del mapa o al módulo que la respalda.
+- [x] Enlace cruzado: desde cada guía, a la capa del mapa o al módulo que la respalda.
 
 **Hecho cuando:** cada guía se lee en una pantalla de tablet y todas sus cifras tienen referencia.
+
+**Estado:** hecho. Las seis tarjetas de necesidades diarias dicen "sin datos" hasta que exista
+`src/core/human-needs.js` (Parte A, punto I2); en cuanto se cree, la pantalla lo lee sola, sin
+cambiar este módulo. Formato que acepta: `export const HUMAN_NEEDS = [...]` o un objeto por id, con
+`id` (`water`, `oxygen`, `food`, `pressure`, `temperature`, `radiation` u otro), `value` (número, par
+`[mín, máx]` o texto), `unit`, `note` opcional y `ref: { title, org, url }` o `refId`. Detalle en
+`src/modules/guides/needs.js`. Los pasos de cada guía son una guía general del equipo basada en
+fuentes de la NASA, no un procedimiento oficial, y así se dice en pantalla.
 
 **Fuentes:** NASA-STD-3001, peligros del HRP, documentación de sistemas de soporte vital de la NASA.
 
