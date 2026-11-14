@@ -2,8 +2,9 @@
  * Módulo "map": mapa con capas y elección del sitio de aterrizaje.
  * Dueño: Parte A — tareas A2 (capas), A3 (datos y reloj) y A4 (ficha de zona).
  *
- * Estado actual (A2): mapas base de Mars Trek, capas de datos con opacidad y leyenda, sitios de
- * aterrizaje y recorridos reales de los rovers. Las capas se declaran en layers.js y sites.js.
+ * Estado actual (A3): mapas base y capas de Mars Trek (layers.js), sitios de aterrizaje y recorridos
+ * de rovers (sites.js), reloj marciano, capas con escala numérica pintadas con ctx.env (envlayers.js)
+ * y condiciones del punto que se toca. Falta la ficha de zona completa (A4).
  */
 import L from 'leaflet';
 import './map.css';
@@ -11,6 +12,11 @@ import messages from './i18n.js';
 import { createMarsMap, BASEMAPS, trekLayer } from '../../core/marsmap.js';
 import { DATA_LAYERS, RAMPS } from './layers.js';
 import { LANDING_SITES, SITE_REFERENCES } from './sites.js';
+import { ENV_LAYERS, createEnvOverlay, rampCss, craterMinDiameterKm, KM_PER_DEG } from './envlayers.js';
+import { ENV_REFERENCES } from '../../core/env.js';
+import { mountClockControl, formatHour } from '../../core/clock.js';
+import { HUMAN_REFERENCES } from '../../core/human-needs.js';
+import { zoneHtml, bestZones, ZONE_REFERENCES } from './zone.js';
 
 const ROVERS = {
   perseverance: { color: '#ffd166', refId: 'nasa-track-perseverance' },
@@ -42,6 +48,9 @@ const REFERENCES = [
   },
   ...DATA_LAYERS.map((layer) => layer.reference),
   ...SITE_REFERENCES,
+  ...ENV_REFERENCES,
+  ...HUMAN_REFERENCES,
+  ...ZONE_REFERENCES,
 ];
 const refUrl = (id) => REFERENCES.find((r) => r.id === id)?.url ?? null;
 
@@ -52,6 +61,11 @@ const ui = {
   opacity: {},
   sites: true,
   rovers: { perseverance: true, curiosity: true },
+  env: {},
+  envOpacity: {},
+  craters: false,
+  point: null,
+  best: false,
   panelOpen: null,
   center: [0, 0],
   zoom: 2,
@@ -106,9 +120,22 @@ const mod = {
           <div class="mapview__base" role="radiogroup" aria-label="${t('map.panel.base')}"></div>
           <p class="mapview__note" data-base-note></p>
 
+          <h2>${t('core.clock.title')}</h2>
+          <div data-clock></div>
+
+          <h2>${t('map.best.title')}</h2>
+          <div class="mapview__best-actions">
+            <button type="button" class="btn" data-best>${t('map.best.find')}</button>
+            <button type="button" class="btn btn--ghost" data-best-clear>${t('map.best.clear')}</button>
+          </div>
+          <p class="mapview__note" data-best-note></p>
+          <p class="mapview__note">${t('map.best.how')}</p>
+
+          <h2>${t('map.panel.env')}</h2>
+          <div data-env></div>
+
           <h2>${t('map.panel.data')}</h2>
           <div data-data></div>
-          <p class="mapview__note">${t('map.panel.pending')}</p>
 
           <h2>${t('map.panel.explore')}</h2>
           <div data-explore></div>
@@ -116,6 +143,7 @@ const mod = {
         <div class="mapview__stage">
           <div class="mapview__map"></div>
           <button type="button" class="btn mapview__toggle" data-toggle>${t('map.panel.toggle')}</button>
+          <section class="mapview__sheet zone" data-zone hidden></section>
         </div>
       </div>
     `;
@@ -355,14 +383,249 @@ const mod = {
         });
     }
 
-    /* ---------- Toque en el mapa ---------- */
+    /* ---------- Reloj marciano y capas con escala numérica (datos de ctx.env) ---------- */
 
-    map.on('click', (e) => {
-      L.popup().setLatLng(e.latlng).setContent(coords(e.latlng.lat, e.latlng.lng)).openOn(map);
+    const { env } = ctx;
+    const unmountClock = mountClockControl(el.querySelector('[data-clock]'), ctx);
+    const envBox = el.querySelector('[data-env]');
+    const modelTag = `<span class="mapview__model">${t('map.panel.model')}</span>`;
+    const envOverlays = {};
+
+    for (const def of ENV_LAYERS) {
+      const row = document.createElement('div');
+      row.className = 'mapview__layer';
+      const unit = def.unit ? ` ${def.unit}` : '';
+      row.innerHTML = `
+        <label class="mapview__check">
+          <input type="checkbox" />
+          <span>${t(`map.env.${def.id}.name`)}</span>
+        </label>
+        <div class="mapview__layer-body" hidden>
+          <p>${t(`map.env.${def.id}.why`)}</p>
+          <div class="mapview__ramp" style="background:${rampCss(def.ramp)}"></div>
+          <div class="mapview__ramp-ends"><span>${num(def.min, def.digits)}${unit}</span><span>${num(def.max, def.digits)}${unit}</span></div>
+          <p class="mapview__note">
+            ${def.modeled ? `${modelTag} ` : ''}${def.clock ? t('map.panel.followsClock') : ''}${def.noData ? ` ${t('map.panel.noDataClear')}` : ''}
+          </p>
+          <label class="mapview__opacity">
+            <span>${t('map.panel.opacity')}</span>
+            <input type="range" min="10" max="100" step="5" value="${Math.round((ui.envOpacity[def.id] ?? def.opacity) * 100)}" />
+          </label>
+          <p class="mapview__source">${sourceLink(def.refId)}</p>
+        </div>
+      `;
+      const checkbox = row.querySelector('input[type="checkbox"]');
+      const body = row.querySelector('.mapview__layer-body');
+      const slider = row.querySelector('input[type="range"]');
+
+      const setOn = (on) => {
+        ui.env[def.id] = on;
+        checkbox.checked = on;
+        body.hidden = !on;
+        row.classList.toggle('is-on', on);
+        if (on) {
+          envOverlays[def.id] ??= createEnvOverlay(def, env, ui.envOpacity[def.id] ?? def.opacity);
+          envOverlays[def.id].redraw(store.get().clock);
+          envOverlays[def.id].overlay.addTo(map);
+        } else if (envOverlays[def.id]) {
+          map.removeLayer(envOverlays[def.id].overlay);
+        }
+      };
+      checkbox.addEventListener('change', () => setOn(checkbox.checked));
+      slider.addEventListener('input', () => {
+        ui.envOpacity[def.id] = Number(slider.value) / 100;
+        envOverlays[def.id]?.overlay.setOpacity(ui.envOpacity[def.id]);
+      });
+      envBox.append(row);
+      setOn(Boolean(ui.env[def.id]));
+    }
+
+    // Cráteres: círculos al tamaño real; cuanto más zoom, más pequeños se muestran.
+    const cratersGroup = L.layerGroup();
+    const MAX_CRATERS = 400;
+    const EARTH_M_PER_DEG = (Math.PI * 6378137) / 180; // Leaflet mide los círculos con el radio terrestre
+    const craterRow = document.createElement('div');
+    craterRow.className = 'mapview__layer';
+    craterRow.innerHTML = `
+      <label class="mapview__check">
+        <input type="checkbox" />
+        <span>${t('map.env.craters.name')}</span>
+      </label>
+      <div class="mapview__layer-body" hidden>
+        <p>${t('map.env.craters.why')}</p>
+        <p class="mapview__note" data-crater-count></p>
+        <p class="mapview__source">${sourceLink('robbins2012')}</p>
+      </div>
+    `;
+    const craterCheck = craterRow.querySelector('input');
+    const craterBody = craterRow.querySelector('.mapview__layer-body');
+    const craterCount = craterRow.querySelector('[data-crater-count]');
+    let craterRequest = 0;
+    async function drawCraters() {
+      if (!ui.craters) return;
+      const request = ++craterRequest;
+      const b = map.getBounds();
+      const minKm = craterMinDiameterKm(map.getZoom());
+      try {
+        const list = await env.craters({ south: b.getSouth(), west: b.getWest(), north: b.getNorth(), east: b.getEast() }, minKm);
+        if (!alive || request !== craterRequest || !ui.craters) return;
+        cratersGroup.clearLayers();
+        for (const crater of list.slice(0, MAX_CRATERS)) {
+          L.circle([crater.lat, crater.lon], {
+            radius: (crater.diameterKm / 2 / KM_PER_DEG) * EARTH_M_PER_DEG,
+            color: cream,
+            weight: 1,
+            opacity: 0.9,
+            fillColor: rust,
+            fillOpacity: 0.15,
+            interactive: false,
+          }).addTo(cratersGroup);
+        }
+        craterCount.textContent = t(list.length > MAX_CRATERS ? 'map.env.craters.countMax' : 'map.env.craters.count', {
+          n: num(Math.min(list.length, MAX_CRATERS)),
+          km: num(minKm),
+        });
+      } catch (err) {
+        console.warn('[map] cráteres no disponibles', err);
+        craterCount.textContent = t('map.env.craters.failed');
+      }
+    }
+    function setCraters(on) {
+      ui.craters = on;
+      craterCheck.checked = on;
+      craterBody.hidden = !on;
+      craterRow.classList.toggle('is-on', on);
+      if (on) {
+        cratersGroup.addTo(map);
+        drawCraters();
+      } else {
+        map.removeLayer(cratersGroup);
+      }
+    }
+    craterCheck.addEventListener('change', () => setCraters(craterCheck.checked));
+    map.on('moveend', drawCraters);
+    envBox.append(craterRow);
+    setCraters(ui.craters);
+
+    /* ---------- Toque en el mapa: condiciones del punto en el instante del reloj ---------- */
+
+    // Ficha de zona (A4): se abre al tocar el mapa y se actualiza con el reloj.
+    const sheet = el.querySelector('[data-zone]');
+    const pointMarker = L.circleMarker([0, 0], { radius: 9, color: cream, weight: 3, fillColor: '#140c0a', fillOpacity: 0.6, interactive: false });
+    const siteMarker = L.marker([0, 0], {
+      icon: L.divIcon({ className: 'mapview__site', html: '<span>★</span>', iconSize: [36, 36], iconAnchor: [18, 18] }),
+      interactive: false,
+      keyboard: false,
+    });
+    const samePlace = (a, b) => Boolean(a && b) && Math.abs(a.lat - b[0]) < 1e-6 && Math.abs(a.lon - b[1]) < 1e-6;
+
+    function paintSite() {
+      const site = store.get().mission.site;
+      if (site) siteMarker.setLatLng([site.lat, site.lon]).bindTooltip(t('map.zone.siteTooltip'), { direction: 'top', offset: [0, -14] }).addTo(map);
+      else map.removeLayer(siteMarker);
+    }
+
+    function paintSheet() {
+      if (!ui.point) {
+        sheet.hidden = true;
+        map.removeLayer(pointMarker);
+        return;
+      }
+      const [lat, lon] = ui.point;
+      const { clock, mission } = store.get();
+      const scroll = sheet.scrollTop;
+      sheet.innerHTML = zoneHtml({
+        lat,
+        lon,
+        sample: env.sample(lat, lon, clock),
+        evaluation: env.evaluate(lat, lon, clock, 'habitat'),
+        isSite: samePlace(mission.site, ui.point),
+        t,
+        num,
+        coords,
+        sourceLink,
+      });
+      sheet.hidden = false;
+      sheet.scrollTop = scroll;
+      pointMarker.setLatLng([lat, lon]).addTo(map);
+    }
+
+    function showPoint(lat, lon) {
+      ui.point = [lat, lon];
+      sheet.scrollTop = 0;
+      paintSheet();
+    }
+
+    sheet.addEventListener('click', (e) => {
+      const button = e.target.closest('button');
+      if (!button) return;
+      if ('zoneClose' in button.dataset) {
+        ui.point = null;
+        paintSheet();
+      } else if ('zoneChoose' in button.dataset && ui.point) {
+        store.set('mission.site', { lat: ui.point[0], lon: ui.point[1] });
+      } else if ('zoneClear' in button.dataset) {
+        store.set('mission.site', null);
+      } else if ('zoneNext' in button.dataset) {
+        ctx.navigate('transit');
+      }
+    });
+    map.on('click', (e) => showPoint(e.latlng.lat, e.latlng.lng));
+
+    // Mejores zonas para el instante del reloj, entre las que cumplen las restricciones de aterrizaje.
+    const bestGroup = L.layerGroup().addTo(map);
+    const bestNote = el.querySelector('[data-best-note]');
+    function drawBest() {
+      bestGroup.clearLayers();
+      const zones = bestZones(env, store.get().clock);
+      zones.forEach((zone, index) => {
+        L.marker([zone.lat, zone.lon], {
+          icon: L.divIcon({ className: `mapview__best is-${zone.verdict}`, html: `<span>${index + 1}</span>`, iconSize: [32, 32], iconAnchor: [16, 16] }),
+          bubblingMouseEvents: false,
+        })
+          .bindTooltip(t('map.best.tooltip', { n: index + 1, score: zone.score }), { direction: 'top', offset: [0, -14] })
+          .on('click', () => showPoint(zone.lat, zone.lon))
+          .addTo(bestGroup);
+      });
+      const { clock } = store.get();
+      bestNote.textContent = zones.length
+        ? t('map.best.note', { n: zones.length, sol: clock.sol, hour: formatHour(clock.localHour), ls: Math.round(clock.ls) })
+        : t('map.best.none');
+      ui.best = true;
+    }
+    el.querySelector('[data-best]').addEventListener('click', drawBest);
+    el.querySelector('[data-best-clear]').addEventListener('click', () => {
+      bestGroup.clearLayers();
+      bestNote.textContent = '';
+      ui.best = false;
+    });
+    if (ui.best) drawBest();
+
+    paintSite();
+    paintSheet();
+
+    // Al mover el reloj se repintan las capas que dependen de él y la ficha del punto abierto.
+    let frame = 0;
+    const unsubscribe = store.subscribe((state, path) => {
+      if (path === 'mission' || path.startsWith('mission.site')) {
+        paintSite();
+        paintSheet();
+      }
+      if (path !== 'clock' && !path.startsWith('clock.') && path !== 'mission') return;
+      clearTimeout(frame);
+      frame = setTimeout(() => {
+        for (const def of ENV_LAYERS) {
+          if (def.clock && ui.env[def.id]) envOverlays[def.id].redraw(state.clock);
+        }
+        paintSheet();
+      }, 30);
     });
 
     return () => {
       alive = false;
+      clearTimeout(frame);
+      unsubscribe();
+      unmountClock();
       mars.destroy();
     };
   },
