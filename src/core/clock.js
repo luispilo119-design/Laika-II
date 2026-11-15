@@ -73,6 +73,7 @@ export function mountClockControl(el, ctx) {
     hourInput.value = String(Math.round(clock.localHour * 2) / 2);
     lsInput.value = String(Math.round(wrap360(clock.ls)) % 360);
     solValue.textContent = String(clock.sol);
+    for (const back of box.querySelectorAll('[data-sol^="-"]')) back.disabled = clock.sol <= 0;
     const season = t(`core.clock.season.${northernSeason(clock.ls)}`);
     now.innerHTML = `
       <strong>${t('core.clock.now', { sol: clock.sol, hour: formatHour(clock.localHour) })}</strong>

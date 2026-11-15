@@ -229,10 +229,12 @@ const mod = {
         out.textContent = t('transit.trip.dayValue', { day: ui.day, days: trip.days });
         slider.setAttribute('aria-valuetext', out.textContent);
         metersTitle.textContent = t('transit.trip.metersTitle', { day: ui.day });
-        value('bone').textContent = t('transit.meter.bone.value', {
-          low: number.format(est.boneLossPct[0]),
-          high: number.format(est.boneLossPct[1]),
-        });
+        const boneLow = number.format(est.boneLossPct[0]);
+        const boneHigh = number.format(est.boneLossPct[1]);
+        const boneLost = Number(boneHigh.replace(',', '.')) > 0; // con un decimal, la pérdida ya se nota
+        value('bone').textContent = boneLost
+          ? t('transit.meter.bone.value', { low: boneLow, high: boneHigh })
+          : t('transit.meter.bone.none');
         value('dose').textContent = t('transit.meter.dose.value', { dose: whole.format(est.doseMSv) });
         value('exercise').textContent = t('transit.meter.exercise.value', { hours: whole.format(est.exerciseH) });
         // Gráficos: trayecto, hueso que se vacía, medidor de radiación y horas de ejercicio.
@@ -240,7 +242,7 @@ const mod = {
         panel.querySelector('.transit__ship').style.left = `${(progress * 100).toFixed(2)}%`;
         const loss = est.boneLossPct[1];
         panel.querySelector('[data-viz="bone"] .transit__bone-fill').setAttribute('width', String(Math.max(0, 140 * (1 - loss / 20))));
-        panel.querySelector('[data-viz="bone"] .transit__bone-loss').textContent = `−${number.format(est.boneLossPct[0])}–${number.format(loss)} %`;
+        panel.querySelector('[data-viz="bone"] .transit__bone-loss').textContent = boneLost ? `−${boneLow}–${boneHigh} %` : '0 %';
         const share = Math.min(1, est.doseMSv / CAREER_LIMIT_MSV);
         panel.querySelector('[data-viz="dose"] .transit__gauge-arc').setAttribute('stroke-dasharray', `${(share * 157).toFixed(1)} 157`);
         panel.querySelector('[data-viz="dose"] .transit__gauge-num').textContent = whole.format(est.doseMSv);
@@ -500,7 +502,10 @@ const mod = {
       function endGame() {
         game.phase = 'over';
         setInput(false);
-        status.textContent = t('transit.games.over', { points: game.points, rounds: game.completed });
+        status.textContent = t(game.completed === 1 ? 'transit.games.overOne' : 'transit.games.over', {
+          points: game.points,
+          rounds: game.completed,
+        });
         startBtn.textContent = t('transit.games.again');
         startBtn.hidden = false;
         form.hidden = game.points === 0;

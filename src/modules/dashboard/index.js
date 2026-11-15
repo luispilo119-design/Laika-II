@@ -95,6 +95,8 @@ const mod = {
           <div class="dash__actions">
             <button type="button" class="btn btn--primary" data-print>${t('dashboard.print')}</button>
             <p class="dash__hint">${t('dashboard.printHint')}</p>
+            <button type="button" class="btn btn--ghost" data-new>${t('dashboard.newMission')}</button>
+            <p class="dash__hint">${t('dashboard.newHint')}</p>
           </div>
         </header>
 
@@ -139,7 +141,7 @@ const mod = {
           ${kpi(t('dashboard.kpi.routes'), routes.length, t('dashboard.kpi.routesSum', { km: n0.format(km), h: n1.format(hours) }), '', 'var(--ink)')}
           ${kpi(
             t('dashboard.kpi.survival'),
-            t('dashboard.kpi.sols', { n: stats.sols.length }),
+            t(stats.sols.length === 1 ? 'dashboard.kpi.solsOne' : 'dashboard.kpi.sols', { n: stats.sols.length }),
             t('dashboard.kpi.survivalSum', { score: n0.format(stats.avgScore * 100), streak: stats.streak, water: n1.format(stats.totalWater) }),
             '',
             'var(--ok)',
@@ -257,8 +259,27 @@ const mod = {
 
     const nameInput = el.querySelector('.dash__name input');
     const onInput = () => store.set('mission.name', nameInput.value.slice(0, 60));
+    // Nueva misión: el primer toque pide confirmación; el segundo (antes de 4 s) borra y va a la Fase 1.
+    const newBtn = el.querySelector('[data-new]');
+    let confirmTimer = 0;
+    const resetNew = () => {
+      clearTimeout(confirmTimer);
+      delete newBtn.dataset.confirm;
+      newBtn.textContent = t('dashboard.newMission');
+    };
     const onClick = (event) => {
       if (event.target.closest('[data-print]')) return window.print();
+      if (event.target.closest('[data-new]')) {
+        if (!newBtn.dataset.confirm) {
+          newBtn.dataset.confirm = '1';
+          newBtn.textContent = t('dashboard.newConfirm');
+          confirmTimer = setTimeout(resetNew, 4000);
+          return undefined;
+        }
+        resetNew();
+        store.resetMission();
+        return navigate('hohmann');
+      }
       const go = event.target.closest('[data-go]')?.dataset.go;
       if (go) navigate(go);
       return undefined;
@@ -266,6 +287,7 @@ const mod = {
     nameInput.addEventListener('change', onInput);
     el.addEventListener('click', onClick);
     return () => {
+      clearTimeout(confirmTimer);
       nameInput.removeEventListener('change', onInput);
       el.removeEventListener('click', onClick);
     };

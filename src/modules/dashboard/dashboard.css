@@ -54,7 +54,12 @@
 }
 
 .dash__actions {
+  max-width: 320px;
   text-align: right;
+}
+
+.dash__actions [data-new] {
+  margin-top: 16px;
 }
 
 .dash__hint {

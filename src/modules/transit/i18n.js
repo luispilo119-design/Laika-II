@@ -52,6 +52,7 @@ export default {
       bone: {
         label: 'Densidad de los huesos',
         value: 'entre −{low} % y −{high} %',
+        none: 'sin pérdida aún',
         note: 'En vuelo, los huesos que cargan peso pierden en promedio de 1 % a 1.5 % de densidad mineral al mes.',
       },
       dose: {
@@ -153,6 +154,7 @@ export default {
       turnReversed: 'Tu turno: orden inverso, del último al primero.',
       good: '¡Protocolo correcto!',
       over: 'Fin de la guardia: {points} puntos en {rounds} rondas completas.',
+      overOne: 'Fin de la guardia: {points} puntos en 1 ronda completa.',
       aliasLabel: 'Tu alias (hasta {max} caracteres)',
       save: 'Guardar puntuación',
       savedCloud: 'Puntuación guardada en la nube.',
@@ -224,6 +226,7 @@ export default {
       bone: {
         label: 'Bone density',
         value: 'between −{low}% and −{high}%',
+        none: 'no loss yet',
         note: 'In flight, weight-bearing bones lose on average 1% to 1.5% of mineral density per month.',
       },
       dose: {
@@ -323,6 +326,7 @@ export default {
       turnReversed: 'Your turn: reverse order, from last to first.',
       good: 'Protocol correct!',
       over: 'End of watch: {points} points in {rounds} completed rounds.',
+      overOne: 'End of watch: {points} points in 1 completed round.',
       aliasLabel: 'Your alias (up to {max} characters)',
       save: 'Save score',
       savedCloud: 'Score saved to the cloud.',

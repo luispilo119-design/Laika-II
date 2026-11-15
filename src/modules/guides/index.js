@@ -251,7 +251,7 @@ const mod = {
               <p class="book__note">${t('guides.journal.doseTotal', { v: num1.format(dose.total), limit: CAREER_LIMIT_MSV })} ${srcTag('nasa-std-3001-radiation')}</p>
               <ul class="book__dose-list">
                 <li>${cDays ? t('guides.journal.doseCruise', { days: cDays, rate: CRUISE_MSV_PER_DAY }) : t('guides.journal.doseNoPlan')} ${cDays ? srcTag('jpl-rad-cruise') : ''}</li>
-                <li>${surfaceRate != null ? `${t('guides.journal.doseSurface', { sols: stats.lastSol, rate: num.format(surfaceRate) })} <span class="badge">${t('core.modelTag')}</span>` : t('guides.journal.doseNoSite')}</li>
+                <li>${surfaceRate != null ? `${t(stats.lastSol === 1 ? 'guides.journal.doseSurfaceOne' : 'guides.journal.doseSurface', { sols: stats.lastSol, rate: num.format(surfaceRate) })} <span class="badge">${t('core.modelTag')}</span>` : t('guides.journal.doseNoSite')}</li>
               </ul>
               ${surfaceRate != null ? `<p class="book__fine">${t('guides.journal.doseModel')}</p>` : ''}
             </div>

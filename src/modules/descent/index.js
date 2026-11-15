@@ -197,7 +197,9 @@ const mod = {
       read('dust').textContent = t('descent.unit.tau', { v: num(sample.dustOpacity, 2) }) + mark('dustOpacity');
       modeledNote.hidden = modeled.length === 0;
       read('position').textContent = coords(lat, lon);
-      read('distance').textContent = t('descent.unit.km', { v: num(Math.hypot(where.x, where.z) / 1000, 2) });
+      const meters = Math.hypot(where.x, where.z);
+      read('distance').textContent =
+        meters < 1000 ? t('descent.unit.meters', { v: num(meters) }) : t('descent.unit.km', { v: num(meters / 1000, 2) });
       paintVehicle(where);
       drawMinimap();
       read('hour').textContent = formatHour(hour());

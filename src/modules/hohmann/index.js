@@ -620,7 +620,10 @@ const mod = {
     }
     dateInput.addEventListener('change', () => {
       const iso = dateInput.value;
-      if (!iso || iso < MIN_DATE || iso > MAX_DATE) return;
+      if (!iso || iso < MIN_DATE || iso > MAX_DATE) {
+        dateInput.value = ui.fromISO;
+        return;
+      }
       ui.selectedISO = null;
       setFrom(iso);
     });

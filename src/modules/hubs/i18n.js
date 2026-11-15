@@ -25,6 +25,7 @@ export default {
     empty: 'Todavía no hay hubs.',
     count: '{n} hubs · {viable} viables',
     clearAll: 'Quitar todos',
+    clearConfirm: 'Toca otra vez para quitarlos todos',
     card: {
       scoreNow: 'Puntaje en este instante del reloj (al colocarlo: {placed}).',
       weights: 'Cruce de datos',
@@ -67,6 +68,7 @@ export default {
     empty: 'No hubs yet.',
     count: '{n} hubs · {viable} viable',
     clearAll: 'Remove all',
+    clearConfirm: 'Tap again to remove them all',
     card: {
       scoreNow: 'Score at this clock instant (when placed: {placed}).',
       weights: 'Data cross-check',

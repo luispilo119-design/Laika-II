@@ -167,6 +167,7 @@ const mod = {
       ui.tool = null;
       ui.movingId = null;
       paintMode();
+      paintAll(); // si se cancelaba un movimiento, vuelve la ficha del hub elegido
     });
 
     map.on('mousemove', (e) => {
@@ -376,7 +377,21 @@ const mod = {
         removeHub(ui.selectedId);
       }
     });
+    // Quitar todos: el primer toque pide confirmación; el segundo (antes de 4 s) borra.
+    let confirmTimer = 0;
+    const resetClear = () => {
+      clearTimeout(confirmTimer);
+      delete clearAll.dataset.confirm;
+      clearAll.textContent = t('hubs.clearAll');
+    };
     clearAll.addEventListener('click', () => {
+      if (!clearAll.dataset.confirm) {
+        clearAll.dataset.confirm = '1';
+        clearAll.textContent = t('hubs.clearConfirm');
+        confirmTimer = setTimeout(resetClear, 4000);
+        return;
+      }
+      resetClear();
       ui.selectedId = null;
       ui.movingId = null;
       store.set('mission.hubs', []);
@@ -397,6 +412,7 @@ const mod = {
 
     return () => {
       clearTimeout(timer);
+      clearTimeout(confirmTimer);
       unsubscribe();
       unmountClock();
       mars.destroy();

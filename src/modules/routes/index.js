@@ -585,6 +585,12 @@ const mod = {
       if (fromLabel) route.from = fromLabel;
       if (toLabel) route.to = toLabel;
       store.set('mission.routes', [...(store.get().mission.routes ?? []), route]);
+      current = null;
+      const saveBtn = resultBox.querySelector('[data-save]');
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = t('routes.result.savedDone');
+      }
       paintSaved();
       savedBox.querySelector(`[data-show="${route.id}"]`)?.focus();
     }
