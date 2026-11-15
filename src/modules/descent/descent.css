@@ -616,3 +616,109 @@
   border: 1px solid var(--line);
   border-radius: var(--radius);
 }
+
+/* ---------- Fotos de los rovers ---------- */
+
+.descent__photos {
+  position: absolute;
+  top: 68px;
+  right: 12px;
+  bottom: 16px;
+  width: min(480px, calc(100% - 24px));
+  overflow-y: auto;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-top: 5px solid var(--rust-500);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--bg-sunken) 96%, transparent);
+  font-size: 13px;
+}
+
+.descent__photos[hidden],
+.descent__photo-view[hidden],
+.descent__photos .btn[hidden] {
+  display: none;
+}
+
+.descent__photos-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0;
+}
+
+.descent__photos-filters .btn {
+  min-height: 44px;
+  font-size: 12px;
+}
+
+.descent__photos-filters .btn[aria-pressed='true'] {
+  background: var(--rust-500);
+  color: var(--cream);
+}
+
+.descent__photos-filters .btn span {
+  opacity: 0.75;
+}
+
+.descent__photos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 6px;
+}
+
+.descent__thumb {
+  aspect-ratio: 1;
+  min-height: 44px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #000;
+  cursor: pointer;
+}
+
+.descent__thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.descent__thumb:focus-visible {
+  outline: 2px solid var(--cream);
+  outline-offset: 1px;
+}
+
+.descent__photos [data-photos-more] {
+  min-height: 44px;
+  margin-top: 10px;
+}
+
+.descent__photo-view {
+  position: sticky;
+  bottom: 0;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  background: var(--bg-sunken);
+}
+
+.descent__photo-view .btn {
+  min-height: 44px;
+  margin-bottom: 8px;
+}
+
+.descent__photo-view img {
+  display: block;
+  width: 100%;
+  max-height: 52vh;
+  object-fit: contain;
+  background: #000;
+  border-radius: 4px;
+}
+
+.descent__photo-view a,
+.descent__photos [data-photos-note] a {
+  color: var(--rust-300);
+}

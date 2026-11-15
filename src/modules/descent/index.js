@@ -11,6 +11,8 @@ import messages from './i18n.js';
 import L from 'leaflet';
 import { AREA_M, GRID, areaBBox, makeHeightField, toLatLon, toLocal, insideArea } from './terrain.js';
 import { IMAGERY_REFERENCES } from './tiles.js';
+import { PHOTO_REFERENCES, photosForStop } from './photos.js';
+import { esc } from '../../core/html.js';
 import { createMarsMap } from '../../core/marsmap.js';
 import { loadRovers, stopsOf, ROVER_IDS, ROVER_REFERENCES } from '../../core/rovers.js';
 import { routeCenter, localPaths, localStops, nearestStop, pointAtDistance, elevationProfile } from './traverse.js';
@@ -34,6 +36,7 @@ const REFERENCES = [
   },
   ...IMAGERY_REFERENCES,
   ...ROVER_REFERENCES,
+  ...PHOTO_REFERENCES,
 ];
 
 const ROUTE_COLORS = { perseverance: '#ffd166', curiosity: '#5bd1c9' };
@@ -203,6 +206,22 @@ const mod = {
             </div>
             <canvas class="descent__profile" width="340" height="96" aria-label="${t('descent.routes.profile')}"></canvas>
             <p class="descent__note">${t('descent.routes.note')}</p>
+          </div>
+        </section>
+
+        <section class="descent__photos" hidden aria-label="${t('descent.photos.label')}">
+          <div class="descent__panel-head">
+            <h2 data-photos-title>${t('descent.photos.label')}</h2>
+            <button type="button" class="btn" data-photos-close aria-label="${t('descent.close')}">×</button>
+          </div>
+          <p class="descent__note" data-photos-note role="status"></p>
+          <div class="descent__photos-filters" data-photos-filters></div>
+          <div class="descent__photos-grid" data-photos-grid></div>
+          <button type="button" class="btn" data-photos-more hidden>${t('descent.photos.more')}</button>
+          <div class="descent__photo-view" data-photo-view hidden>
+            <button type="button" class="btn" data-photo-back>${t('descent.photos.back')}</button>
+            <img data-photo-img alt="" />
+            <p class="descent__note" data-photo-caption></p>
           </div>
         </section>
 
@@ -550,6 +569,11 @@ const mod = {
     }
 
     function onKeyDown(event) {
+      if (event.code === 'Escape') {
+        if (!photoView.hidden) photoView.hidden = true;
+        else if (!photosBox.hidden) closePhotos();
+        return;
+      }
       if (event.target.closest?.('input, textarea, select')) return;
       if (event.code === 'KeyE') {
         if (!event.repeat) toggleVehicle();
@@ -860,6 +884,7 @@ const mod = {
     }
 
     function onClick(event) {
+      if (event.target.closest('.descent__photos')) return onPhotosClick(event);
       const go = event.target.closest('[data-go]')?.dataset.go;
       if (go) return navigate(go);
       if (event.target.closest('[data-place-open]')) return openPlace();
@@ -983,8 +1008,129 @@ const mod = {
       setRoutesOpen(true);
     };
 
-    /** Panel de fotos de una parada (se completa en la sección de fotos). */
-    function openPhotos() {}
+    // ---------- Fotos de los rovers por parada ----------
+
+    const photosBox = el.querySelector('.descent__photos');
+    const photosTitle = el.querySelector('[data-photos-title]');
+    const photosNote = el.querySelector('[data-photos-note]');
+    const photosFilters = el.querySelector('[data-photos-filters]');
+    const photosGrid = el.querySelector('[data-photos-grid]');
+    const photosMore = el.querySelector('[data-photos-more]');
+    const photoView = el.querySelector('[data-photo-view]');
+    const photoImg = el.querySelector('[data-photo-img]');
+    const photoCaption = el.querySelector('[data-photo-caption]');
+    const PHOTO_PAGE = 48;
+    const photosUi = { list: [], family: 'all', shown: PHOTO_PAGE, abort: null, rover: null };
+    const dateFmt = new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
+    const rawPage = (rover) => PHOTO_REFERENCES.find((r) => r.id === (rover === 'perseverance' ? 'nasa-m20-raw' : 'nasa-msl-raw')).url;
+
+    async function openPhotos(rover, index) {
+      const stop = routes.stops[index];
+      if (!stop) return;
+      photosBox.hidden = false;
+      photoView.hidden = true;
+      photosUi.abort?.abort();
+      const controller = new AbortController();
+      photosUi.abort = controller;
+      photosUi.rover = rover;
+      photosUi.list = [];
+      photosUi.family = 'all';
+      photosUi.shown = PHOTO_PAGE;
+      photosTitle.textContent = t('descent.photos.title', { name: roverName(rover), sol: num(stop.sol) });
+      photosNote.textContent = t('descent.photos.loading');
+      photosFilters.innerHTML = '';
+      photosGrid.innerHTML = '';
+      photosMore.hidden = true;
+      try {
+        const result = await photosForStop(rover, routes.stops, index, { signal: controller.signal });
+        if (!alive || controller.signal.aborted) return;
+        photosUi.list = result.photos;
+        const sols = result.sols.length > 1 ? `${num(result.sols[0])}–${num(result.sols[result.sols.length - 1])}` : num(stop.sol);
+        let note = result.photos.length
+          ? t(result.exact ? 'descent.photos.exact' : 'descent.photos.approx', { count: num(result.photos.length), sols })
+          : t('descent.photos.none', { sols });
+        if (result.truncated) note += ` ${t('descent.photos.truncated')}`;
+        photosNote.textContent = note;
+        renderPhotoFilters();
+        renderPhotoGrid();
+      } catch {
+        if (!alive || controller.signal.aborted) return;
+        photosNote.innerHTML = `${esc(t('descent.photos.failed'))} <a href="${rawPage(rover)}" target="_blank" rel="noopener">${esc(t('descent.photos.nasaPage'))}</a>`;
+      }
+    }
+
+    function closePhotos() {
+      photosUi.abort?.abort();
+      photosBox.hidden = true;
+      photoView.hidden = true;
+      photoImg.removeAttribute('src');
+    }
+
+    const filteredPhotos = () => (photosUi.family === 'all' ? photosUi.list : photosUi.list.filter((p) => p.family === photosUi.family));
+
+    function renderPhotoFilters() {
+      const counts = new Map();
+      for (const p of photosUi.list) counts.set(p.family, (counts.get(p.family) ?? 0) + 1);
+      if (counts.size < 2) {
+        photosFilters.innerHTML = '';
+        return;
+      }
+      const chip = (family, count) =>
+        `<button type="button" class="btn" data-photo-family="${family}" aria-pressed="${photosUi.family === family}">${esc(
+          family === 'all' ? t('descent.photos.all') : t(`descent.photos.family.${family}`),
+        )} <span>${num(count)}</span></button>`;
+      photosFilters.innerHTML = chip('all', photosUi.list.length) + [...counts].map(([family, count]) => chip(family, count)).join('');
+    }
+
+    function renderPhotoGrid() {
+      const list = filteredPhotos();
+      photosGrid.innerHTML = list
+        .slice(0, photosUi.shown)
+        .map(
+          (p, i) => `<button type="button" class="descent__thumb" data-photo="${i}">
+            <img src="${esc(p.thumb)}" alt="${esc(t('descent.photos.alt', { camera: t(`descent.photos.family.${p.family}`), sol: num(p.sol) }))}" loading="lazy" decoding="async" />
+          </button>`,
+        )
+        .join('');
+      photosMore.hidden = list.length <= photosUi.shown;
+    }
+
+    function showPhoto(i) {
+      const p = filteredPhotos()[i];
+      if (!p) return;
+      photoView.hidden = false;
+      photoImg.src = p.large;
+      photoImg.alt = t('descent.photos.alt', { camera: t(`descent.photos.family.${p.family}`), sol: num(p.sol) });
+      const date = p.date ? dateFmt.format(new Date(p.date)) : '—';
+      photoCaption.innerHTML = `${esc(t('descent.photos.caption', { instrument: p.instrument, sol: num(p.sol), date }))}<br>${esc(
+        p.credit,
+      )} · <a href="${esc(p.link)}" target="_blank" rel="noopener">${esc(t('descent.photos.nasaPage'))}</a>`;
+      photoView.scrollIntoView({ block: 'nearest' });
+    }
+
+    function onPhotosClick(event) {
+      if (event.target.closest('[data-photos-close]')) return closePhotos();
+      const family = event.target.closest('[data-photo-family]')?.dataset.photoFamily;
+      if (family) {
+        photosUi.family = family;
+        photosUi.shown = PHOTO_PAGE;
+        photoView.hidden = true;
+        renderPhotoFilters();
+        renderPhotoGrid();
+        return undefined;
+      }
+      const thumb = event.target.closest('[data-photo]');
+      if (thumb) return showPhoto(Number(thumb.dataset.photo));
+      if (event.target.closest('[data-photo-back]')) {
+        photoView.hidden = true;
+        return undefined;
+      }
+      if (event.target.closest('[data-photos-more]')) {
+        photosUi.shown += PHOTO_PAGE;
+        renderPhotoGrid();
+      }
+      return undefined;
+    }
 
     function onHour() {
       ui.hour = Number(hourSlider.value);
@@ -1019,6 +1165,7 @@ const mod = {
     return () => {
       alive = false;
       imageryAbort?.abort();
+      photosUi.abort?.abort();
       cancelAnimationFrame(raf);
       resizeObserver.disconnect();
       el.removeEventListener('click', onClick);

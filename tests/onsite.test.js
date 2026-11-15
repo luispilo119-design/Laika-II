@@ -171,3 +171,57 @@ test('soles de fotos: exactos con site/drive y aproximados sin ellos', () => {
   assert.deepEqual(photoSols(fakeStops, 0, false).sols, [10, 11]);
   assert.deepEqual(photoSols(fakeStops, 3, true).sols, [20], 'la última parada: solo su sol');
 });
+
+// ---------- Fotos crudas de la NASA ----------
+import { normalizeM20, normalizeMSL, cameraFamily, photosForStop, solUrl } from '../src/modules/descent/photos.js';
+
+test('las respuestas de las dos API se leen igual y siempre con https', () => {
+  const m20 = normalizeM20({
+    images: [
+      {
+        imageid: 'NLF_0400_A',
+        sol: 400,
+        site: 4,
+        drive: '218',
+        sample_type: 'Full',
+        camera: { instrument: 'NAVCAM_LEFT' },
+        image_files: { small: 'http://x/s.jpg', large: 'https://x/l.jpg' },
+        link: 'https://mars.nasa.gov/mars2020/multimedia/raw-images/NLF_0400_A',
+        credit: 'NASA/JPL-Caltech',
+        date_taken_utc: '2022-04-06T10:00:00',
+      },
+      { imageid: 'thumb', sol: 400, sample_type: 'Thumbnail', camera: { instrument: 'NAVCAM_LEFT' }, image_files: { small: 'a', large: 'b' } },
+    ],
+  });
+  assert.equal(m20.length, 1, 'sin miniaturas');
+  assert.equal(m20[0].drive, 218, 'drive llega como texto y se compara como número');
+  assert.equal(m20[0].thumb, 'https://x/s.jpg');
+  assert.equal(m20[0].family, 'navcam');
+  const msl = normalizeMSL({
+    items: [{ imageid: '1664ML', sol: 1664, instrument: 'MAST_LEFT', https_url: 'https://y/a.jpg', link: '/raw_images/1', image_credit: 'NASA/JPL-Caltech/MSSS', is_thumbnail: false, site: null, drive: null }],
+  });
+  assert.equal(msl[0].link, 'https://mars.nasa.gov/raw_images/1');
+  assert.equal(msl[0].family, 'mastcam');
+  assert.equal(msl[0].site, null);
+  assert.equal(cameraFamily('FRONT_HAZCAM_LEFT_A'), 'hazcam');
+  assert.equal(cameraFamily('SUPERCAM_RMI'), 'laser');
+  assert.ok(solUrl('curiosity', 12).includes('condition_2=12:sol:eq'));
+});
+
+test('con Perseverance quedan solo las fotos de la parada exacta', async () => {
+  const stops = [
+    { sol: 99, site: 4, drive: 218, distM: 0 },
+    { sol: 102, site: 4, drive: 372, distM: 50 },
+  ];
+  const photo = (id, sol, drive) => ({ imageid: id, sol, site: 4, drive: String(drive), sample_type: 'Full', camera: { instrument: 'NAVCAM_LEFT' }, image_files: { small: 's', large: 'l' } });
+  const bySol = {
+    99: [photo('a', 99, 136), photo('b', 99, 218)],
+    100: [photo('c', 100, 218)],
+    101: [photo('d', 101, 218)],
+    102: [photo('e', 102, 218), photo('f', 102, 372)],
+  };
+  const fetchFn = async (url) => ({ ok: true, json: async () => ({ images: bySol[Number(new URL(url).searchParams.get('sol'))] ?? [] }) });
+  const result = await photosForStop('perseverance', stops, 0, { fetchFn });
+  assert.deepEqual(result.photos.map((p) => p.id), ['b', 'c', 'd', 'e']);
+  assert.equal(result.exact, true);
+});
