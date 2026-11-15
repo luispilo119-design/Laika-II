@@ -16,6 +16,34 @@ point on the planet gets a clear verdict: viable, marginal or not viable, and wh
 
 It works on desktop and tablet, in Spanish and English.
 
+## Presentation and video
+
+<table>
+  <tr>
+    <td align="center" width="30%">
+      <a href="docs/presentation/martian-map-reel.mp4?raw=true"><img src="docs/presentation/reel-preview.gif" alt="Preview of the 30-second Martian Map video: the ASCII black hole title, then each phase of the app" width="240"></a>
+    </td>
+    <td align="center">
+      <a href="docs/presentation/Martian-Map-presentation.pdf"><img src="docs/presentation/slides.jpg" alt="The seven slides of the Martian Map presentation: cover, the challenge, the solution, plan from Earth, the journey and the descent, build and survive, and how the app answers the challenge" width="560"></a>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <b>30-second video</b><br>
+      <a href="docs/presentation/martian-map-reel.mp4?raw=true">Download MP4</a> · vertical 1080×1920, 21 MB
+    </td>
+    <td align="center">
+      <b>3-minute pitch · 7 slides</b><br>
+      <a href="docs/presentation/Martian-Map-presentation.pptx?raw=true">Download PowerPoint</a> (20 MB) ·
+      <a href="docs/presentation/Martian-Map-presentation.pdf">View as PDF</a>
+    </td>
+  </tr>
+</table>
+
+The PowerPoint has the app's demo videos and the 30-second video inside. Open it in desktop PowerPoint:
+animations and videos start on their own, so it takes one click per slide, and the speaker notes carry
+the script for two presenters. The PDF shows the same slides without motion.
+
 ## What you can do
 
 | Phase | Screen | What it does |
