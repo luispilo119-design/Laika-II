@@ -17,12 +17,30 @@ import { createMarsMap } from '../../core/marsmap.js';
 import { loadRovers, stopsOf, ROVER_IDS, ROVER_REFERENCES } from '../../core/rovers.js';
 import { routeCenter, localPaths, localStops, nearestStop, pointAtDistance, elevationProfile } from './traverse.js';
 import { formatHour } from '../../core/clock.js';
+import { VEHICLES, VEHICLE_IDS, WALK, travelSeconds } from './vehicles.js';
 
 // Punto de ejemplo para cuando todavía no hay sitio de aterrizaje (el mismo que usa "routes").
 const EXAMPLE_SITE = { lat: 1.0, lon: 3.0 };
 const HUD_EVERY_MS = 400;
 const MINIMAP_M = 2000; // lado del mini mapa, centrado en la persona
 const EDGE_RELOAD_M = 1500; // a esta distancia del borde se ofrece cargar el terreno de más allá
+
+const VEHICLE_REFS = {
+  'nasa-sev': {
+    id: 'nasa-sev',
+    title: 'Space Exploration Vehicle',
+    org: 'NASA Science',
+    url: 'https://science.nasa.gov/3d-resources/space-exploration-vehicle/',
+    verified: true,
+  },
+  'nasa-perseverance-components': {
+    id: 'nasa-perseverance-components',
+    title: 'Perseverance Rover Components',
+    org: 'NASA Science',
+    url: 'https://science.nasa.gov/mission/mars-2020-perseverance/rover-components/',
+    verified: true,
+  },
+};
 
 /** @type {import('../../core/types.js').Reference[]} */
 const REFERENCES = [
@@ -37,14 +55,17 @@ const REFERENCES = [
   ...IMAGERY_REFERENCES,
   ...ROVER_REFERENCES,
   ...PHOTO_REFERENCES,
+  ...Object.values(VEHICLE_REFS),
 ];
 
 const ROUTE_COLORS = { perseverance: '#ffd166', curiosity: '#5bd1c9' };
 const ROUTE_REGION = { perseverance: 'Jezero', curiosity: 'Gale' };
 const REPLAY_SPEEDS = [100, 400, 1600]; // m/s a lo largo del recorrido
+const WARPS = [1, 10, 100, 1000]; // aceleración del tiempo en modo de velocidad real
+const SOL_SECONDS = 24.6597 * 3600; // duración del día solar de Marte (NSSDCA Mars Fact Sheet)
 
 /** Hora elegida en la vista previa (null = la del reloj de la misión). No se escribe en el store. */
-const ui = { hour: null, place: null, stop: null, replaySpeed: 1 };
+const ui = { hour: null, place: null, stop: null, replaySpeed: 1, speedMode: 'explore', warp: 1, simSeconds: 0 };
 
 /** @type {import('../../core/types.js').ModuleDef} */
 const mod = {
@@ -86,6 +107,7 @@ const mod = {
           <button type="button" class="btn" data-ascend hidden>${t('descent.ascend')}</button>
           <button type="button" class="btn" data-place-open>${t('descent.place.open')}</button>
           <button type="button" class="btn" data-routes-open aria-expanded="false">${t('descent.routes.open')}</button>
+          <button type="button" class="btn" data-garage-open aria-expanded="false">${t('descent.garage.open')}</button>
           <button type="button" class="btn" data-go="${nextModule}">${t('descent.next', { name: t(`${nextModule}.title`) })}</button>
           ${env.isMock ? `<span class="badge badge--warn">${t('core.mockBadge')}</span>` : ''}
         </div>
@@ -132,13 +154,45 @@ const mod = {
           <p class="descent__aerial-hint">${t('descent.aerial.hint')}</p>
         </div>
 
+        <p class="descent__realchip" data-realchip hidden role="status"></p>
+
+        <section class="descent__garage descent__panel" hidden aria-label="${t('descent.garage.title')}">
+          <div class="descent__panel-head">
+            <h2>${t('descent.garage.title')}</h2>
+            <button type="button" class="btn" data-garage-close aria-label="${t('descent.close')}">×</button>
+          </div>
+          <div class="descent__seg" role="group" aria-label="${t('descent.garage.speedMode')}">
+            <button type="button" class="btn" data-speed-mode="explore">${t('descent.garage.explore')}</button>
+            <button type="button" class="btn" data-speed-mode="real">${t('descent.garage.real')}</button>
+          </div>
+          <div class="descent__seg" data-warp-row role="group" aria-label="${t('descent.garage.warp')}">
+            <span>${t('descent.garage.warp')}</span>
+            ${WARPS.map((w) => `<button type="button" class="btn" data-warp="${w}">×${num(w)}</button>`).join('')}
+          </div>
+          <p class="descent__note" data-speed-note></p>
+          <ul class="descent__garage-list">
+            ${['walk', ...VEHICLE_IDS]
+              .map(
+                (id) => `<li class="descent__card" data-card="${id}">
+                  <h3>${t(`descent.garage.v.${id}.name`)}</h3>
+                  <p class="descent__note">${t(`descent.garage.v.${id}.desc`)}</p>
+                  <dl data-card-specs="${id}"></dl>
+                  <button type="button" class="btn" data-use-vehicle="${id}">${t('descent.garage.use')}</button>
+                </li>`,
+              )
+              .join('')}
+          </ul>
+          <p class="descent__note">${t('descent.garage.note')}</p>
+        </section>
+
         <section class="descent__vehicle" hidden aria-label="${t('descent.rover.title')}">
-          <h2>${t('descent.rover.title')}</h2>
+          <h2 data-veh="title">${t('descent.rover.title')}</h2>
           <div class="descent__gauge-row">
             <div class="descent__speed"><strong data-veh="speed">0</strong><span>km/h</span></div>
             <div class="descent__veh-bars">
-              <p><span>${t('descent.rover.battery')}</span><b data-veh="battery"></b></p>
+              <p data-veh-row="battery"><span>${t('descent.rover.battery')}</span><b data-veh="battery"></b></p>
               <div class="glyph-bar glyph-bar--square" data-veh-bar="battery" style="--tone:#7fc98b;--value:1"></div>
+              <p data-veh-row="rps" hidden><span>${t('descent.rover.energy')}</span><b>${t('descent.garage.power.rpsShort')}</b></p>
               <p><span>${t('descent.rover.damage')}</span><b data-veh="damage"></b></p>
               <div class="glyph-bar glyph-bar--square" data-veh-bar="damage" style="--tone:#e2664f;--value:0"></div>
             </div>
@@ -152,7 +206,7 @@ const mod = {
           <div class="descent__veh-actions">
             <button type="button" class="btn" data-repair hidden>${t('descent.rover.repair')}</button>
           </div>
-          <p class="descent__note">${t('descent.rover.note')}</p>
+          <p class="descent__note" data-veh="note">${t('descent.rover.note')}</p>
         </section>
 
         <canvas class="descent__minimap" width="180" height="180" hidden aria-label="${t('descent.minimap')}"></canvas>
@@ -307,9 +361,17 @@ const mod = {
       descendPinBtn.hidden = !(aerial && pinPoint);
       const nearEdge = !insideArea(where.x, where.z, EDGE_RELOAD_M);
       reloadHereBtn.hidden = !(nearEdge && (aerial || mode === 'ground'));
-      if (!where.vehicle) return;
+      paintRealChip();
+      if (!where.vehicle || !driving) return;
       const v = where.vehicle;
-      veh('speed').textContent = num(Math.abs(v.speed) * 3.6);
+      const rps = where.spec.power === 'rps';
+      veh('title').textContent = t(`descent.garage.v.${where.vehicleId}.name`);
+      el.querySelector('[data-veh-row="battery"]').hidden = rps;
+      vehBar('battery').hidden = rps;
+      el.querySelector('[data-veh-row="rps"]').hidden = !rps;
+      const kmh = Math.abs(v.speed) * 3.6;
+      veh('speed').textContent = num(kmh, kmh < 1 && kmh > 0 ? 2 : 0);
+      veh('note').textContent = t(where.realSpeed ? 'descent.rover.noteReal' : 'descent.rover.note');
       veh('battery').textContent = `${num(v.battery * 100)} %`;
       veh('damage').textContent = `${num(v.damage * 100)} %`;
       vehBar('battery').style.setProperty('--value', v.battery.toFixed(3));
@@ -357,9 +419,11 @@ const mod = {
         else g.moveTo(px, py);
       });
       g.stroke();
-      const [vx, vy] = P(data.vehicle.x, data.vehicle.z);
       g.fillStyle = '#7fc98b';
-      g.fillRect(vx - 3, vy - 3, 6, 6);
+      for (const vehicle of data.vehicles) {
+        const [vx, vy] = P(vehicle.x, vehicle.z);
+        g.fillRect(vx - 3, vy - 3, 6, 6);
+      }
       const a = (where.headingDeg * Math.PI) / 180;
       g.fillStyle = '#e2664f';
       g.beginPath();
@@ -390,6 +454,8 @@ const mod = {
       routesOpenBtn.setAttribute('aria-expanded', String(open));
       if (!open) return;
       intro.hidden = true;
+      garageBox.hidden = true;
+      garageOpenBtn.setAttribute('aria-expanded', 'false');
       const mode = scene?.state().mode;
       if (mode === 'ground' || mode === 'driving') ascendNow();
     }
@@ -542,6 +608,108 @@ const mod = {
       ui.stop = null;
       reloadAt({ lat: center.lat, lon: center.lon, name: `${ROUTE_REGION[id]} · ${roverName(id)}`, rover: id });
       intro.hidden = true; // reloadAt la vuelve a mostrar; aquí el panel de rutas ya explica dónde se está
+    }
+
+    // ---------- Vehículos y velocidad real ----------
+
+    const garageBox = el.querySelector('.descent__garage');
+    const garageOpenBtn = el.querySelector('[data-garage-open]');
+    const realChip = el.querySelector('[data-realchip]');
+    const speedNote = el.querySelector('[data-speed-note]');
+    let realEnvAt = 0;
+
+    /** Duración legible: segundos, minutos, horas o soles. */
+    function duration(seconds) {
+      if (!Number.isFinite(seconds)) return '—';
+      if (seconds < 60) return t('descent.dur.s', { v: num(seconds) });
+      if (seconds < 3600) return t('descent.dur.min', { v: num(seconds / 60) });
+      if (seconds < 2 * SOL_SECONDS) return t('descent.dur.h', { h: num(Math.floor(seconds / 3600)), m: num(Math.floor((seconds % 3600) / 60)) });
+      return t('descent.dur.sols', { v: num(seconds / SOL_SECONDS, 1) });
+    }
+    const kmh = (mps) => {
+      const v = mps * 3.6;
+      return t('descent.unit.kmh', { v: num(v, v < 1 ? 2 : 0) });
+    };
+
+    function setGarageOpen(open) {
+      garageBox.hidden = !open;
+      garageOpenBtn.setAttribute('aria-expanded', String(open));
+      if (open) {
+        intro.hidden = true;
+        routesBox.hidden = true;
+        routesOpenBtn.setAttribute('aria-expanded', 'false');
+        paintGarage();
+      }
+    }
+
+    function paintGarage() {
+      const real = ui.speedMode === 'real';
+      for (const btn of el.querySelectorAll('[data-speed-mode]')) btn.setAttribute('aria-pressed', String(btn.dataset.speedMode === ui.speedMode));
+      el.querySelector('[data-warp-row]').hidden = !real;
+      for (const btn of el.querySelectorAll('[data-warp]')) btn.setAttribute('aria-pressed', String(Number(btn.dataset.warp) === ui.warp));
+      speedNote.textContent = t(real ? 'descent.garage.realNote' : 'descent.garage.exploreNote');
+      const current = scene?.state().vehicleId ?? 'walk';
+      for (const id of ['walk', ...VEHICLE_IDS]) {
+        const spec = id === 'walk' ? null : VEHICLES[id];
+        const realMps = spec ? spec.realSpeed : WALK.realSpeed;
+        const exploreMps = spec ? spec.maxSpeed : WALK.exploreSpeed;
+        const realRef = spec ? spec.realRef : WALK.realRef;
+        const rows = [
+          [t('descent.garage.realSpeed'), `${kmh(realMps)} · ${realRef ? t('descent.garage.sourceNasa') : t('descent.garage.assumption')}`],
+          [t('descent.garage.exploreSpeed'), `${kmh(exploreMps)} · ${t('descent.garage.game')}`],
+          [t('descent.garage.oneKm'), duration(travelSeconds(1000, realMps))],
+        ];
+        if (spec) rows.push([t('descent.rover.energy'), t(`descent.garage.power.${spec.power}`)]);
+        if (spec?.id === 'perseverance') rows.push([t('descent.garage.maxTilt'), `${num(spec.maxTiltDeg)}° · ${t('descent.garage.sourceNasa')}`]);
+        el.querySelector(`[data-card-specs="${id}"]`).innerHTML = rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('');
+        const card = el.querySelector(`[data-card="${id}"]`);
+        card.classList.toggle('is-current', id === current);
+        card.querySelector('[data-use-vehicle]').textContent = id === current ? t('descent.garage.inUse') : t('descent.garage.use');
+      }
+    }
+
+    function paintRealChip() {
+      const real = ui.speedMode === 'real';
+      realChip.hidden = !real || !scene;
+      if (real) realChip.textContent = t('descent.garage.chip', { warp: num(ui.warp), time: duration(ui.simSeconds) });
+    }
+
+    function applySpeedMode() {
+      scene?.setSpeedMode(ui.speedMode === 'real', ui.warp);
+      paintGarage();
+      paintRealChip();
+    }
+
+    /** En modo real el tiempo corre: cuenta el tiempo simulado y la hora del cielo avanza (vista previa). */
+    function advanceRealTime(simDt) {
+      ui.simSeconds += simDt;
+      ui.hour = (((ui.hour ?? clock.localHour) + (simDt * 24) / SOL_SECONDS) % 24 + 24) % 24;
+      const now = performance.now();
+      if (now - realEnvAt > HUD_EVERY_MS) {
+        realEnvAt = now;
+        hourSlider.value = String(ui.hour);
+        applyEnvironment();
+      }
+    }
+
+    function useVehicle(id) {
+      if (!scene) return;
+      const mode = scene.state().mode;
+      if (id === 'walk' && mode !== 'driving') return;
+      stopReplay();
+      scene.useVehicle(id);
+      intro.hidden = true;
+      routesBox.hidden = true;
+      if (id !== 'walk') {
+        // Desde la vista aérea se entra directo al vehículo: ya no se está "arriba".
+        el.querySelector('[data-ascend]').hidden = false;
+        landed = true;
+        stick.hidden = false;
+        root.classList.add('is-landed');
+      }
+      lastHud = 0;
+      setGarageOpen(false);
+      canvas.focus({ preventScroll: true });
     }
 
     function applyEnvironment() {
@@ -720,7 +888,8 @@ const mod = {
       raf = requestAnimationFrame(frame);
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
-      scene.update(dt, readInput());
+      const simDt = scene.update(dt, readInput());
+      if (ui.speedMode === 'real') advanceRealTime(simDt);
       if (routes.replay) stepReplay(dt);
       scene.render();
       if (!landed && scene.state().mode === 'ground') {
@@ -782,6 +951,7 @@ const mod = {
           },
         });
         scene.resize(root.clientWidth, root.clientHeight);
+        scene.setSpeedMode(ui.speedMode === 'real', ui.warp);
         applyEnvironment();
         scene.update(0, readInput());
         scene.render();
@@ -935,6 +1105,32 @@ const mod = {
         intro.hidden = true;
         routesBox.hidden = true;
         canvas.focus({ preventScroll: true });
+        return undefined;
+      }
+      // Vehículos y velocidad
+      if (event.target.closest('[data-garage-open]')) {
+        setGarageOpen(garageBox.hidden);
+        return undefined;
+      }
+      if (event.target.closest('[data-garage-close]')) {
+        setGarageOpen(false);
+        return undefined;
+      }
+      const speedMode = event.target.closest('[data-speed-mode]')?.dataset.speedMode;
+      if (speedMode) {
+        ui.speedMode = speedMode;
+        applySpeedMode();
+        return undefined;
+      }
+      const warpBtn = event.target.closest('[data-warp]')?.dataset.warp;
+      if (warpBtn) {
+        ui.warp = Number(warpBtn);
+        applySpeedMode();
+        return undefined;
+      }
+      const useId = event.target.closest('[data-use-vehicle]')?.dataset.useVehicle;
+      if (useId) {
+        useVehicle(useId);
         return undefined;
       }
       // Rutas de los rovers

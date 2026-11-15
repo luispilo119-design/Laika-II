@@ -34,6 +34,84 @@ export const ROVER = {
   tiltDamage: 0.06, // daño por segundo inclinado de más
 };
 
+/**
+ * Vehículos que se pueden usar. `realSpeed` (m/s) sale de una fuente de la NASA (`realRef`) o es un
+ * supuesto del equipo (`realRef: null`); el resto son valores de juego, y la pantalla lo dice.
+ * `power`: 'battery' se gasta y se recarga al sol; 'rps' es un generador radioisotópico: no depende
+ * del sol (NASA, Perseverance Rover Components).
+ */
+export const VEHICLES = {
+  pressurized: {
+    ...ROVER,
+    id: 'pressurized',
+    // "drive about 10 kilometers per hour" (NASA Science, Space Exploration Vehicle).
+    realSpeed: 10 / 3.6,
+    realRef: 'nasa-sev',
+    power: 'battery',
+  },
+  perseverance: {
+    id: 'perseverance',
+    maxSpeed: 4, // m/s (~14 km/h) en modo exploración: valor de juego
+    reverseSpeed: 1.5,
+    accel: 1.6,
+    coast: 1.5,
+    turnRate: 0.9,
+    length: 3,
+    width: 2.7,
+    radius: 1.9,
+    boardDistance: 8,
+    gravity: MARS_G,
+    holdSpeed: true, // sus motores mantienen la velocidad en pendiente: no rueda solo
+    energyPerM: 0,
+    climbEnergy: 0,
+    idleDrain: 0,
+    solarCharge: 0,
+    crashSpeed: 0.5,
+    crashDamage: 0.08,
+    // "rover drivers avoid terrains that would tilt the rover more than 30 degrees" (NASA).
+    maxTiltDeg: 30,
+    tiltDamage: 0.06,
+    // "top speed on flat, hard ground is just under 0.1 mph (152 meters per hour)" (NASA).
+    realSpeed: 152 / 3600,
+    realRef: 'nasa-perseverance-components',
+    power: 'rps',
+  },
+};
+
+/** A pie: velocidad de exploración (juego) y real. La real es un supuesto del equipo, sin fuente. */
+export const WALK = { exploreSpeed: 5, runFactor: 3, realSpeed: 3 / 3.6, realRef: null };
+
+export const VEHICLE_IDS = Object.keys(VEHICLES);
+
+/**
+ * Ficha con la que se mueve un vehículo según el modo de velocidad. En modo real la velocidad
+ * máxima es la real; la aceleración se ajusta para que llegue a ella en un par de segundos.
+ */
+export function effectiveSpec(spec, real) {
+  if (!real) return spec;
+  return {
+    ...spec,
+    maxSpeed: spec.realSpeed,
+    reverseSpeed: spec.realSpeed * 0.5,
+    accel: Math.min(spec.accel, Math.max(spec.realSpeed, 0.02)),
+    boost: 1, // en modo real no hay impulso
+  };
+}
+
+/**
+ * Divide `simDt` segundos en pasos de como mucho `maxStep`, sin pasar de `maxSteps` (con el tiempo
+ * acelerado, un solo paso grande se saltaría choques y pendientes).
+ * @returns {{ steps: number, dt: number }}
+ */
+export function subSteps(simDt, maxStep = 0.05, maxSteps = 400) {
+  if (simDt <= 0) return { steps: 0, dt: 0 };
+  const steps = Math.min(maxSteps, Math.ceil(simDt / maxStep));
+  return { steps, dt: simDt / steps };
+}
+
+/** Segundos que se tarda en recorrer `meters` a `speed` m/s. */
+export const travelSeconds = (meters, speed) => (speed > 0 ? meters / speed : Infinity);
+
 /** Estado inicial de un vehículo estacionado en (x, z). */
 export function makeVehicle(x, z, heading = 0) {
   return { x, z, heading, speed: 0, battery: 1, damage: 0, odometer: 0, tilt: 0, grade: 0, warn: null, chaseYaw: 0, pitch: 0, roll: 0, y: 0 };
@@ -60,11 +138,12 @@ export function stepVehicle(v, spec, dt, input, world) {
   v.grade = (heightAt(v.x + fx * 3, v.z + fz * 3) - heightAt(v.x - fx * 3, v.z - fz * 3)) / 6;
   if (throttle !== 0) v.speed += throttle * spec.accel * dt;
   else v.speed -= v.speed * spec.coast * dt;
-  v.speed -= spec.gravity * Math.sin(Math.atan(v.grade)) * dt * 0.6;
-  const top = spec.maxSpeed * (input.run ? 1.4 : 1) * (1 - 0.6 * v.damage);
+  if (!spec.holdSpeed) v.speed -= spec.gravity * Math.sin(Math.atan(v.grade)) * dt * 0.6;
+  const top = spec.maxSpeed * (input.run ? spec.boost ?? 1.4 : 1) * (1 - 0.6 * v.damage);
   v.speed = clamp(v.speed, -spec.reverseSpeed, top);
-  if (disabled && Math.abs(v.speed) < 0.05) v.speed = 0;
-  v.heading -= steer * spec.turnRate * dt * clamp(v.speed / 3, -1, 1);
+  if ((disabled || (throttle === 0 && spec.holdSpeed)) && Math.abs(v.speed) < Math.min(0.05, spec.maxSpeed * 0.05)) v.speed = 0;
+  // El giro crece con la velocidad hasta el 40 % de la máxima (o 3 m/s): así también gira despacio.
+  v.heading -= steer * spec.turnRate * dt * clamp(v.speed / Math.min(3, spec.maxSpeed * 0.4), -1, 1);
 
   const step = v.speed * dt;
   v.x = world.clampToArea(v.x + Math.cos(v.heading) * step);

@@ -225,3 +225,38 @@ test('con Perseverance quedan solo las fotos de la parada exacta', async () => {
   assert.deepEqual(result.photos.map((p) => p.id), ['b', 'c', 'd', 'e']);
   assert.equal(result.exact, true);
 });
+
+// ---------- Vehículos y velocidad real ----------
+import { VEHICLES, WALK, effectiveSpec, subSteps, travelSeconds } from '../src/modules/descent/vehicles.js';
+
+test('las velocidades reales salen de la NASA (o se marcan como supuesto)', () => {
+  assert.ok(Math.abs(VEHICLES.perseverance.realSpeed * 3600 - 152) < 1e-9, '152 m/h');
+  assert.ok(Math.abs(VEHICLES.pressurized.realSpeed * 3.6 - 10) < 1e-9, '10 km/h');
+  assert.equal(VEHICLES.perseverance.realRef, 'nasa-perseverance-components');
+  assert.equal(VEHICLES.pressurized.realRef, 'nasa-sev');
+  assert.equal(WALK.realRef, null, 'a pie es un supuesto del equipo');
+  assert.ok(Math.abs(travelSeconds(1000, VEHICLES.perseverance.realSpeed) / 3600 - 1000 / 152) < 1e-9);
+});
+
+test('en modo real la réplica de Perseverance no pasa de 152 m/h, gira y no gasta batería', () => {
+  const spec = effectiveSpec(VEHICLES.perseverance, true);
+  const v = makeVehicle(0, 0, 0);
+  for (let i = 0; i < 2000; i++) stepVehicle(v, spec, 0.05, { forward: 1, strafe: 0.5, turn: 0, run: true }, flat);
+  assert.ok(v.speed <= VEHICLES.perseverance.realSpeed + 1e-12, `${v.speed} m/s`);
+  assert.ok(v.speed > VEHICLES.perseverance.realSpeed * 0.9);
+  assert.ok(Math.abs(v.heading) > 0.5, 'gira aunque vaya despacio');
+  assert.equal(v.battery, 1, 'generador radioisotópico');
+  // En una pendiente no rueda solo: sus motores mantienen la velocidad.
+  const parked = makeVehicle(0, 0, 0);
+  for (let i = 0; i < 200; i++) stepVehicle(parked, spec, 0.05, { forward: 0, strafe: 0, turn: 0, run: false }, { ...flat, heightAt: (x) => -0.2 * x });
+  assert.equal(parked.speed, 0);
+});
+
+test('el tiempo acelerado se reparte en pasos cortos', () => {
+  assert.deepEqual(subSteps(0), { steps: 0, dt: 0 });
+  const big = subSteps(16, 0.05, 400);
+  assert.equal(big.steps, 320);
+  assert.ok(Math.abs(big.steps * big.dt - 16) < 1e-9);
+  const capped = subSteps(100, 0.05, 400);
+  assert.equal(capped.steps, 400, 'con un tope de pasos por cuadro');
+});

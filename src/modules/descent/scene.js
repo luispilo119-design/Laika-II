@@ -54,13 +54,11 @@ import { uvOf } from './tiles.js';
 import { Line2 } from 'three/addons/lines/Line2.js';
 import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
-import { ROVER, makeVehicle, stepVehicle } from './vehicles.js';
-import { createKit, buildLander, buildPressurizedRover, buildHabitat, buildSolarField } from './models.js';
+import { ROVER, VEHICLES, WALK, makeVehicle, stepVehicle, effectiveSpec, subSteps } from './vehicles.js';
+import { createKit, buildLander, buildPressurizedRover, buildRoboticRover, buildHabitat, buildSolarField } from './models.js';
 
 export { ROVER };
 
-const WALK_MPS = 5; // más rápido que una caminata real, para poder recorrer el terreno
-const RUN_FACTOR = 3;
 const TURN_RPS = 1.4; // giro con el teclado, radianes por segundo
 const LOOK_SENSITIVITY = 0.0042; // radianes por píxel arrastrado
 const ROCKS = 320;
@@ -220,9 +218,17 @@ export function createScene({ canvas, field, palette, site, equipment = true, se
     return obj;
   };
 
-  const rover = place(buildPressurizedRover(kit), 10, -26, -0.9, ROVER.radius);
-  const roverObstacle = obstacles[obstacles.length - 1];
-  rover.rotation.order = 'YXZ';
+  // Vehículos: el rover presurizado y la réplica de rover robótico, estacionados cerca del centro.
+  const fleet = [
+    { id: 'pressurized', build: buildPressurizedRover, x: 10, z: -26, heading: -0.9 },
+    { id: 'perseverance', build: buildRoboticRover, x: -14, z: -18, heading: 0.6 },
+  ].map(({ id, build, x, z, heading }) => {
+    const spec = VEHICLES[id];
+    const model = place(build(kit), x, z, heading, spec.radius);
+    model.rotation.order = 'YXZ';
+    return { id, spec, model, obstacle: obstacles[obstacles.length - 1], v: makeVehicle(x, z, heading) };
+  });
+  let car = fleet[0]; // el vehículo que se maneja (o el último usado)
   if (equipment) {
     place(buildLander(kit), -22, -38, 0.4, 5);
     place(buildHabitat(kit), 48, -95, 2.6, 9);
@@ -353,7 +359,8 @@ export function createScene({ canvas, field, palette, site, equipment = true, se
     aerial: { tx: 0, tz: 0, dist: AERIAL.startDist, tilt: AERIAL.startTilt, yaw: 0, goal: null },
     descent: null,
   };
-  const vehicle = makeVehicle(10, -26, -0.9);
+  let realSpeed = false; // modo de velocidad: real (fuentes de la NASA) o de exploración (juego)
+  let warp = 1; // aceleración del tiempo en modo real
   const track = [[0, 0]]; // recorrido (x, z) para el mini mapa
   let daylight = 1;
 
@@ -365,39 +372,113 @@ export function createScene({ canvas, field, palette, site, equipment = true, se
     }
   }
 
-  /** Mueve el rover un paso (física en vehicles.js) y coloca su modelo. */
-  function drive(dt, input) {
-    stepVehicle(vehicle, ROVER, dt, input, { heightAt, clampToArea: field.clampToArea, obstacles, self: roverObstacle, daylight });
-    rover.position.set(vehicle.x, vehicle.y, vehicle.z);
-    rover.rotation.set(-vehicle.roll, vehicle.heading, vehicle.pitch);
-    pushTrack(vehicle.x, vehicle.z);
+  function placeModel(entry) {
+    const v = entry.v;
+    if (!v.y) v.y = heightAt(v.x, v.z);
+    entry.model.position.set(v.x, v.y, v.z);
+    entry.model.rotation.set(-v.roll, v.heading, v.pitch);
+    entry.obstacle.x = v.x;
+    entry.obstacle.z = v.z;
+  }
+
+  /** Mueve el vehículo `simDt` segundos (en pasos cortos) y coloca su modelo. */
+  function drive(simDt, input) {
+    const spec = effectiveSpec(car.spec, realSpeed);
+    const world = { heightAt, clampToArea: field.clampToArea, obstacles, self: car.obstacle, daylight };
+    const { steps, dt } = subSteps(simDt);
+    for (let i = 0; i < steps; i++) stepVehicle(car.v, spec, dt, input, world);
+    placeModel(car);
+    pushTrack(car.v.x, car.v.z);
+  }
+
+  /** El vehículo estacionado más cercano a la persona, si está a distancia de subirse. */
+  function nearbyVehicle() {
+    let best = null;
+    let bestD = Infinity;
+    for (const entry of fleet) {
+      const d = Math.hypot(view.x - entry.v.x, view.z - entry.v.z);
+      if (d < entry.spec.boardDistance && d < bestD) {
+        best = entry;
+        bestD = d;
+      }
+    }
+    return best;
   }
 
   function canBoard() {
-    return view.mode === 'ground' && Math.hypot(view.x - vehicle.x, view.z - vehicle.z) < ROVER.boardDistance;
+    return view.mode === 'ground' && Boolean(nearbyVehicle());
   }
 
   function board() {
     if (!canBoard()) return false;
+    car = nearbyVehicle();
     view.mode = 'driving';
-    vehicle.chaseYaw = 0;
+    car.v.chaseYaw = 0;
     return true;
   }
 
   function exitVehicle() {
     if (view.mode !== 'driving') return;
-    vehicle.speed = 0;
-    // Bajarse por el lado izquierdo del rover, mirando hacia donde apuntaba.
-    view.x = field.clampToArea(vehicle.x - Math.sin(vehicle.heading) * 3.6);
-    view.z = field.clampToArea(vehicle.z - Math.cos(vehicle.heading) * 3.6);
-    view.yaw = vehicle.heading - Math.PI / 2;
+    const v = car.v;
+    v.speed = 0;
+    // Bajarse por el lado izquierdo, mirando hacia donde apuntaba el vehículo.
+    const side = car.spec.width / 2 + 2.2;
+    view.x = field.clampToArea(v.x - Math.sin(v.heading) * side);
+    view.z = field.clampToArea(v.z - Math.cos(v.heading) * side);
+    view.yaw = v.heading - Math.PI / 2;
     view.pitch = 0;
     view.mode = 'ground';
   }
 
   function repair() {
-    vehicle.damage = 0;
-    vehicle.warn = null;
+    car.v.damage = 0;
+    car.v.warn = null;
+  }
+
+  /**
+   * Cambia de vehículo: 'walk' para ir a pie, o el id de un vehículo, que se trae junto a la
+   * persona (o al punto que mira la vista aérea) y se maneja de inmediato.
+   */
+  function useVehicle(id) {
+    if (id === 'walk') {
+      exitVehicle();
+      return;
+    }
+    const entry = fleet.find((f) => f.id === id);
+    if (!entry) return;
+    let x;
+    let z;
+    let heading;
+    if (view.mode === 'driving') {
+      if (entry === car) return;
+      ({ x, z, heading } = car.v);
+      car.v.speed = 0;
+      // El vehículo anterior queda estacionado a un lado.
+      car.v.x = field.clampToArea(x - Math.sin(heading) * (car.spec.width + entry.spec.width));
+      car.v.z = field.clampToArea(z - Math.cos(heading) * (car.spec.width + entry.spec.width));
+      car.v.y = 0;
+      placeModel(car);
+    } else if (view.mode === 'aerial' || view.mode === 'descending') {
+      x = view.aerial.tx;
+      z = view.aerial.tz;
+      heading = view.aerial.yaw + Math.PI / 2;
+    } else {
+      x = view.x - Math.sin(view.yaw) * (entry.spec.length + 2);
+      z = view.z - Math.cos(view.yaw) * (entry.spec.length + 2);
+      heading = view.yaw + Math.PI / 2;
+    }
+    Object.assign(entry.v, { x: field.clampToArea(x), z: field.clampToArea(z), heading, speed: 0, y: 0, chaseYaw: 0 });
+    placeModel(entry);
+    car = entry;
+    pin.visible = false;
+    view.descent = null;
+    view.mode = 'driving';
+  }
+
+  /** Modo de velocidad: real (con aceleración del tiempo) o de exploración. */
+  function setSpeedMode(real, timeWarp = 1) {
+    realSpeed = Boolean(real);
+    warp = realSpeed ? Math.max(1, timeWarp) : 1;
   }
 
   /** Saca a la persona de las rocas y vehículos con los que choca. */
@@ -418,9 +499,9 @@ export function createScene({ canvas, field, palette, site, equipment = true, se
   function ascend() {
     const driving = view.mode === 'driving';
     const a = view.aerial;
-    a.tx = driving ? vehicle.x : view.x;
-    a.tz = driving ? vehicle.z : view.z;
-    a.yaw = driving ? vehicle.heading - Math.PI / 2 : view.yaw;
+    a.tx = driving ? car.v.x : view.x;
+    a.tz = driving ? car.v.z : view.z;
+    a.yaw = driving ? car.v.heading - Math.PI / 2 : view.yaw;
     a.dist = 1800;
     a.tilt = 0.85;
     a.goal = null;
@@ -496,6 +577,8 @@ export function createScene({ canvas, field, palette, site, equipment = true, se
    *   zoom?: number, tilt?: number, rotate?: number }} input
    */
   function update(dt, input) {
+    // Con el tiempo acelerado solo se acelera lo que se mueve en el terreno, no la cámara.
+    const simDt = dt * (realSpeed ? warp : 1);
     if (view.mode === 'aerial') {
       updateAerial(dt, input);
     } else if (view.mode === 'descending') {
@@ -511,13 +594,16 @@ export function createScene({ canvas, field, palette, site, equipment = true, se
       camera.rotation.set(d.pitch0 * (1 - e), d.yaw, 0);
       if (d.t >= 1) Object.assign(view, { mode: 'ground', x: d.x, z: d.z, yaw: d.yaw, pitch: 0, descent: null });
     } else if (view.mode === 'driving') {
-      drive(dt, input);
-      vehicle.chaseYaw = (vehicle.chaseYaw - input.lookX * LOOK_SENSITIVITY) * (input.lookX ? 1 : 1 - Math.min(1, dt * 0.8));
-      const back = vehicle.heading + Math.PI + vehicle.chaseYaw;
-      const cx = vehicle.x + Math.cos(back) * 13;
-      const cz = vehicle.z - Math.sin(back) * 13;
-      camera.position.set(cx, Math.max(heightAt(cx, cz) + 2, rover.position.y + 5.5), cz);
-      camera.lookAt(vehicle.x + Math.cos(vehicle.heading) * 6, rover.position.y + 1.6, vehicle.z - Math.sin(vehicle.heading) * 6);
+      drive(simDt, input);
+      const v = car.v;
+      v.chaseYaw = (v.chaseYaw - input.lookX * LOOK_SENSITIVITY) * (input.lookX ? 1 : 1 - Math.min(1, dt * 0.8));
+      const back = v.heading + Math.PI + v.chaseYaw;
+      const reach = car.spec.length * 2.5;
+      const cx = v.x + Math.cos(back) * reach;
+      const cz = v.z - Math.sin(back) * reach;
+      const modelY = car.model.position.y;
+      camera.position.set(cx, Math.max(heightAt(cx, cz) + 2, modelY + car.spec.length), cz);
+      camera.lookAt(v.x + Math.cos(v.heading) * 6, modelY + 1.6, v.z - Math.sin(v.heading) * 6);
     } else {
       view.yaw -= input.turn * TURN_RPS * dt + input.lookX * LOOK_SENSITIVITY;
       view.pitch = Math.min(1.2, Math.max(-1.2, view.pitch - input.lookY * LOOK_SENSITIVITY));
@@ -530,10 +616,14 @@ export function createScene({ canvas, field, palette, site, equipment = true, se
       const len = Math.hypot(dirX, dirZ) || 1;
       const ahead = heightAt(view.x + (dirX / len) * 2, view.z + (dirZ / len) * 2) - heightAt(view.x, view.z);
       const grade = Math.min(1, Math.abs(ahead) / 2 / 0.6);
-      const speed = WALK_MPS * (input.run ? RUN_FACTOR : 1) * (1 - SLOPE_SLOW * grade) * dt;
-      view.x = field.clampToArea(view.x + dirX * speed);
-      view.z = field.clampToArea(view.z + dirZ * speed);
-      resolveCollisions();
+      const walk = realSpeed ? WALK.realSpeed : WALK.exploreSpeed * (input.run ? WALK.runFactor : 1);
+      const { steps, dt: stepDt } = subSteps(simDt, 0.1, 200);
+      for (let i = 0; i < steps; i++) {
+        const speed = walk * (1 - SLOPE_SLOW * grade) * stepDt;
+        view.x = field.clampToArea(view.x + dirX * speed);
+        view.z = field.clampToArea(view.z + dirZ * speed);
+        resolveCollisions();
+      }
       pushTrack(view.x, view.z);
       const moving = Math.abs(input.forward) + Math.abs(input.strafe) > 0;
       view.bob = moving ? view.bob + dt * (input.run ? 14 : 8) : view.bob * 0.9;
@@ -553,6 +643,7 @@ export function createScene({ canvas, field, palette, site, equipment = true, se
     }
     if (pin.visible) pin.scale.setScalar(Math.max(0.3, view.aerial.dist / 1200));
     sunDisc.position.copy(camera.position).addScaledVector(sunDir, 9000);
+    return simDt;
   }
 
   const ndc = new Vector3();
@@ -589,11 +680,13 @@ export function createScene({ canvas, field, palette, site, equipment = true, se
     setPin,
     board,
     exitVehicle,
+    useVehicle,
+    setSpeedMode,
     repair,
     canBoard,
     heightAt,
     /** Datos para el mini mapa: recorrido y vehículo, en metros locales. */
-    mapData: () => ({ track, vehicle: { x: vehicle.x, z: vehicle.z, heading: vehicle.heading } }),
+    mapData: () => ({ track, vehicles: fleet.map((f) => ({ id: f.id, x: f.v.x, z: f.v.z })) }),
     update,
     resize,
     render: () => renderer.render(scene, camera),
@@ -601,9 +694,9 @@ export function createScene({ canvas, field, palette, site, equipment = true, se
     state: () => {
       const driving = view.mode === 'driving';
       const aerial = view.mode === 'aerial' || view.mode === 'descending';
-      const yaw = driving ? vehicle.heading - Math.PI / 2 : aerial ? view.aerial.yaw : view.yaw;
-      const x = driving ? vehicle.x : aerial ? view.aerial.tx : view.x;
-      const z = driving ? vehicle.z : aerial ? view.aerial.tz : view.z;
+      const yaw = driving ? car.v.heading - Math.PI / 2 : aerial ? view.aerial.yaw : view.yaw;
+      const x = driving ? car.v.x : aerial ? view.aerial.tx : view.x;
+      const z = driving ? car.v.z : aerial ? view.aerial.tz : view.z;
       return {
         x,
         z,
@@ -611,7 +704,10 @@ export function createScene({ canvas, field, palette, site, equipment = true, se
         headingDeg: (((-yaw * 180) / Math.PI) % 360 + 360) % 360,
         aerialDist: view.aerial.dist,
         canBoard: canBoard(),
-        vehicle: { ...vehicle },
+        vehicleId: driving ? car.id : 'walk',
+        vehicle: { ...car.v },
+        spec: car.spec,
+        realSpeed,
       };
     },
     /** Libera la memoria de la escena y el contexto WebGL. */

@@ -722,3 +722,105 @@
 .descent__photos [data-photos-note] a {
   color: var(--rust-300);
 }
+
+/* ---------- Vehículos y velocidad ---------- */
+
+.descent__seg {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0;
+}
+
+.descent__seg[hidden] {
+  display: none;
+}
+
+.descent__seg .btn {
+  min-height: 44px;
+}
+
+.descent__seg .btn[aria-pressed='true'] {
+  background: var(--rust-500);
+  color: var(--cream);
+}
+
+.descent__seg span {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.descent__garage-list {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.descent__card {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.descent__card.is-current {
+  border-color: var(--rust-300);
+  box-shadow: inset 4px 0 0 var(--rust-500);
+}
+
+.descent__card h3 {
+  margin: 0 0 2px;
+  font-size: 14px;
+}
+
+.descent__card dl {
+  display: grid;
+  gap: 2px;
+  margin: 6px 0 8px;
+  font-size: 12px;
+}
+
+.descent__card dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.descent__card dt {
+  color: var(--text-dim);
+}
+
+.descent__card dd {
+  margin: 0;
+  text-align: right;
+  font-family: var(--font-mono, ui-monospace, monospace);
+}
+
+.descent__card .btn {
+  min-height: 44px;
+}
+
+.descent__realchip {
+  position: absolute;
+  top: 64px;
+  left: 50%;
+  margin: 0;
+  padding: 6px 12px;
+  transform: translateX(-50%);
+  border: 1px solid var(--rust-300);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-sunken) 90%, transparent);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.descent__realchip[hidden] {
+  display: none;
+}
+
+.descent__veh-bars [hidden] {
+  display: none;
+}

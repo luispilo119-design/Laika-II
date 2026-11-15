@@ -76,6 +76,51 @@ export function buildPressurizedRover({ mats, box, cyl }) {
   return rover;
 }
 
+/**
+ * Réplica sencilla de un rover robótico de seis ruedas (tipo Perseverance): cuerpo, ruedas,
+ * balancines, mástil con cabeza de cámaras, brazo plegado y el generador detrás. Hecha con figuras
+ * básicas, no a escala exacta. El frente apunta a +x.
+ */
+export function buildRoboticRover({ mats, box, cyl }) {
+  const rover = new Group();
+  const body = box(2.2, 0.75, 1.9, mats.white);
+  body.position.set(0, 1.25, 0);
+  const deck = box(2.25, 0.08, 1.95, mats.grey);
+  deck.position.set(0, 1.66, 0);
+  rover.add(body, deck);
+  for (const wx of [-1.25, 0, 1.25]) {
+    for (const wz of [-1.25, 1.25]) {
+      const wheel = cyl(0.26, 0.26, 0.4, mats.grey, 14);
+      wheel.rotation.x = Math.PI / 2;
+      wheel.position.set(wx, 0.26, wz);
+      rover.add(wheel);
+    }
+  }
+  for (const wz of [-1.05, 1.05]) {
+    const rocker = box(2.6, 0.08, 0.08, mats.grey);
+    rocker.position.set(0, 0.85, wz);
+    rocker.rotation.z = 0.08;
+    rover.add(rocker);
+  }
+  const mast = cyl(0.07, 0.07, 1.5, mats.white, 8);
+  mast.position.set(0.8, 2.4, 0.6);
+  const head = box(0.35, 0.3, 0.7, mats.white);
+  head.position.set(0.85, 3.2, 0.6);
+  const lens = box(0.06, 0.12, 0.5, mats.glass);
+  lens.position.set(1.04, 3.2, 0.6);
+  rover.add(mast, head, lens);
+  const arm = box(0.12, 0.12, 1.6, mats.grey);
+  arm.position.set(1.2, 1.1, 0);
+  const turret = box(0.35, 0.35, 0.35, mats.dark);
+  turret.position.set(1.25, 1.1, -0.8);
+  rover.add(arm, turret);
+  const power = cyl(0.3, 0.3, 0.9, mats.dark, 10);
+  power.rotation.z = 1.0;
+  power.position.set(-1.35, 1.6, 0);
+  rover.add(power);
+  return rover;
+}
+
 /** Hábitat inflable con esclusa. */
 export function buildHabitat({ mats, cyl, sphere }) {
   const habitat = new Group();
