@@ -8,6 +8,7 @@ import { env } from './env.js';
 import { modules, PHASES } from './registry.js';
 import coreMessages from './messages.js';
 import { buildTopbar, setActive } from './topbar.js';
+import { el } from './html.js';
 
 const DEFAULT_MODULE = 'home';
 
@@ -18,13 +19,6 @@ function navigate(id) {
 function currentModule() {
   const id = location.hash.replace(/^#\/?/, '').split('?')[0] || DEFAULT_MODULE;
   return modules.find((m) => m.id === id) ?? modules.find((m) => m.id === DEFAULT_MODULE);
-}
-
-function el(tag, className, text) {
-  const node = document.createElement(tag);
-  if (className) node.className = className;
-  if (text != null) node.textContent = text;
-  return node;
 }
 
 /**

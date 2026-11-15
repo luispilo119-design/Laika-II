@@ -10,9 +10,10 @@ import './routes.css';
 import messages from './i18n.js';
 import { createMarsMap } from '../../core/marsmap.js';
 import { hubIconSvg } from '../../core/hub-icons.js';
+import { esc } from '../../core/html.js';
+import { MARS_RADIUS_KM, KM_PER_DEG } from '../../core/geo.js';
 import { PROFILES, PROFILE_IDS, REFERENCES, refOf } from './profiles.js';
 import {
-  MARS_RADIUS_KM,
   SLOPE_SLOWDOWN,
   CRATER_BLOCK_FACTOR,
   CRATER_RING_FACTOR,
@@ -26,7 +27,6 @@ import {
 
 const SAVE_KEY = 'laika2.routes.v1';
 const GRID_SIZE = 96; // celdas por lado de la rejilla de costo
-const KM_PER_DEG = (Math.PI * MARS_RADIUS_KM) / 180;
 const CRATER_MARGIN_DEG = 2; // se piden cráteres hasta ~118 km fuera del recuadro de trabajo
 
 // Puntos de ejemplo para cuando todavía no hay sitio de aterrizaje ni hubs. No son un lugar
@@ -34,8 +34,6 @@ const CRATER_MARGIN_DEG = 2; // se piden cráteres hasta ~118 km fuera del recua
 const EXAMPLE_ORIGIN = [1.0, 3.0];
 const EXAMPLE_OFFSET = [0.7, 3.6]; // destino de ejemplo = origen + este desplazamiento (grados)
 
-const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
-const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ESCAPES[ch]);
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const isPoint = (p) => Array.isArray(p) && p.length === 2 && p.every(Number.isFinite);
 const round4 = (v) => Math.round(v * 1e4) / 1e4;

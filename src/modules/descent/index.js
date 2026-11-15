@@ -11,6 +11,7 @@ import messages from './i18n.js';
 import L from 'leaflet';
 import { AREA_M, GRID, areaBBox, makeHeightField, toLatLon } from './terrain.js';
 import { createMarsMap } from '../../core/marsmap.js';
+import { formatHour } from '../../core/clock.js';
 
 // Punto de ejemplo para cuando todavía no hay sitio de aterrizaje (el mismo que usa "routes").
 const EXAMPLE_SITE = { lat: 1.0, lon: 3.0 };
@@ -56,10 +57,6 @@ const mod = {
       `${num(Math.abs(lat), 3)}° ${t(lat >= 0 ? 'descent.card.n' : 'descent.card.s')}, ${num(Math.abs(lon), 3)}° ${t(
         lon >= 0 ? 'descent.card.e' : 'descent.card.w',
       )}`;
-    const clockText = (h) => {
-      const minutes = Math.round(h * 60) % (24 * 60);
-      return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
-    };
     const nextModule = modules.find((m) => m.id === 'hubs') ? 'hubs' : 'home';
     const prevModule = modules.find((m) => m.id === 'transit') ? 'transit' : 'home';
 
@@ -203,7 +200,7 @@ const mod = {
       read('distance').textContent = t('descent.unit.km', { v: num(Math.hypot(where.x, where.z) / 1000, 2) });
       paintVehicle(where);
       drawMinimap();
-      read('hour').textContent = clockText(hour());
+      read('hour').textContent = formatHour(hour());
       return sample;
     }
 
@@ -573,7 +570,6 @@ const mod = {
     window.addEventListener('blur', onBlur);
     document.addEventListener('visibilitychange', syncLoop);
 
-    canvas.tabIndex = 0;
     paintHud();
     load();
 

@@ -17,9 +17,8 @@
  * meridiano ±180°.
  */
 
-// Radio medio volumétrico de Marte, km. Ref: nssdca-mars-fact.
-export const MARS_RADIUS_KM = 3389.5;
-const KM_PER_DEG = (Math.PI * MARS_RADIUS_KM) / 180;
+import { haversineKm, KM_PER_DEG } from '../../core/geo.js';
+
 const rad = (deg) => (deg * Math.PI) / 180;
 const deg = (r) => (r * 180) / Math.PI;
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
@@ -31,13 +30,8 @@ export const CRATER_BLOCK_FACTOR = 1.1; // prohibido hasta 1.1 radios del centro
 export const CRATER_RING_FACTOR = 1.4; // entre 1.1 y 1.4 radios, terreno más lento…
 export const CRATER_RING_PENALTY = 1.5; // …que cuesta 1.5 veces el tiempo normal
 
-/** Distancia sobre la superficie entre dos puntos [lat, lon], en km (fórmula del haversine). */
-export function distanceKm(a, b) {
-  const dLat = rad(b[0] - a[0]);
-  const dLon = rad(b[1] - a[1]);
-  const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a[0])) * Math.cos(rad(b[0])) * Math.sin(dLon / 2) ** 2;
-  return 2 * MARS_RADIUS_KM * Math.asin(Math.min(1, Math.sqrt(h)));
-}
+/** Distancia sobre la superficie entre dos puntos [lat, lon], en km. */
+export const distanceKm = (a, b) => haversineKm(a[0], a[1], b[0], b[1]);
 
 /** Rumbo inicial de a hacia b, en grados 0..360 (0 = norte, 90 = este). */
 export function bearingDeg(a, b) {

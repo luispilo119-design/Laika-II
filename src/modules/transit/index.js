@@ -10,6 +10,7 @@ import messages from './i18n.js';
 import { submitScore, topScores, ALIAS_MAX } from '../../services/index.js';
 import { REFERENCES, refOf, STAGES, METERS, HAZARDS } from './data.js';
 import { CAREER_LIMIT_MSV } from '../../core/journal.js';
+import { esc } from '../../core/html.js';
 import {
   tripInfo,
   estimates,
@@ -62,8 +63,6 @@ const LIT_MS = 520;
 const GAP_MS = 220;
 const LEAD_MS = 900;
 
-const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
-const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ESCAPES[ch]);
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
 function readSaved() {

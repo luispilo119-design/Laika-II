@@ -2,6 +2,7 @@
  * Cálculos del viaje y de la rutina (sin DOM, para poder probarlos). Parte B — tarea B3.
  * Cada constante lleva el id de la referencia que la respalda (ver data.js).
  */
+import { CRUISE_MSV_PER_DAY } from '../../core/journal.js';
 
 // Semiejes mayores de las órbitas, en unidades astronómicas. Ref: jpl-approx-pos.
 export const A_EARTH_AU = 1.00000261;
@@ -40,8 +41,6 @@ export function tripInfo(mission) {
 
 // Pérdida de densidad mineral en huesos que cargan peso, % por mes de vuelo. Ref: hrp-gravity.
 export const BONE_LOSS_PCT_PER_MONTH = [1, 1.5];
-// Rayos cósmicos medidos por RAD dentro de la nave de Curiosity rumbo a Marte, mSv por día. Ref: jpl-rad-cruise.
-export const CRUISE_DOSE_MSV_PER_DAY = 1.8;
 // Ejercicio diario promedio de las tripulaciones de la estación espacial, horas. Ref: nasa-bone-muscle.
 export const EXERCISE_H_PER_DAY = 2;
 
@@ -53,7 +52,7 @@ export function estimates(day) {
   const months = day / DAYS_PER_MONTH;
   return {
     boneLossPct: BONE_LOSS_PCT_PER_MONTH.map((rate) => rate * months),
-    doseMSv: CRUISE_DOSE_MSV_PER_DAY * day,
+    doseMSv: CRUISE_MSV_PER_DAY * day,
     exerciseH: EXERCISE_H_PER_DAY * day,
   };
 }

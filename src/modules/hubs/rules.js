@@ -4,8 +4,7 @@
  * (src/core/env.js), sus textos en i18n.js bajo `type.<id>` y la clave en types.js (Hub.type).
  */
 
-/** Radio medio de Marte en km (NASA Mars Fact Sheet). */
-export const MARS_RADIUS_KM = 3389.5;
+import { haversineKm } from '../../core/geo.js';
 
 /**
  * Alcance de un recorrido de superficie desde la base: unos 100 km en línea recta (rover presurizado,
@@ -37,14 +36,8 @@ export const HUB_TYPES = [
 
 export const hubType = (id) => HUB_TYPES.find((type) => type.id === id) ?? HUB_TYPES[0];
 
-/** Distancia sobre la superficie entre dos puntos, en km (fórmula del haversine). */
-export function distanceKm(a, b) {
-  const rad = Math.PI / 180;
-  const dLat = (b.lat - a.lat) * rad;
-  const dLon = (b.lon - a.lon) * rad;
-  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLon / 2) ** 2;
-  return 2 * MARS_RADIUS_KM * Math.asin(Math.min(1, Math.sqrt(h)));
-}
+/** Distancia sobre la superficie entre dos hubs { lat, lon }, en km. */
+export const distanceKm = (a, b) => haversineKm(a.lat, a.lon, b.lat, b.lon);
 
 /**
  * Regla de cercanía: todo hub que no sea hábitat debe quedar dentro del alcance de un hábitat.

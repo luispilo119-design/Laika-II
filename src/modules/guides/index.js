@@ -11,6 +11,8 @@ import './guides.css';
 import messages from './i18n.js';
 import { REFERENCES, refOf, GUIDES, NEED_ORDER, ESSENTIAL_NEEDS } from './data.js';
 import { readNeeds } from './needs.js';
+import * as needsModule from '../../core/human-needs.js';
+import { esc } from '../../core/html.js';
 import {
   TARGETS,
   CRUISE_MSV_PER_DAY,
@@ -24,17 +26,14 @@ import {
   cruiseDays,
   doseSummary,
   journalStats,
+  targetValues,
 } from '../../core/journal.js';
 
-// Si la Parte A todavía no creó el archivo, esto devuelve un objeto vacío (no falla al compilar).
-const needsModule = Object.values(import.meta.glob('../../core/human-needs.js', { eager: true }))[0];
 const NEEDS = readNeeds(needsModule);
 // Las fuentes de esos valores también cuentan como referencias de este módulo.
-const NEED_REFERENCES = Array.isArray(needsModule?.HUMAN_REFERENCES) ? needsModule.HUMAN_REFERENCES : [];
+const NEED_REFERENCES = needsModule.HUMAN_REFERENCES;
 const allRefs = new Map([...REFERENCES, ...NEED_REFERENCES].map((r) => [r.id, r]));
 
-const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
-const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ESCAPES[ch]);
 
 const CHAPTERS = ['today', 'body', ...GUIDES.map((g) => g.id)];
 /** Forma de cada capítulo en el índice (Bauhaus: círculo, cuadrado, triángulo, media luna). */
@@ -42,14 +41,6 @@ const SHAPES = { today: 'circle', body: 'square', pressure: 'half', dust: 'trian
 
 /** Capítulo abierto: se recuerda fuera del DOM porque el shell remonta el módulo al cambiar de idioma. */
 const ui = { chapter: 'today' };
-
-/** Objetivos en uso: los de human-needs.js si existen; si no, los de respaldo de TARGETS. */
-export function targetValues() {
-  return {
-    water: NEEDS.get(TARGETS.water.need)?.value ?? TARGETS.water.fallback,
-    food: NEEDS.get(TARGETS.food.need)?.value ?? TARGETS.food.fallback,
-  };
-}
 
 /** @type {import('../../core/types.js').ModuleDef} */
 const mod = {

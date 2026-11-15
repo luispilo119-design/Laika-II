@@ -166,6 +166,3 @@ export function craterMinDiameterKm(zoom) {
   if (zoom === 6) return 10;
   return 5;
 }
-
-/** Kilómetros por grado de latitud en Marte (radio medio 3389.5 km, NASA Mars Fact Sheet). */
-export const KM_PER_DEG = (Math.PI * 3389.5) / 180;

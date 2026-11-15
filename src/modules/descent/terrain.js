@@ -5,9 +5,9 @@
  * Ejes de la escena (los de Three.js): x = este, y = arriba, z = sur. 1 unidad = 1 metro.
  */
 
-// Radio medio volumétrico de Marte, km. Ref: nssdca-mars-fact.
-export const MARS_RADIUS_KM = 3389.5;
-const M_PER_DEG = ((Math.PI * MARS_RADIUS_KM) / 180) * 1000;
+import { KM_PER_DEG } from '../../core/geo.js';
+
+const M_PER_DEG = KM_PER_DEG * 1000;
 const rad = (deg) => (deg * Math.PI) / 180;
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 

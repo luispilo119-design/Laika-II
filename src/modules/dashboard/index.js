@@ -13,9 +13,9 @@ import {
   doseSummary,
   targetValues,
 } from '../../core/journal.js';
+import { esc } from '../../core/html.js';
+import { collectReferences } from '../../core/references.js';
 
-const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
-const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ESCAPES[ch]);
 
 const VERDICT_TONE = { viable: 'var(--ok)', marginal: 'var(--yellow)', not_viable: 'var(--red)' };
 
@@ -64,10 +64,10 @@ const mod = {
     ];
     const doneCount = steps.filter((s) => s.done).length;
 
-    // Todas las referencias de todos los módulos, sin repetir.
-    const refs = new Map();
-    for (const m of modules) for (const r of m.references ?? []) if (r?.id && !refs.has(r.id)) refs.set(r.id, r);
-    const refList = [...refs.values()].sort((a, b) => (a.org || '').localeCompare(b.org || '') || a.title.localeCompare(b.title));
+    // Todas las referencias de todos los módulos, sin repetir (las mismas de la pantalla Referencias).
+    const refList = collectReferences(modules)
+      .map((entry) => entry.ref)
+      .sort((a, b) => (a.org || '').localeCompare(b.org || '') || a.title.localeCompare(b.title));
 
     // ---------- Vista ----------
     const kpi = (label, big, sub, extra = '', tone = '') => `

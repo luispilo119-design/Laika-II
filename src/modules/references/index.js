@@ -8,6 +8,8 @@
 import './references.css';
 import messages from './i18n.js';
 import { BASEMAPS } from '../../core/marsmap.js';
+import { esc } from '../../core/html.js';
+import { collectReferences } from '../../core/references.js';
 
 /** Bibliotecas de terceros. Las licencias son las que declara cada paquete en node_modules. */
 const LIBRARIES = [
@@ -20,37 +22,11 @@ const LIBRARIES = [
 const ASCII_SOURCE = 'https://github.com/JIN2-ASCII/-JIN2-ASCII/tree/main/BLACK-HOLE';
 const MARS_TREK = 'https://trek.nasa.gov/mars/';
 
-const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
-const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ESCAPES[ch]);
 const isWebUrl = (url) => /^https?:\/\//i.test(String(url ?? ''));
 
 function link(url, label) {
   if (!isWebUrl(url)) return esc(label);
   return `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(label)}</a>`;
-}
-
-/**
- * Reúne las referencias de todos los módulos, sin duplicados (misma `id` o, si falta, misma URL).
- * Cada fuente queda en la fase del primer módulo que la registra y recuerda todos los que la usan.
- * @param {import('../../core/types.js').ModuleDef[]} modules
- */
-export function collectReferences(modules) {
-  const byKey = new Map();
-  for (const mod of modules) {
-    for (const ref of mod.references ?? []) {
-      const key = ref.id || ref.url;
-      if (!key) continue;
-      const found = byKey.get(key);
-      if (found) {
-        if (!found.usedBy.includes(mod.id)) found.usedBy.push(mod.id);
-        // Basta con que un módulo la haya comprobado.
-        found.ref = { ...found.ref, verified: Boolean(found.ref.verified || ref.verified) };
-      } else {
-        byKey.set(key, { ref: { ...ref }, phase: mod.phase ?? null, usedBy: [mod.id] });
-      }
-    }
-  }
-  return [...byKey.values()];
 }
 
 /** @type {import('../../core/types.js').ModuleDef} */

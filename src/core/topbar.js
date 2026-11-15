@@ -4,13 +4,7 @@
  * Dueño: Parte A.
  */
 import { modules, PHASES } from './registry.js';
-
-function el(tag, className, text) {
-  const node = document.createElement(tag);
-  if (className) node.className = className;
-  if (text != null) node.textContent = text;
-  return node;
-}
+import { el } from './html.js';
 
 /** Nombre corto para el menú; si no hay, el título del módulo. */
 function shortLabel(t, id) {
