@@ -1,5 +1,11 @@
 # Martian Map — Interplanetary Survival Guide
 
+<p align="center">
+  <img src="docs/img/phases/0-mars-globe.jpg" alt="Global color view of Mars, with Valles Marineris across the center and the north polar cap at the top" width="360">
+  <br>
+  <sub>Mars seen by the Viking orbiters. Credit: NASA/JPL/USGS (<a href="https://images.nasa.gov/details/PIA00407">PIA00407</a>)</sub>
+</p>
+
 A hackathon project by team **LAIKA II**.
 
 Martian Map is an interactive guide to surviving on Mars. You go through a crewed mission **phase by
@@ -30,6 +36,24 @@ It works on desktop and tablet, in Spanish and English.
 The phases are linked by data: the arrival date from the Hohmann planner sets the Martian season
 (solar longitude, Ls) at landing, and that season changes temperature and dust on the map, in the hubs
 and in the first-person view.
+
+## The mission in real photos
+
+Each phase of the app, matched with a real NASA photo of the same moment in an actual mission.
+
+| | |
+|---|---|
+| <img src="docs/img/phases/1-launch.jpg" alt="Atlas V rocket lifting off with the Perseverance rover" width="420"> | <img src="docs/img/phases/1-jezero-landing-site.jpg" alt="Jezero crater and its ancient river delta seen from orbit" width="420"> |
+| **Phase 1 · Plan from Earth.** Perseverance lifts off on an Atlas V from Cape Canaveral on July 30, 2020, during its launch window to Mars. Credit: NASA/Frank Michaux ([KSC-20200730-PH-FMX01_0042](https://images.nasa.gov/details/KSC-20200730-PH-FMX01_0042)) | **Phase 1 · Landing site.** Jezero crater, the landing site chosen for Mars 2020, seen by the Mars Reconnaissance Orbiter. Credit: NASA/JPL-Caltech/MSSS/JHU-APL ([PIA23239](https://images.nasa.gov/details/PIA23239)) |
+| <img src="docs/img/phases/2-exercise-in-orbit.jpg" alt="Astronaut exercising on the resistive exercise device aboard the International Space Station" width="420"> | <img src="docs/img/phases/3-perseverance-landing.jpg" alt="Perseverance hanging from its cables above the Martian surface during landing" width="420"> |
+| **Phase 2 · Transit.** Astronaut André Kuipers exercises aboard the International Space Station, the daily routine that fights bone and muscle loss in weightlessness. Credit: NASA ([iss030e148403](https://images.nasa.gov/details/iss030e148403)) | **Phase 3 · Descent.** Perseverance moments before touchdown on February 18, 2021, photographed from the descent stage that lowered it. Credit: NASA/JPL-Caltech ([PIA24428](https://images.nasa.gov/details/PIA24428)) |
+| <img src="docs/img/phases/4-chapea-habitat.jpg" alt="Four CHAPEA crew members inside the simulated Mars habitat, by a door labeled To surface" width="420"> | <img src="docs/img/phases/4-rover-tracks.jpg" alt="Perseverance looking back at its wheel tracks across the floor of Jezero crater" width="420"> |
+| **Phase 4 · Hubs.** The CHAPEA Mission 2 crew inside NASA's simulated Mars habitat, where crews live for a year as if on Mars. Credit: NASA ([jsc2026e403153](https://images.nasa.gov/details/jsc2026e403153)) | **Phase 4 · Routes.** Perseverance looks back at its wheel tracks on sol 381 (March 17, 2022). Credit: NASA/JPL-Caltech ([PIA25171](https://images.nasa.gov/details/PIA25171)) |
+| <img src="docs/img/phases/5-dust-storm-selfie.jpg" alt="Curiosity self-portrait under a dusty, hazy sky" width="420"> | <img src="docs/img/phases/6-perseverance-selfie.jpg" alt="Perseverance self-portrait with the Ingenuity helicopter on the ground nearby" width="420"> |
+| **Phase 5 · Survival.** Curiosity's self-portrait on June 15, 2018, while a dust storm dimmed the sunlight in Gale crater. Credit: NASA/JPL-Caltech/MSSS ([PIA22486](https://images.nasa.gov/details/PIA22486)) | **Phase 6 · Report.** Perseverance and the Ingenuity helicopter on sol 46 (April 6, 2021). Credit: NASA/JPL-Caltech/MSSS ([PIA24542](https://images.nasa.gov/details/PIA24542)) |
+
+All photos come from the [NASA Image and Video Library](https://images.nasa.gov/), resized for this
+README. Sources are also listed in [docs/REFERENCES.md](docs/REFERENCES.md).
 
 ## Getting started
 
