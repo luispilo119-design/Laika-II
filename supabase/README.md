@@ -38,8 +38,6 @@ Los módulos no importan el cliente. Usan `src/services/index.js`:
 
 | Función | Para qué |
 |---|---|
-| `saveMission({ asNew })` | Guardar ahora, sin esperar el guardado automático |
-| `listMissions()` / `loadMission(id)` | Listar y cargar misiones guardadas |
 | `submitScore(game, alias, points)` | Registrar una puntuación (siempre queda también en local) |
 | `topScores(game, limit)` | Mejores puntuaciones; dice si vienen de la nube o de local |
 | `getStatus()` / `onStatus(fn)` | Estado del guardado: `local`, `connecting`, `saving`, `synced`, `offline` |

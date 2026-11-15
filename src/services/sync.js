@@ -27,7 +27,14 @@ export function missionHash(mission) {
 export function isEmptyMission(mission) {
   const m = mission ?? {};
   return (
-    !m.name && !m.departure && !m.arrival && m.arrivalLs == null && !m.site && !m.hubs?.length && !m.routes?.length
+    !m.name &&
+    !m.departure &&
+    !m.arrival &&
+    m.arrivalLs == null &&
+    !m.site &&
+    !m.hubs?.length &&
+    !m.routes?.length &&
+    !Object.keys(m.journal?.days ?? {}).length
   );
 }
 
@@ -205,44 +212,6 @@ export function createMissionSync({ client, store, storage, delayMs = 1500, onSt
     },
 
     flush,
-
-    /** Guarda ahora; con asNew crea una misión aparte en vez de actualizar la actual. */
-    async save({ asNew = false } = {}) {
-      if (asNew) setMeta({});
-      else if (ready && !isDirty() && meta.missionId) return true;
-      clearTimeout(timer);
-      timer = null;
-      if (!ready && !(await connect())) return false;
-      if (!isDirty() && meta.missionId) return true;
-      return push();
-    },
-
-    /** @returns {Promise<{ id: string, name: string, updatedAt: string, current: boolean }[]>} */
-    async list() {
-      if (!ready && !(await connect())) return [];
-      const res = await client
-        .from('missions')
-        .select('id, name, updated_at')
-        .order('updated_at', { ascending: false })
-        .limit(50);
-      if (res.error) return [];
-      return res.data.map((row) => ({
-        id: row.id,
-        name: row.name,
-        updatedAt: row.updated_at,
-        current: row.id === meta.missionId,
-      }));
-    },
-
-    /** Carga una misión guardada en el store. Antes guarda lo pendiente de la actual. */
-    async load(id) {
-      if (!(await flush())) return false;
-      const res = await client.from('missions').select(ROW_FIELDS).eq('id', id).limit(1);
-      if (res.error || !res.data?.[0]) return false;
-      apply(res.data[0]);
-      onStatus('synced');
-      return true;
-    },
 
     stop() {
       clearTimeout(timer);

@@ -90,30 +90,6 @@ export async function init(ctx) {
 }
 
 /**
- * Guarda la misión ahora, sin esperar el retardo. Con `asNew` crea una misión aparte.
- * @returns {Promise<boolean>} true si quedó en Supabase; false si solo está en este navegador.
- */
-export async function saveMission(options) {
-  return sync ? sync.save(options) : false;
-}
-
-/**
- * Misiones guardadas en Supabase por esta persona, de la más reciente a la más antigua.
- * @returns {Promise<{ id: string, name: string, updatedAt: string, current: boolean }[]>}
- */
-export async function listMissions() {
-  return sync ? sync.list() : [];
-}
-
-/**
- * Carga una misión guardada y la pone como misión actual.
- * @returns {Promise<boolean>} false si no se pudo.
- */
-export async function loadMission(id) {
-  return sync ? sync.load(id) : false;
-}
-
-/**
  * Registra una puntuación. `alias` se recorta a 16 caracteres.
  * @returns {Promise<{ game: string, alias: string, points: number, at: string, cloud: boolean }>}
  */

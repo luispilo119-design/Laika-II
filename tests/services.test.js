@@ -229,29 +229,12 @@ test('si la fila guardada ya no es de esta sesión, crea una nueva', async () =>
   sync.stop();
 });
 
-test('guardar como nueva, listar y cargar misiones', async () => {
-  const { store, sync } = setup();
-  await sync.start();
-  store.set('mission.name', 'Uno');
-  await sync.flush();
-  store.set('mission.name', 'Dos');
-  assert.equal(await sync.save({ asNew: true }), true);
-
-  const list = await sync.list();
-  assert.deepEqual(list.map((m) => m.name).sort(), ['Dos', 'Uno']);
-  assert.equal(list.find((m) => m.current).name, 'Dos');
-
-  assert.equal(await sync.load(list.find((m) => m.name === 'Uno').id), true);
-  assert.equal(store.get().mission.name, 'Uno');
-  assert.equal(await sync.load('no-existe'), false);
-  sync.stop();
-});
-
 test('huella y misión vacía', () => {
   assert.equal(missionHash(emptyMission()), missionHash(emptyMission()));
   assert.notEqual(missionHash(emptyMission()), missionHash({ ...emptyMission(), site: SITE }));
   assert.equal(isEmptyMission(emptyMission()), true);
   assert.equal(isEmptyMission({ ...emptyMission(), hubs: [{ id: 'h1' }] }), false);
+  assert.equal(isEmptyMission({ ...emptyMission(), journal: { day: 1, days: { 1: { water: 0.5 } } } }), false);
 });
 
 test('puntuaciones sin Supabase: se guardan y se leen en local, ordenadas', async () => {
