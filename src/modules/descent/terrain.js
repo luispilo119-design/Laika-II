@@ -11,10 +11,11 @@ const M_PER_DEG = KM_PER_DEG * 1000;
 const rad = (deg) => (deg * Math.PI) / 180;
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
-export const AREA_M = 6000; // lado del terreno que se recorre
+export const AREA_M = 16000; // lado del terreno que se recorre (cabe la ruta completa de un rover)
 export const GRID = 128; // celdas por lado que se piden a env.elevationGrid
+export const MESH_SEGMENTS = 400; // segmentos por lado de la malla: un vértice cada 40 m
 export const EYE_M = 1.7; // altura de los ojos sobre el suelo
-export const START_ALTITUDE_M = 2600; // altura de la cámara antes de bajar
+export const EDGE_M = 40; // margen que no se pisa en el borde del terreno
 
 /** Recuadro (en grados) de un cuadrado de `areaM` metros de lado centrado en el sitio. */
 export function areaBBox(site, areaM = AREA_M) {
@@ -27,6 +28,88 @@ export function areaBBox(site, areaM = AREA_M) {
 export function toLatLon(site, x, z) {
   const lat = site.lat - z / M_PER_DEG;
   return { lat, lon: site.lon + x / (M_PER_DEG * Math.max(0.05, Math.cos(rad(site.lat)))) };
+}
+
+/** Punto de la escena (metros) de una latitud y longitud: lo inverso de `toLatLon`. */
+export function toLocal(site, lat, lon) {
+  let dLon = lon - site.lon;
+  if (dLon > 180) dLon -= 360;
+  if (dLon < -180) dLon += 360;
+  return { x: dLon * M_PER_DEG * Math.max(0.05, Math.cos(rad(site.lat))), z: (site.lat - lat) * M_PER_DEG };
+}
+
+/** ¿El punto (x, z) cae dentro del terreno, dejando `margin` metros de borde? */
+export function insideArea(x, z, margin = EDGE_M, areaM = AREA_M) {
+  const half = areaM / 2 - margin;
+  return Math.abs(x) <= half && Math.abs(z) <= half;
+}
+
+/**
+ * Alturas de los vértices de la malla del terreno. La persona y los vehículos pisan esta misma
+ * superficie (`gridHeightAt`), no la función original: así nunca se hunden ni flotan sobre la malla.
+ * @param {(x: number, z: number) => number} heightAt
+ * @returns {{ n: number, areaM: number, step: number, heights: Float32Array }}
+ */
+export function makeTerrainGrid(heightAt, segments = MESH_SEGMENTS, areaM = AREA_M) {
+  const n = segments;
+  const step = areaM / n;
+  const heights = new Float32Array((n + 1) * (n + 1));
+  for (let iy = 0; iy <= n; iy++) {
+    const z = -areaM / 2 + iy * step;
+    for (let ix = 0; ix <= n; ix++) heights[iy * (n + 1) + ix] = heightAt(-areaM / 2 + ix * step, z);
+  }
+  return { n, areaM, step, heights };
+}
+
+/**
+ * Altura de la malla en (x, z), con los mismos dos triángulos por celda que PlaneGeometry de
+ * Three.js (diagonal del vértice suroeste al noreste de cada celda).
+ */
+export function gridHeightAt(grid, x, z) {
+  const { n, areaM, step, heights } = grid;
+  const gx = clamp((x + areaM / 2) / step, 0, n);
+  const gz = clamp((z + areaM / 2) / step, 0, n);
+  const ix = Math.min(n - 1, Math.floor(gx));
+  const iy = Math.min(n - 1, Math.floor(gz));
+  const u = gx - ix;
+  const v = gz - iy;
+  const row = n + 1;
+  const ha = heights[iy * row + ix]; // noroeste
+  const hb = heights[(iy + 1) * row + ix]; // suroeste
+  const hc = heights[(iy + 1) * row + ix + 1]; // sureste
+  const hd = heights[iy * row + ix + 1]; // noreste
+  if (u + v <= 1) return ha + (hd - ha) * u + (hb - ha) * v;
+  return hc + (hb - hc) * (1 - u) + (hd - hc) * (1 - v);
+}
+
+/**
+ * Dónde choca con el suelo un rayo que sale de `origin` en la dirección `dir` (normalizada).
+ * Avanza a pasos y afina por bisección. null = no toca el terreno antes de `maxDist`.
+ * @returns {{ x: number, y: number, z: number, dist: number } | null}
+ */
+export function rayGround(origin, dir, heightAt, maxDist = 60000, areaM = AREA_M) {
+  const at = (t) => [origin[0] + dir[0] * t, origin[1] + dir[1] * t, origin[2] + dir[2] * t];
+  const above = (p) => p[1] - heightAt(p[0], p[2]);
+  let prev = 0;
+  if (above(at(0)) <= 0) return null;
+  const stepM = Math.max(5, Math.min(200, above(at(0)) / 20));
+  for (let t = stepM; t <= maxDist; t += stepM) {
+    const p = at(t);
+    if (Math.abs(p[0]) > areaM || Math.abs(p[2]) > areaM) break; // ya salió del terreno
+    if (above(p) <= 0) {
+      let lo = prev;
+      let hi = t;
+      for (let i = 0; i < 30; i++) {
+        const mid = (lo + hi) / 2;
+        if (above(at(mid)) > 0) lo = mid;
+        else hi = mid;
+      }
+      const q = at(hi);
+      return { x: q[0], y: q[1], z: q[2], dist: hi };
+    }
+    prev = t;
+  }
+  return null;
 }
 
 /**
@@ -70,7 +153,7 @@ export function makeHeightField(elevation, areaM = AREA_M) {
     /** Elevación real del terreno según la rejilla, en metros sobre el areoide. */
     elevationAt: (x, z) => sample(x, z),
     /** Mantiene a la persona dentro del terreno. */
-    clampToArea: (v) => clamp(v, -areaM / 2 + 40, areaM / 2 - 40),
+    clampToArea: (v) => clamp(v, -areaM / 2 + EDGE_M, areaM / 2 - EDGE_M),
   };
 }
 
@@ -89,9 +172,14 @@ export function sunState(hour) {
   return { dir, daylight: t * t * (3 - 2 * t) };
 }
 
-/** Densidad de la niebla de polvo a partir de la opacidad óptica τ (más polvo, se ve menos lejos). */
-export function dustFogDensity(tau) {
-  return 0.00012 + 0.0003 * clamp(tau, 0, 3);
+/**
+ * Densidad de la niebla de polvo a partir de la opacidad óptica τ (más polvo, se ve menos lejos).
+ * Desde lo alto la niebla se adelgaza (`altitudeM` sobre el suelo), para ver el terreno completo:
+ * es un ajuste de la vista, no un modelo de la atmósfera.
+ */
+export function dustFogDensity(tau, altitudeM = 0) {
+  const ground = 0.00012 + 0.0003 * clamp(tau, 0, 3);
+  return ground / (1 + Math.max(0, altitudeM) / 600);
 }
 
 /** Avance suave 0→1 para la secuencia de bajada. */

@@ -1,16 +1,19 @@
 /**
- * Escena Three.js de la primera persona: terreno, rocas, cielo, sol y cámara. Parte B — B5.
- * Se carga bajo demanda (import dinámico desde index.js) para que Three.js no pese en el
- * arranque de la app.
+ * Escena Three.js de «En sitio»: terreno, foto orbital, rocas, cielo, sol y cámaras (vista aérea,
+ * bajada, a pie y manejando). Parte B — B5. Se carga bajo demanda (import dinámico desde index.js)
+ * para que Three.js no pese en el arranque de la app.
  *
  * Qué viene de datos y qué es decorativo:
- *  - La forma del terreno sale de la rejilla de `env.elevationGrid`.
- *  - El relieve fino, los cráteres pequeños, las rocas, los vehículos y los colores son decorativos
- *    (ver terrain.js y la nota en pantalla).
+ *  - La forma del terreno sale de la rejilla de `env.elevationGrid` (MOLA, ~15 km por celda).
+ *  - La imagen del suelo es una foto real desde órbita (tiles.js); en blanco y negro, teñida.
+ *  - El relieve fino, las rocas, los vehículos, el equipo y los colores son decorativos.
  */
 import {
   BufferAttribute,
+  CanvasTexture,
   Color,
+  ConeGeometry,
+  CylinderGeometry,
   DirectionalLight,
   FogExp2,
   Group,
@@ -25,30 +28,45 @@ import {
   PlaneGeometry,
   Quaternion,
   RingGeometry,
+  SRGBColorSpace,
   Scene,
   SphereGeometry,
   Vector3,
   WebGLRenderer,
 } from 'three';
-import { AREA_M, EYE_M, START_ALTITUDE_M, sunState, dustFogDensity, easeInOut } from './terrain.js';
+import {
+  AREA_M,
+  EYE_M,
+  MESH_SEGMENTS,
+  makeTerrainGrid,
+  gridHeightAt,
+  rayGround,
+  sunState,
+  dustFogDensity,
+  easeInOut,
+  toLatLon,
+} from './terrain.js';
+import { uvOf } from './tiles.js';
 import { ROVER, makeVehicle, stepVehicle } from './vehicles.js';
 import { createKit, buildLander, buildPressurizedRover, buildHabitat, buildSolarField } from './models.js';
 
 export { ROVER };
 
-const DESCENT_SECONDS = 7;
 const WALK_MPS = 5; // más rápido que una caminata real, para poder recorrer el terreno
 const RUN_FACTOR = 3;
 const TURN_RPS = 1.4; // giro con el teclado, radianes por segundo
 const LOOK_SENSITIVITY = 0.0042; // radianes por píxel arrastrado
-const LOOK_DOWN = -Math.PI / 2 + 0.02;
 const ROCKS = 320;
-const BOULDERS = 46;
-const CRATERS = 16;
-const TERRAIN_SEGMENTS = 255;
+const BOULDERS = 60;
 const PERSON_RADIUS = 0.45;
 const SLOPE_SLOW = 0.55; // en una pendiente fuerte se camina a ~45 % de la velocidad
 const BOB_M = 0.045;
+const FOV = 70;
+
+/** Límites de la vista aérea: distancia a la que se mira (m) e inclinación (rad sobre el horizonte). */
+export const AERIAL = { minDist: 120, maxDist: 24000, minTilt: 0.2, maxTilt: 1.52, startDist: 6500, startTilt: 0.8 };
+
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
 function seeded(seed) {
   let s = seed >>> 0;
@@ -64,20 +82,23 @@ function seeded(seed) {
  * @param {object} opts
  * @param {HTMLCanvasElement} opts.canvas
  * @param {ReturnType<import('./terrain.js').makeHeightField>} opts.field
- * @param {number} [opts.seed]  semilla de los cráteres decorativos (cambia con el lugar)
+ * @param {{ lat: number, lon: number }} opts.site  centro del terreno
+ * @param {boolean} [opts.equipment]  poner el equipo de la misión (solo en el sitio de aterrizaje)
+ * @param {number} [opts.seed]
  * @param {{ groundDark: string, groundMid: string, groundLight: string, rock: string, sky: string, dust: string, night: string, sun: string }} opts.palette
- *   colores CSS (#rrggbb)
  */
-export function createScene({ canvas, field, palette, seed = 1114 }) {
+export function createScene({ canvas, field, palette, site, equipment = true, seed = 1114 }) {
   const renderer = new WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+  let viewHeight = 1;
 
   const scene = new Scene();
   const fog = new FogExp2(palette.sky, dustFogDensity(0.5));
   scene.fog = fog;
   scene.background = new Color(palette.sky);
+  let tau = 0.5;
 
-  const camera = new PerspectiveCamera(70, 1, 0.3, 16000);
+  const camera = new PerspectiveCamera(FOV, 1, 0.3, 24000);
   camera.rotation.order = 'YXZ';
 
   const disposables = [];
@@ -86,36 +107,13 @@ export function createScene({ canvas, field, palette, seed = 1114 }) {
     return x;
   };
 
-  // ---------- Cráteres pequeños (decorativos) ----------
-  // La rejilla de elevación tiene ~15 km por celda: los cráteres de decenas o cientos de metros no
-  // salen en los datos. Se agregan aquí para que el paisaje se lea como Marte; no son reales.
-  const craterRand = seeded(seed);
-  const craters = [];
-  while (craters.length < CRATERS) {
-    const r = 30 + Math.pow(craterRand(), 1.8) * 360;
-    const a = craterRand() * Math.PI * 2;
-    const d = 220 + craterRand() * (AREA_M / 2 - 400);
-    const cx = Math.cos(a) * d;
-    const cz = Math.sin(a) * d;
-    if (craters.some((c) => Math.hypot(c.x - cx, c.z - cz) < (c.r + r) * 0.9)) continue;
-    craters.push({ x: cx, z: cz, r, depth: r * (0.12 + craterRand() * 0.08), rim: r * 0.045 });
-  }
-  function craterRelief(x, z) {
-    let h = 0;
-    for (const c of craters) {
-      const d = Math.hypot(x - c.x, z - c.z) / c.r;
-      if (d > 1.8) continue;
-      if (d < 1) h -= c.depth * (1 - d * d);
-      h += c.rim * Math.exp(-(((d - 1) / 0.22) ** 2));
-    }
-    return h;
-  }
-  const heightAt = (x, z) => field.heightAt(x, z) + craterRelief(x, z);
+  // ---------- Terreno ----------
+  // La persona y los vehículos pisan la misma malla que se dibuja (gridHeightAt).
+  const grid = makeTerrainGrid(field.heightAt, MESH_SEGMENTS, field.areaM);
+  const heightAt = (x, z) => gridHeightAt(grid, x, z);
   const obstacles = []; // { x, z, r }: rocas grandes y vehículos que no se atraviesan
 
-  // ---------- Terreno ----------
-  const segments = TERRAIN_SEGMENTS;
-  const geometry = new PlaneGeometry(AREA_M, AREA_M, segments, segments);
+  const geometry = keep(new PlaneGeometry(AREA_M, AREA_M, grid.n, grid.n));
   geometry.rotateX(-Math.PI / 2); // del plano XY al suelo XZ: la fila 0 queda al norte (z negativo)
   const position = geometry.attributes.position;
   const colors = new Float32Array(position.count * 3);
@@ -126,29 +124,49 @@ export function createScene({ canvas, field, palette, seed = 1114 }) {
   for (let i = 0; i < position.count; i++) {
     const x = position.getX(i);
     const z = position.getZ(i);
-    position.setY(i, heightAt(x, z));
-    // Manchas suaves de color para que el suelo no sea un tono plano.
+    position.setY(i, grid.heights[i]);
+    // Manchas suaves de color para que el suelo no sea un tono plano mientras llega la foto.
     const patch = 0.5 + 0.5 * Math.sin(x * 0.0041 + 0.8) * Math.cos(z * 0.0035 - 1.1);
     const grain = 0.5 + 0.5 * Math.sin(x * 0.07 + z * 0.05);
     tint.lerpColors(dark, mid, patch).lerp(light, grain * 0.18);
-    // El fondo de los cráteres un poco más oscuro y sus bordes más claros.
-    const relief = craterRelief(x, z);
-    if (relief < 0) tint.lerp(dark, Math.min(0.6, -relief / 30));
-    else tint.lerp(light, Math.min(0.35, relief / 8));
     colors[i * 3] = tint.r;
     colors[i * 3 + 1] = tint.g;
     colors[i * 3 + 2] = tint.b;
   }
   geometry.setAttribute('color', new BufferAttribute(colors, 3));
   geometry.computeVertexNormals();
-  const groundMaterial = new MeshLambertMaterial({ vertexColors: true });
-  scene.add(new Mesh(geometry, groundMaterial));
+  const groundMaterial = keep(new MeshLambertMaterial({ vertexColors: true }));
+  const ground = new Mesh(geometry, groundMaterial);
+  scene.add(ground);
+  let groundTexture = null;
 
-  // ---------- Rocas (decorativas) ----------
-  const rockGeometry = new IcosahedronGeometry(1, 0);
-  const rockMaterial = new MeshLambertMaterial({ color: palette.rock, flatShading: true });
-  const rocks = new InstancedMesh(rockGeometry, rockMaterial, ROCKS);
-  const rand = seeded(20261114);
+  /**
+   * Pone la foto orbital sobre el terreno. `cover` es el recuadro (lat/lon) que cubre el canvas.
+   * Las fotos CTX e HiRISE son en blanco y negro: se tiñen con el color del suelo (decorativo).
+   */
+  function setImagery(imageCanvas, cover) {
+    const uv = geometry.attributes.uv;
+    for (let i = 0; i < position.count; i++) {
+      const { lat, lon } = toLatLon(site, position.getX(i), position.getZ(i));
+      const [u, v] = uvOf(cover, lat, lon);
+      uv.setXY(i, u, v);
+    }
+    uv.needsUpdate = true;
+    groundTexture?.dispose();
+    groundTexture = new CanvasTexture(imageCanvas);
+    groundTexture.colorSpace = SRGBColorSpace;
+    groundTexture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    groundMaterial.map = groundTexture;
+    groundMaterial.vertexColors = false;
+    groundMaterial.color.set(palette.groundTint ?? '#f0b58e');
+    groundMaterial.needsUpdate = true;
+  }
+
+  // ---------- Rocas (decorativas, cerca del centro) ----------
+  const rockGeometry = keep(new IcosahedronGeometry(1, 0));
+  const rockMaterial = keep(new MeshLambertMaterial({ color: palette.rock, flatShading: true }));
+  const rocks = keep(new InstancedMesh(rockGeometry, rockMaterial, ROCKS));
+  const rand = seeded(seed);
   const matrix = new Matrix4();
   const rockPos = new Vector3();
   const rockRot = new Quaternion();
@@ -169,13 +187,12 @@ export function createScene({ canvas, field, palette, seed = 1114 }) {
   rocks.instanceMatrix.needsUpdate = true;
   scene.add(rocks);
 
-  const boulders = new InstancedMesh(rockGeometry, rockMaterial, BOULDERS);
+  const boulders = keep(new InstancedMesh(rockGeometry, rockMaterial, BOULDERS));
   for (let i = 0; i < BOULDERS; i++) {
-    const c = craters[i % craters.length];
+    const r = 120 + rand() * 1400;
     const a = rand() * Math.PI * 2;
-    const rr = c.r * (1 + (rand() - 0.3) * 0.25);
-    const x = c.x + Math.cos(a) * rr;
-    const z = c.z + Math.sin(a) * rr;
+    const x = Math.cos(a) * r;
+    const z = Math.sin(a) * r;
     const size = 1.2 + rand() * 2.6;
     rockPos.set(x, heightAt(x, z) + size * 0.2, z);
     rockRot.setFromAxisAngle(axis.set(rand() - 0.5, rand(), rand() - 0.5).normalize(), rand() * Math.PI * 2);
@@ -186,7 +203,7 @@ export function createScene({ canvas, field, palette, seed = 1114 }) {
   boulders.instanceMatrix.needsUpdate = true;
   scene.add(boulders);
 
-  // ---------- Equipo de la misión junto al sitio (modelos simples, no a escala exacta) ----------
+  // ---------- Equipo de la misión (modelos simples, no a escala exacta) ----------
   const kit = createKit(keep);
   const place = (obj, x, z, yaw = 0, footprint = 0) => {
     obj.position.set(x, heightAt(x, z), z);
@@ -196,32 +213,45 @@ export function createScene({ canvas, field, palette, seed = 1114 }) {
     return obj;
   };
 
-  place(buildLander(kit), -22, -38, 0.4, 5);
   const rover = place(buildPressurizedRover(kit), 10, -26, -0.9, ROVER.radius);
   const roverObstacle = obstacles[obstacles.length - 1];
   rover.rotation.order = 'YXZ';
-  place(buildHabitat(kit), 48, -95, 2.6, 9);
-  place(buildSolarField(kit), -95, -88, 0.2, 0);
-  for (let row = 0; row < 3; row++) obstacles.push({ x: -95 + 6.6, z: -88 + row * 4, r: 8 });
+  if (equipment) {
+    place(buildLander(kit), -22, -38, 0.4, 5);
+    place(buildHabitat(kit), 48, -95, 2.6, 9);
+    place(buildSolarField(kit), -95, -88, 0.2, 0);
+    for (let row = 0; row < 3; row++) obstacles.push({ x: -95 + 6.6, z: -88 + row * 4, r: 8 });
 
-  // ---------- Marca del sitio de aterrizaje (se ve desde arriba y sirve de referencia al caminar) ----------
-  const markGeometry = new RingGeometry(70, 80, 64);
-  markGeometry.rotateX(-Math.PI / 2);
-  const markPosition = markGeometry.attributes.position;
-  for (let i = 0; i < markPosition.count; i++) {
-    markPosition.setY(i, heightAt(markPosition.getX(i), markPosition.getZ(i)) + 0.15);
+    // Marca del sitio de aterrizaje (se ve desde arriba y sirve de referencia al caminar).
+    const markGeometry = keep(new RingGeometry(70, 80, 64));
+    markGeometry.rotateX(-Math.PI / 2);
+    const markPosition = markGeometry.attributes.position;
+    for (let i = 0; i < markPosition.count; i++) {
+      markPosition.setY(i, heightAt(markPosition.getX(i), markPosition.getZ(i)) + 0.15);
+    }
+    scene.add(new Mesh(markGeometry, keep(new MeshBasicMaterial({ color: palette.sun }))));
   }
-  const markMaterial = new MeshBasicMaterial({ color: palette.sun });
-  scene.add(new Mesh(markGeometry, markMaterial));
+
+  // ---------- Marcador del punto elegido en la vista aérea ----------
+  const pin = new Group();
+  const pinMaterial = keep(new MeshBasicMaterial({ color: '#eab422', fog: false, depthTest: false, transparent: true, opacity: 0.95 }));
+  const pinStem = new Mesh(keep(new CylinderGeometry(1.2, 1.2, 90, 8)), pinMaterial);
+  pinStem.position.y = 69;
+  const pinHead = new Mesh(keep(new ConeGeometry(9, 24, 16)), pinMaterial);
+  pinHead.rotation.x = Math.PI;
+  pinHead.position.y = 12;
+  pin.add(pinStem, pinHead);
+  pin.renderOrder = 10;
+  pin.visible = false;
+  scene.add(pin);
 
   // ---------- Luz, cielo y sol ----------
   const sunLight = new DirectionalLight(palette.sun, 2.4);
   scene.add(sunLight);
   const hemi = new HemisphereLight(palette.sky, palette.groundDark, 1);
   scene.add(hemi);
-  const sunGeometry = new SphereGeometry(140, 20, 14);
-  const sunMaterial = new MeshBasicMaterial({ color: palette.sun, fog: false });
-  const sunDisc = new Mesh(sunGeometry, sunMaterial);
+  const sunMaterial = keep(new MeshBasicMaterial({ color: palette.sun, fog: false }));
+  const sunDisc = new Mesh(keep(new SphereGeometry(140, 20, 14)), sunMaterial);
   scene.add(sunDisc);
   const sunDir = new Vector3(0, 1, 0);
 
@@ -230,10 +260,10 @@ export function createScene({ canvas, field, palette, seed = 1114 }) {
   const skyNight = new Color(palette.night);
   const skyNow = new Color();
   const nightLight = new Color(palette.sun);
-  const markColor = new Color(palette.sun);
 
   /** Cielo, luz y niebla según la hora solar local y la opacidad del polvo (τ). */
-  function setEnvironment({ hour, tau }) {
+  function setEnvironment({ hour, tau: newTau }) {
+    tau = newTau;
     const sun = sunState(hour);
     const dustiness = Math.min(1, Math.max(0, tau / 1.5));
     sunDir.set(sun.dir[0], sun.dir[1], sun.dir[2]);
@@ -242,18 +272,25 @@ export function createScene({ canvas, field, palette, seed = 1114 }) {
     skyNow.lerpColors(skyNight, skyNow.clone(), sun.daylight);
     scene.background.copy(skyNow);
     fog.color.copy(skyNow);
-    fog.density = dustFogDensity(tau);
     sunLight.position.copy(sunDir).multiplyScalar(1000);
     sunLight.intensity = 2.6 * sun.daylight * (1 - 0.5 * dustiness);
     // De noche queda una luz tenue y neutra para que el terreno se siga distinguiendo.
     hemi.color.lerpColors(nightLight, skyNow, sun.daylight);
     hemi.intensity = 0.4 + 0.9 * sun.daylight;
-    markMaterial.color.copy(markColor).multiplyScalar(0.3 + 0.7 * sun.daylight);
     sunDisc.visible = sun.dir[1] > -0.03;
   }
 
-  // ---------- Cámara ----------
-  const view = { x: 0, z: 0, yaw: 0, pitch: LOOK_DOWN, mode: 'above', progress: 0, bob: 0 };
+  // ---------- Cámaras ----------
+  const view = {
+    mode: 'aerial', // 'aerial' | 'descending' | 'ground' | 'driving'
+    x: 0,
+    z: 0,
+    yaw: 0,
+    pitch: 0,
+    bob: 0,
+    aerial: { tx: 0, tz: 0, dist: AERIAL.startDist, tilt: AERIAL.startTilt, yaw: 0, goal: null },
+    descent: null,
+  };
   const vehicle = makeVehicle(10, -26, -0.9);
   const track = [[0, 0]]; // recorrido (x, z) para el mini mapa
   let daylight = 1;
@@ -315,49 +352,110 @@ export function createScene({ canvas, field, palette, seed = 1114 }) {
     }
   }
 
-  /** Vuelve a la vista desde arriba (para volver a ver el sitio completo). */
+  /** Sube a la vista aérea mirando el punto donde estaba la persona o el vehículo. */
   function ascend() {
-    view.mode = 'above';
-    view.progress = 0;
-    view.pitch = LOOK_DOWN;
+    const driving = view.mode === 'driving';
+    const a = view.aerial;
+    a.tx = driving ? vehicle.x : view.x;
+    a.tz = driving ? vehicle.z : view.z;
+    a.yaw = driving ? vehicle.heading - Math.PI / 2 : view.yaw;
+    a.dist = 1800;
+    a.tilt = 0.85;
+    a.goal = null;
+    view.mode = 'aerial';
   }
 
-  /** Empieza a bajar; con `instant` (movimiento reducido) aparece ya en el suelo. */
+  /** Baja desde la vista aérea hasta (x, z); con `instant` (movimiento reducido) aparece ya abajo. */
+  function descendTo(x, z, instant = false) {
+    if (view.mode !== 'aerial') return;
+    const tx = field.clampToArea(x);
+    const tz = field.clampToArea(z);
+    pin.visible = false;
+    if (instant) {
+      Object.assign(view, { mode: 'ground', x: tx, z: tz, yaw: view.aerial.yaw, pitch: 0 });
+      return;
+    }
+    const from = camera.position.clone();
+    const seconds = 2.5 + 3.5 * Math.min(1, from.distanceTo(new Vector3(tx, heightAt(tx, tz), tz)) / 9000);
+    view.descent = { from, x: tx, z: tz, pitch0: camera.rotation.x, yaw: view.aerial.yaw, t: 0, seconds };
+    view.mode = 'descending';
+  }
+
+  /** Baja al punto que se mira en la vista aérea. */
   function startDescent(instant = false) {
-    if (view.mode !== 'above') return;
-    view.mode = instant ? 'ground' : 'descending';
-    view.progress = instant ? 1 : 0;
-    if (instant) view.pitch = 0;
+    descendTo(view.aerial.tx, view.aerial.tz, instant);
+  }
+
+  /** Mueve la vista aérea (con suavidad) para mirar (x, z) desde `dist` metros. */
+  function flyTo(x, z, dist = null) {
+    if (view.mode !== 'aerial') ascend();
+    view.aerial.goal = { tx: field.clampToArea(x), tz: field.clampToArea(z), dist: dist ?? view.aerial.dist };
+  }
+
+  function updateAerial(dt, input) {
+    const a = view.aerial;
+    const fwdX = -Math.sin(a.yaw);
+    const fwdZ = -Math.cos(a.yaw);
+    const rightX = Math.cos(a.yaw);
+    const rightZ = -Math.sin(a.yaw);
+    const touched = input.lookX || input.lookY || input.forward || input.strafe || input.zoom !== 1;
+    if (touched) a.goal = null;
+    // Arrastrar mueve el suelo con el dedo: metros por píxel a la distancia que se mira.
+    const mpp = (a.dist * 2 * Math.tan(((FOV / 2) * Math.PI) / 180)) / viewHeight;
+    const along = mpp / Math.max(0.35, Math.sin(a.tilt)); // en profundidad el suelo se ve acortado
+    a.tx += -rightX * input.lookX * mpp + fwdX * input.lookY * along;
+    a.tz += -rightZ * input.lookX * mpp + fwdZ * input.lookY * along;
+    const keyPan = a.dist * 0.7 * dt;
+    a.tx += (fwdX * input.forward + rightX * input.strafe) * keyPan;
+    a.tz += (fwdZ * input.forward + rightZ * input.strafe) * keyPan;
+    a.yaw -= input.turn * 1.1 * dt + (input.rotate ?? 0);
+    a.tilt = clamp(a.tilt + (input.tilt ?? 0), AERIAL.minTilt, AERIAL.maxTilt);
+    a.dist = clamp(a.dist * (input.zoom ?? 1), AERIAL.minDist, AERIAL.maxDist);
+    if (a.goal) {
+      const k = 1 - Math.exp(-dt * 3.5);
+      a.tx += (a.goal.tx - a.tx) * k;
+      a.tz += (a.goal.tz - a.tz) * k;
+      a.dist += (a.goal.dist - a.dist) * k;
+      if (Math.hypot(a.goal.tx - a.tx, a.goal.tz - a.tz) < 1 && Math.abs(a.goal.dist - a.dist) < 1) a.goal = null;
+    }
+    a.tx = field.clampToArea(a.tx);
+    a.tz = field.clampToArea(a.tz);
+    const groundY = heightAt(a.tx, a.tz);
+    const cx = a.tx - fwdX * Math.cos(a.tilt) * a.dist;
+    const cz = a.tz - fwdZ * Math.cos(a.tilt) * a.dist;
+    const cy = Math.max(groundY + Math.sin(a.tilt) * a.dist, heightAt(cx, cz) + 25);
+    camera.position.set(cx, cy, cz);
+    camera.rotation.set(-a.tilt, a.yaw, 0);
   }
 
   /**
    * @param {number} dt  segundos desde el cuadro anterior
-   * @param {{ forward: number, strafe: number, turn: number, run: boolean, lookX: number, lookY: number }} input
+   * @param {{ forward: number, strafe: number, turn: number, run: boolean, lookX: number, lookY: number,
+   *   zoom?: number, tilt?: number, rotate?: number }} input
    */
   function update(dt, input) {
-    let altitude = EYE_M;
-    if (view.mode === 'above') {
-      altitude = START_ALTITUDE_M;
+    if (view.mode === 'aerial') {
+      updateAerial(dt, input);
     } else if (view.mode === 'descending') {
-      view.progress = Math.min(1, view.progress + dt / DESCENT_SECONDS);
-      const t = easeInOut(view.progress);
-      altitude = START_ALTITUDE_M + (EYE_M - START_ALTITUDE_M) * t;
-      view.pitch = LOOK_DOWN * (1 - t * t);
-      if (view.progress >= 1) {
-        view.mode = 'ground';
-        view.pitch = 0;
-      }
+      const d = view.descent;
+      d.t = Math.min(1, d.t + dt / d.seconds);
+      const e = easeInOut(d.t);
+      const toY = heightAt(d.x, d.z) + EYE_M;
+      const x = d.from.x + (d.x - d.from.x) * e;
+      const z = d.from.z + (d.z - d.from.z) * e;
+      // Baja más tarde de lo que avanza, para no rozar el suelo en el camino.
+      const y = Math.max(d.from.y + (toY - d.from.y) * (e * e), heightAt(x, z) + EYE_M);
+      camera.position.set(x, y, z);
+      camera.rotation.set(d.pitch0 * (1 - e), d.yaw, 0);
+      if (d.t >= 1) Object.assign(view, { mode: 'ground', x: d.x, z: d.z, yaw: d.yaw, pitch: 0, descent: null });
     } else if (view.mode === 'driving') {
       drive(dt, input);
       vehicle.chaseYaw = (vehicle.chaseYaw - input.lookX * LOOK_SENSITIVITY) * (input.lookX ? 1 : 1 - Math.min(1, dt * 0.8));
       const back = vehicle.heading + Math.PI + vehicle.chaseYaw;
       const cx = vehicle.x + Math.cos(back) * 13;
       const cz = vehicle.z - Math.sin(back) * 13;
-      const groundCam = heightAt(cx, cz);
-      camera.position.set(cx, Math.max(groundCam + 2, rover.position.y + 5.5), cz);
+      camera.position.set(cx, Math.max(heightAt(cx, cz) + 2, rover.position.y + 5.5), cz);
       camera.lookAt(vehicle.x + Math.cos(vehicle.heading) * 6, rover.position.y + 1.6, vehicle.z - Math.sin(vehicle.heading) * 6);
-      sunDisc.position.copy(camera.position).addScaledVector(sunDir, 9000);
-      return;
     } else {
       view.yaw -= input.turn * TURN_RPS * dt + input.lookX * LOOK_SENSITIVITY;
       view.pitch = Math.min(1.2, Math.max(-1.2, view.pitch - input.lookY * LOOK_SENSITIVITY));
@@ -377,15 +475,40 @@ export function createScene({ canvas, field, palette, seed = 1114 }) {
       pushTrack(view.x, view.z);
       const moving = Math.abs(input.forward) + Math.abs(input.strafe) > 0;
       view.bob = moving ? view.bob + dt * (input.run ? 14 : 8) : view.bob * 0.9;
-      altitude += moving ? Math.sin(view.bob) * BOB_M : 0;
+      camera.position.set(view.x, heightAt(view.x, view.z) + EYE_M + (moving ? Math.sin(view.bob) * BOB_M : 0), view.z);
+      camera.rotation.set(view.pitch, view.yaw, 0);
     }
-    camera.position.set(view.x, heightAt(view.x, view.z) + altitude, view.z);
-    camera.rotation.set(view.pitch, view.yaw, 0);
+
+    // Desde lo alto: niebla más fina, plano lejano más lejos y marcador a escala visible.
+    const altitude = Math.max(0, camera.position.y - heightAt(camera.position.x, camera.position.z));
+    fog.density = dustFogDensity(tau, altitude);
+    const near = altitude > 200 ? Math.min(20, altitude * 0.004) : 0.3;
+    const far = altitude > 200 ? 30000 + altitude * 3 : 24000;
+    if (Math.abs(camera.near - near) > near * 0.2 || camera.far !== far) {
+      camera.near = near;
+      camera.far = far;
+      camera.updateProjectionMatrix();
+    }
+    if (pin.visible) pin.scale.setScalar(Math.max(0.3, view.aerial.dist / 1200));
     sunDisc.position.copy(camera.position).addScaledVector(sunDir, 9000);
+  }
+
+  const ndc = new Vector3();
+  /** Punto del suelo bajo una posición de la pantalla (coordenadas normalizadas −1..1). */
+  function pick(ndcX, ndcY) {
+    ndc.set(ndcX, ndcY, 0.5).unproject(camera).sub(camera.position).normalize();
+    const p = camera.position;
+    return rayGround([p.x, p.y, p.z], [ndc.x, ndc.y, ndc.z], heightAt, 80000);
+  }
+
+  function setPin(point) {
+    pin.visible = Boolean(point);
+    if (point) pin.position.set(point.x, heightAt(point.x, point.z), point.z);
   }
 
   function resize(width, height) {
     if (!width || !height) return;
+    viewHeight = height;
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
@@ -393,43 +516,44 @@ export function createScene({ canvas, field, palette, seed = 1114 }) {
 
   return {
     setEnvironment,
+    setImagery,
     startDescent,
+    descendTo,
     ascend,
+    flyTo,
+    pick,
+    setPin,
     board,
     exitVehicle,
     repair,
     canBoard,
-    /** Datos para el mini mapa: cráteres, equipo y recorrido, en metros locales. */
-    mapData: () => ({ craters, track, vehicle: { x: vehicle.x, z: vehicle.z, heading: vehicle.heading } }),
+    heightAt,
+    /** Datos para el mini mapa: recorrido y vehículo, en metros locales. */
+    mapData: () => ({ track, vehicle: { x: vehicle.x, z: vehicle.z, heading: vehicle.heading } }),
     update,
     resize,
     render: () => renderer.render(scene, camera),
-    /** Dónde está la persona y en qué fase de la bajada. */
+    /** Dónde está la persona (o lo que mira la vista aérea) y en qué modo. */
     state: () => {
       const driving = view.mode === 'driving';
-      const yaw = driving ? vehicle.heading - Math.PI / 2 : view.yaw;
+      const aerial = view.mode === 'aerial' || view.mode === 'descending';
+      const yaw = driving ? vehicle.heading - Math.PI / 2 : aerial ? view.aerial.yaw : view.yaw;
+      const x = driving ? vehicle.x : aerial ? view.aerial.tx : view.x;
+      const z = driving ? vehicle.z : aerial ? view.aerial.tz : view.z;
       return {
-        x: driving ? vehicle.x : view.x,
-        z: driving ? vehicle.z : view.z,
+        x,
+        z,
         mode: view.mode,
         headingDeg: (((-yaw * 180) / Math.PI) % 360 + 360) % 360,
+        aerialDist: view.aerial.dist,
         canBoard: canBoard(),
         vehicle: { ...vehicle },
       };
     },
     /** Libera la memoria de la escena y el contexto WebGL. */
     dispose() {
-      geometry.dispose();
-      groundMaterial.dispose();
-      rockGeometry.dispose();
-      rockMaterial.dispose();
-      rocks.dispose();
-      boulders.dispose();
+      groundTexture?.dispose();
       for (const d of disposables) d.dispose();
-      markGeometry.dispose();
-      markMaterial.dispose();
-      sunGeometry.dispose();
-      sunMaterial.dispose();
       renderer.dispose();
       renderer.forceContextLoss();
     },

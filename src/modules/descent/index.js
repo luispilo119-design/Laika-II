@@ -9,13 +9,16 @@
 import './descent.css';
 import messages from './i18n.js';
 import L from 'leaflet';
-import { AREA_M, GRID, areaBBox, makeHeightField, toLatLon } from './terrain.js';
+import { AREA_M, GRID, areaBBox, makeHeightField, toLatLon, toLocal, insideArea } from './terrain.js';
+import { IMAGERY_REFERENCES } from './tiles.js';
 import { createMarsMap } from '../../core/marsmap.js';
 import { formatHour } from '../../core/clock.js';
 
 // Punto de ejemplo para cuando todavía no hay sitio de aterrizaje (el mismo que usa "routes").
 const EXAMPLE_SITE = { lat: 1.0, lon: 3.0 };
 const HUD_EVERY_MS = 400;
+const MINIMAP_M = 2000; // lado del mini mapa, centrado en la persona
+const EDGE_RELOAD_M = 1500; // a esta distancia del borde se ofrece cargar el terreno de más allá
 
 /** @type {import('../../core/types.js').Reference[]} */
 const REFERENCES = [
@@ -27,6 +30,7 @@ const REFERENCES = [
     url: 'https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html',
     verified: true,
   },
+  ...IMAGERY_REFERENCES,
 ];
 
 /** Hora elegida en la vista previa (null = la del reloj de la misión). No se escribe en el store. */
@@ -98,7 +102,23 @@ const mod = {
           }
           <p class="descent__status" role="status">${t('descent.loading')}</p>
           <button type="button" class="btn btn--primary" data-descend disabled>${t('descent.descend')}</button>
-          <p class="descent__note">${t('descent.decorNote', { km: num(AREA_M / 1000) })}</p>
+          <details class="descent__about">
+            <summary>${t('descent.aboutTitle')}</summary>
+            <p class="descent__note">${t('descent.decorNote', { km: num(AREA_M / 1000) })}</p>
+            <p class="descent__note" data-imagery-note>${t('descent.imagery.loading')}</p>
+          </details>
+        </div>
+
+        <div class="descent__aerial" hidden>
+          <div class="descent__aerial-zoom">
+            <button type="button" class="btn" data-zoom="in" aria-label="${t('descent.aerial.zoomIn')}">+</button>
+            <button type="button" class="btn" data-zoom="out" aria-label="${t('descent.aerial.zoomOut')}">−</button>
+          </div>
+          <div class="descent__aerial-actions">
+            <button type="button" class="btn btn--primary" data-descend-pin hidden>${t('descent.aerial.descendHere')}</button>
+            <button type="button" class="btn" data-reload-here hidden>${t('descent.aerial.reloadHere')}</button>
+          </div>
+          <p class="descent__aerial-hint">${t('descent.aerial.hint')}</p>
         </div>
 
         <section class="descent__vehicle" hidden aria-label="${t('descent.rover.title')}">
@@ -170,7 +190,15 @@ const mod = {
     const repairBtn = el.querySelector('[data-repair]');
     const minimap = el.querySelector('.descent__minimap');
     const placeBox = el.querySelector('.descent__place');
+    const aerialBox = el.querySelector('.descent__aerial');
+    const descendPinBtn = el.querySelector('[data-descend-pin]');
+    const reloadHereBtn = el.querySelector('[data-reload-here]');
+    const imageryNote = el.querySelector('[data-imagery-note]');
     let placeMap = null;
+    let pinPoint = null; // punto elegido tocando el suelo en la vista aérea
+    /** Foto orbital ya cargada: { canvas, cover, layer } (también la usa el mini mapa). */
+    let imagery = null;
+    let imageryAbort = null;
 
     let alive = true;
     let scene = null;
@@ -214,6 +242,11 @@ const mod = {
       exitBtn.hidden = !driving;
       minimap.hidden = !(mode === 'ground' || driving);
       if (landed) hint.hidden = mode !== 'ground';
+      const aerial = mode === 'aerial';
+      aerialBox.hidden = !aerial || !scene;
+      descendPinBtn.hidden = !(aerial && pinPoint);
+      const nearEdge = !insideArea(where.x, where.z, EDGE_RELOAD_M);
+      reloadHereBtn.hidden = !(nearEdge && (aerial || mode === 'ground'));
       if (!where.vehicle) return;
       const v = where.vehicle;
       veh('speed').textContent = num(Math.abs(v.speed) * 3.6);
@@ -230,30 +263,31 @@ const mod = {
       repairBtn.hidden = v.damage <= 0;
     }
 
-    /** Mini mapa del área: cráteres, equipo, recorrido y posición. */
+    /** Mini mapa de 2 km centrado en la persona: foto orbital, recorrido, vehículo y posición. */
     function drawMinimap() {
       if (!scene || minimap.hidden) return;
       const g = minimap.getContext('2d');
       const W = minimap.width;
-      const k = W / AREA_M;
-      const P = (x, z) => [W / 2 + x * k, W / 2 + z * k];
+      const k = W / MINIMAP_M;
       const data = scene.mapData();
       const where = scene.state();
+      const P = (x, z) => [W / 2 + (x - where.x) * k, W / 2 + (z - where.z) * k];
       g.clearRect(0, 0, W, W);
       g.fillStyle = 'rgba(20, 12, 10, 0.78)';
       g.fillRect(0, 0, W, W);
-      g.strokeStyle = 'rgba(255, 220, 190, 0.45)';
-      g.lineWidth = 1;
-      for (const c of data.craters) {
-        const [cx, cy] = P(c.x, c.z);
-        g.beginPath();
-        g.arc(cx, cy, Math.max(1.5, c.r * k), 0, Math.PI * 2);
-        g.stroke();
+      if (imagery) {
+        // Parte de la foto orbital que cae en el mini mapa (la foto va de norte a sur y de oeste a este).
+        const { canvas: img, cover } = imagery;
+        const nw = toLatLon(site, where.x - MINIMAP_M / 2, where.z - MINIMAP_M / 2);
+        const se = toLatLon(site, where.x + MINIMAP_M / 2, where.z + MINIMAP_M / 2);
+        const sx = ((nw.lon - cover.west) / (cover.east - cover.west)) * img.width;
+        const sy = ((cover.north - nw.lat) / (cover.north - cover.south)) * img.height;
+        const sw = ((se.lon - nw.lon) / (cover.east - cover.west)) * img.width;
+        const sh = ((nw.lat - se.lat) / (cover.north - cover.south)) * img.height;
+        g.globalAlpha = 0.85;
+        g.drawImage(img, sx, sy, sw, sh, 0, 0, W, W);
+        g.globalAlpha = 1;
       }
-      g.strokeStyle = '#fffff3';
-      g.beginPath();
-      g.arc(W / 2, W / 2, 75 * k + 2, 0, Math.PI * 2);
-      g.stroke();
       g.strokeStyle = '#e8b04a';
       g.lineWidth = 1.5;
       g.beginPath();
@@ -266,13 +300,12 @@ const mod = {
       const [vx, vy] = P(data.vehicle.x, data.vehicle.z);
       g.fillStyle = '#7fc98b';
       g.fillRect(vx - 3, vy - 3, 6, 6);
-      const [px, py] = P(where.x, where.z);
       const a = (where.headingDeg * Math.PI) / 180;
       g.fillStyle = '#e2664f';
       g.beginPath();
-      g.moveTo(px + Math.sin(a) * 7, py - Math.cos(a) * 7);
-      g.lineTo(px + Math.sin(a + 2.5) * 5, py - Math.cos(a + 2.5) * 5);
-      g.lineTo(px + Math.sin(a - 2.5) * 5, py - Math.cos(a - 2.5) * 5);
+      g.moveTo(W / 2 + Math.sin(a) * 7, W / 2 - Math.cos(a) * 7);
+      g.lineTo(W / 2 + Math.sin(a + 2.5) * 5, W / 2 - Math.cos(a + 2.5) * 5);
+      g.lineTo(W / 2 + Math.sin(a - 2.5) * 5, W / 2 - Math.cos(a - 2.5) * 5);
       g.closePath();
       g.fill();
     }
@@ -285,9 +318,13 @@ const mod = {
     // ---------- Entradas: teclado, arrastre para mirar y palanca táctil ----------
 
     const keys = new Set();
-    const look = { x: 0, y: 0, pointer: null, lastX: 0, lastY: 0 };
+    const look = { x: 0, y: 0 };
     const pad = { x: 0, y: 0, pointer: null };
+    const gestures = { zoom: 1, tilt: 0, rotate: 0 };
+    const pointers = new Map(); // dedos o ratón sobre el lienzo: id → { x, y, sx, sy, t0, button }
+    let pair = null; // dos dedos: { dist, angle, midY }
     const MOVE_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ShiftLeft', 'ShiftRight']);
+    const ZOOM_KEYS = { Equal: 0.8, NumpadAdd: 0.8, Minus: 1.25, NumpadSubtract: 1.25 };
 
     function toggleVehicle() {
       if (!scene) return;
@@ -298,34 +335,93 @@ const mod = {
     }
 
     function onKeyDown(event) {
-      if (event.code === 'KeyE' && !event.target.closest?.('input, textarea, select')) {
+      if (event.target.closest?.('input, textarea, select')) return;
+      if (event.code === 'KeyE') {
         if (!event.repeat) toggleVehicle();
         return;
       }
-      if (!MOVE_KEYS.has(event.code) || event.target.closest?.('input, textarea, select')) return;
+      if (ZOOM_KEYS[event.code] && scene?.state().mode === 'aerial') {
+        gestures.zoom *= ZOOM_KEYS[event.code];
+        return;
+      }
+      if (!MOVE_KEYS.has(event.code)) return;
       if (event.code.startsWith('Arrow')) event.preventDefault(); // que las flechas no desplacen la página
       keys.add(event.code);
     }
     const onKeyUp = (event) => keys.delete(event.code);
     const onBlur = () => keys.clear();
 
+    function pairState() {
+      const [a, b] = [...pointers.values()];
+      return { dist: Math.hypot(a.x - b.x, a.y - b.y) || 1, angle: Math.atan2(b.y - a.y, b.x - a.x), midY: (a.y + b.y) / 2 };
+    }
+
+    /** Al empezar a explorar la vista aérea, la tarjeta de inicio deja libre la pantalla. */
+    function exploring() {
+      if (scene && !intro.hidden && scene.state().mode === 'aerial') intro.hidden = true;
+    }
+
     function onLookDown(event) {
-      if (look.pointer !== null) return;
-      look.pointer = event.pointerId;
-      look.lastX = event.clientX;
-      look.lastY = event.clientY;
+      exploring();
+      pointers.set(event.pointerId, { x: event.clientX, y: event.clientY, sx: event.clientX, sy: event.clientY, t0: performance.now(), button: event.button });
       canvas.setPointerCapture(event.pointerId);
+      pair = pointers.size === 2 ? pairState() : null;
     }
     function onLookMove(event) {
-      if (event.pointerId !== look.pointer) return;
-      look.x += event.clientX - look.lastX;
-      look.y += event.clientY - look.lastY;
-      look.lastX = event.clientX;
-      look.lastY = event.clientY;
+      const p = pointers.get(event.pointerId);
+      if (!p) return;
+      const dx = event.clientX - p.x;
+      const dy = event.clientY - p.y;
+      p.x = event.clientX;
+      p.y = event.clientY;
+      if (pointers.size === 1) {
+        // Con el botón derecho (o Mayús) en la vista aérea: girar e inclinar en lugar de desplazar.
+        if ((p.button === 2 || event.shiftKey) && scene?.state().mode === 'aerial') {
+          gestures.rotate += dx * 0.005;
+          gestures.tilt += dy * 0.004;
+        } else {
+          look.x += dx;
+          look.y += dy;
+        }
+      } else if (pointers.size === 2 && pair) {
+        const now = pairState();
+        gestures.zoom *= pair.dist / now.dist;
+        gestures.tilt += (now.midY - pair.midY) * 0.004;
+        let turn = now.angle - pair.angle;
+        if (turn > Math.PI) turn -= 2 * Math.PI;
+        if (turn < -Math.PI) turn += 2 * Math.PI;
+        gestures.rotate -= turn;
+        pair = now;
+      }
     }
     function onLookUp(event) {
-      if (event.pointerId === look.pointer) look.pointer = null;
+      const p = pointers.get(event.pointerId);
+      if (!p) return;
+      const tap = pointers.size === 1 && Math.hypot(p.x - p.sx, p.y - p.sy) < 8 && performance.now() - p.t0 < 500;
+      pointers.delete(event.pointerId);
+      pair = pointers.size === 2 ? pairState() : null;
+      if (tap && event.type === 'pointerup' && p.button !== 2) onTap(event.clientX, event.clientY);
     }
+    function onWheel(event) {
+      if (scene?.state().mode !== 'aerial') return;
+      event.preventDefault();
+      exploring();
+      gestures.zoom *= Math.exp(Math.max(-200, Math.min(200, event.deltaY)) * 0.0015);
+    }
+    const onContextMenu = (event) => event.preventDefault();
+
+    /** Tocar el suelo en la vista aérea marca un punto al que se puede bajar. */
+    function onTap(clientX, clientY) {
+      if (!scene || scene.state().mode !== 'aerial') return;
+      const box = canvas.getBoundingClientRect();
+      const hit = scene.pick(((clientX - box.left) / box.width) * 2 - 1, -(((clientY - box.top) / box.height) * 2 - 1));
+      pinPoint = hit ? { x: hit.x, z: hit.z } : null;
+      scene.setPin(pinPoint);
+      onPick?.(pinPoint);
+      lastHud = 0;
+    }
+    /** Lo que pasa además al tocar un punto (lo usa el panel de rutas para elegir paradas). */
+    let onPick = null;
 
     function movePad(event) {
       const box = stick.getBoundingClientRect();
@@ -361,6 +457,9 @@ const mod = {
     function readInput() {
       const key = (code) => (keys.has(code) ? 1 : 0);
       const input = {
+        zoom: gestures.zoom,
+        tilt: gestures.tilt,
+        rotate: gestures.rotate,
         forward: Math.max(-1, Math.min(1, key('KeyW') + key('ArrowUp') - key('KeyS') - key('ArrowDown') - pad.y)),
         strafe: Math.max(-1, Math.min(1, key('KeyD') - key('KeyA') + pad.x)),
         turn: key('ArrowRight') - key('ArrowLeft'),
@@ -370,6 +469,9 @@ const mod = {
       };
       look.x = 0;
       look.y = 0;
+      gestures.zoom = 1;
+      gestures.tilt = 0;
+      gestures.rotate = 0;
       return input;
     }
 
@@ -424,6 +526,8 @@ const mod = {
         scene = createScene({
           canvas,
           field,
+          site,
+          equipment: site === landing,
           seed: Math.round((site.lat + 90) * 100) * 40000 + Math.round((site.lon + 180) * 100),
           // Colores aproximados, tomados de la paleta de la app; no son una medición del color real.
           palette: {
@@ -453,6 +557,29 @@ const mod = {
         status.textContent = t('descent.fallback');
         descendBtn.hidden = true;
         paintHud();
+        return;
+      }
+      loadGroundImagery();
+    }
+
+    /** Foto orbital del terreno. Va aparte del try de load(): si falla, la escena sigue con sus colores. */
+    async function loadGroundImagery() {
+      imageryAbort?.abort();
+      const controller = new AbortController();
+      imageryAbort = controller;
+      imagery = null;
+      imageryNote.textContent = t('descent.imagery.loading');
+      try {
+        const { loadImagery } = await import('./imagery.js');
+        const result = await loadImagery(areaBBox(site), { signal: controller.signal });
+        if (!alive || controller.signal.aborted || !scene) return;
+        scene.setImagery(result.canvas, result.cover);
+        imagery = result;
+        const key = result.layer.controlled ? 'descent.imagery.controlled' : 'descent.imagery.uncontrolled';
+        imageryNote.textContent = t(key, { name: t(`descent.imagery.layer.${result.layer.id}`) });
+      } catch {
+        if (!alive || controller.signal.aborted) return;
+        imageryNote.textContent = t('descent.imagery.failed');
       }
     }
 
@@ -461,6 +588,9 @@ const mod = {
     async function reloadAt(place) {
       ui.place = place;
       site = place ?? landing;
+      imageryAbort?.abort();
+      imagery = null;
+      pinPoint = null;
       cancelAnimationFrame(raf);
       raf = 0;
       resizeObserver.disconnect();
@@ -516,6 +646,23 @@ const mod = {
         placeBox.hidden = true;
         return undefined;
       }
+      const zoom = event.target.closest('[data-zoom]')?.dataset.zoom;
+      if (zoom) {
+        gestures.zoom *= zoom === 'in' ? 0.6 : 1.6;
+        return undefined;
+      }
+      if (event.target.closest('[data-descend-pin]') && scene && pinPoint) {
+        scene.descendTo(pinPoint.x, pinPoint.z, reducedMotion.matches);
+        pinPoint = null;
+        intro.hidden = true;
+        canvas.focus({ preventScroll: true });
+        return undefined;
+      }
+      if (event.target.closest('[data-reload-here]') && scene) {
+        const where = scene.state();
+        const here = toLatLon(site, where.x, where.z);
+        return reloadAt({ lat: here.lat, lon: here.lon });
+      }
       if (event.target.closest('[data-place-landing]')) {
         placeBox.hidden = true;
         return reloadAt(null);
@@ -560,6 +707,8 @@ const mod = {
       canvas.addEventListener('pointermove', onLookMove);
       canvas.addEventListener('pointerup', onLookUp);
       canvas.addEventListener('pointercancel', onLookUp);
+      canvas.addEventListener('wheel', onWheel, { passive: false });
+      canvas.addEventListener('contextmenu', onContextMenu);
       canvas.tabIndex = 0;
     }
     bindCanvas();
@@ -577,6 +726,7 @@ const mod = {
 
     return () => {
       alive = false;
+      imageryAbort?.abort();
       cancelAnimationFrame(raf);
       resizeObserver.disconnect();
       el.removeEventListener('click', onClick);

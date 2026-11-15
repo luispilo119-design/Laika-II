@@ -12,11 +12,32 @@ export default {
     noSite: 'Aún no eliges sitio de aterrizaje: se usa un punto de ejemplo.',
     goMap: 'Elegir sitio',
     loading: 'Cargando el terreno…',
-    ready: 'Terreno listo. Estás viendo el sitio desde arriba; el anillo marca el punto de aterrizaje.',
+    ready: 'Terreno listo. Arrastra para recorrer la vista aérea, pellizca o usa la rueda para acercarte y toca el suelo para elegir dónde bajar.',
     fallback: 'Este dispositivo no puede mostrar la vista 3D. A la derecha están las condiciones del sitio.',
-    descend: 'Bajar al sitio',
+    descend: 'Bajar al centro',
+    aboutTitle: 'Qué es dato y qué no',
     decorNote:
-      'La forma del terreno ({km} km de lado) sale de la rejilla de elevación, que tiene celdas de unos 15 km: a esta escala llega interpolada. El relieve fino, los cráteres pequeños, las rocas, los vehículos y los colores son decorativos, no datos.',
+      'La forma del terreno ({km} km de lado) sale de la rejilla de elevación MOLA, con celdas de unos 15 km: a esta escala llega interpolada y casi plana. El relieve fino, las rocas, los vehículos y el equipo son decorativos, no datos.',
+    imagery: {
+      loading: 'Cargando la foto desde órbita…',
+      controlled:
+        'La imagen del suelo es una foto real desde órbita: {name}. Es en blanco y negro; el tono rojizo es decorativo.',
+      uncontrolled:
+        'La imagen del suelo es una foto real desde órbita: {name}. Es un mosaico preliminar, no controlado: puede quedar algo desplazado respecto a otros datos. Es en blanco y negro; el tono rojizo es decorativo.',
+      failed: 'No se pudo cargar la foto desde órbita (sin conexión o el servidor no respondió): el suelo usa colores de relleno.',
+      layer: {
+        jezero: 'mosaico CTX de 6 m de Jezero (NASA/JPL, Mars Trek)',
+        gale: 'mosaico CTX de Gale (NASA/JPL, Mars Trek)',
+        global: 'mosaico CTX global beta01 de 5 m (NASA/JPL/MSSS, Caltech Murray Lab, Esri)',
+      },
+    },
+    aerial: {
+      zoomIn: 'Acercar',
+      zoomOut: 'Alejar',
+      descendHere: 'Bajar aquí',
+      reloadHere: 'Cargar el terreno de aquí',
+      hint: 'Arrastra para desplazarte · rueda o pellizco para acercar · botón derecho, Mayús o dos dedos para girar e inclinar · toca el suelo para elegir un punto.',
+    },
     hint: 'Muévete con W, A, S, D o las flechas (Mayús para correr) y arrastra para mirar. En tablet, usa la palanca de la izquierda.',
     rover: {
       title: 'Rover presurizado',
@@ -81,11 +102,31 @@ export default {
     noSite: 'You have not chosen a landing site yet: an example point is used.',
     goMap: 'Choose a site',
     loading: 'Loading the terrain…',
-    ready: 'Terrain ready. You are looking at the site from above; the ring marks the landing point.',
+    ready: 'Terrain ready. Drag to move the aerial view, pinch or use the wheel to zoom, and tap the ground to choose where to go down.',
     fallback: 'This device cannot show the 3D view. The site conditions are on the right.',
-    descend: 'Go down to the site',
+    descend: 'Go down to the center',
+    aboutTitle: 'What is data and what is not',
     decorNote:
-      'The shape of the terrain ({km} km across) comes from the elevation grid, whose cells are about 15 km: at this scale it arrives interpolated. Fine relief, small craters, rocks, vehicles and colors are decorative, not data.',
+      'The shape of the terrain ({km} km across) comes from the MOLA elevation grid, whose cells are about 15 km: at this scale it arrives interpolated and almost flat. Fine relief, rocks, vehicles and equipment are decorative, not data.',
+    imagery: {
+      loading: 'Loading the orbital photo…',
+      controlled: 'The ground image is a real photo from orbit: {name}. It is black and white; the reddish tint is decorative.',
+      uncontrolled:
+        'The ground image is a real photo from orbit: {name}. It is a preliminary, uncontrolled mosaic: it may sit slightly offset from other data. It is black and white; the reddish tint is decorative.',
+      failed: 'The orbital photo could not be loaded (offline or the server did not answer): the ground uses placeholder colors.',
+      layer: {
+        jezero: '6 m CTX mosaic of Jezero (NASA/JPL, Mars Trek)',
+        gale: 'CTX mosaic of Gale (NASA/JPL, Mars Trek)',
+        global: '5 m CTX global mosaic beta01 (NASA/JPL/MSSS, Caltech Murray Lab, Esri)',
+      },
+    },
+    aerial: {
+      zoomIn: 'Zoom in',
+      zoomOut: 'Zoom out',
+      descendHere: 'Go down here',
+      reloadHere: 'Load the terrain here',
+      hint: 'Drag to move · wheel or pinch to zoom · right button, Shift or two fingers to rotate and tilt · tap the ground to choose a point.',
+    },
     hint: 'Move with W, A, S, D or the arrow keys (Shift to run) and drag to look around. On a tablet, use the stick on the left.',
     rover: {
       title: 'Pressurized rover',

@@ -49,3 +49,79 @@ test('rovers.json trae las paradas de los dos rovers, en orden de sol', () => {
     assert.ok(stops.every((s) => s.elevM === null || (s.elevM > -9000 && s.elevM < 22000)), 'sin -9999 como dato');
   }
 });
+
+// ---------- Terreno de 16 km, foto orbital y vista aérea ----------
+import { AREA_M, toLatLon, toLocal, insideArea, makeTerrainGrid, gridHeightAt, rayGround, dustFogDensity } from '../src/modules/descent/terrain.js';
+import { IMAGERY, chooseImagery, pickLevel, tileCover, tileDeg, tileUrl, uvOf } from '../src/modules/descent/tiles.js';
+
+const JEZERO = { lat: 18.46, lon: 77.34 };
+
+test('toLocal es lo inverso de toLatLon', () => {
+  for (const [x, z] of [[0, 0], [5000, -3000], [-7900, 7900], [123.4, -987.6]]) {
+    const { lat, lon } = toLatLon(JEZERO, x, z);
+    const back = toLocal(JEZERO, lat, lon);
+    assert.ok(Math.abs(back.x - x) < 1e-6 && Math.abs(back.z - z) < 1e-6, `${x}, ${z}`);
+  }
+  assert.ok(insideArea(0, 0));
+  assert.ok(!insideArea(AREA_M / 2, 0));
+  assert.ok(!insideArea(0, AREA_M / 2 - 100, 1500), 'cerca del borde');
+});
+
+test('la altura del suelo coincide con la malla en los vértices y en medio de las celdas', () => {
+  const slope = (x, z) => 0.01 * x - 0.02 * z + 100 * Math.sin(x / 900);
+  const grid = makeTerrainGrid(slope, 40, 4000);
+  // En los vértices, la altura es exactamente la de la función.
+  for (const [x, z] of [[-2000, -2000], [0, 0], [1900, -1100], [2000, 2000]]) {
+    assert.ok(Math.abs(gridHeightAt(grid, x, z) - slope(x, z)) < 1e-3, `${x}, ${z}`);
+  }
+  // Un plano se reproduce exacto en cualquier punto (los dos triángulos de cada celda son el mismo plano).
+  const plane = makeTerrainGrid((x, z) => 3 * x - 2 * z + 7, 10, 1000);
+  for (const [x, z] of [[13.7, -401.2], [-250, 333.3], [499, -499]]) {
+    assert.ok(Math.abs(gridHeightAt(plane, x, z) - (3 * x - 2 * z + 7)) < 1e-6);
+  }
+});
+
+test('un rayo desde arriba toca el suelo donde apunta', () => {
+  const grid = makeTerrainGrid((x) => x * 0.05, 64, 8000);
+  const heightAt = (x, z) => gridHeightAt(grid, x, z);
+  const straightDown = rayGround([500, 3000, -200], [0, -1, 0], heightAt, 20000, 8000);
+  assert.ok(Math.abs(straightDown.x - 500) < 1e-6 && Math.abs(straightDown.y - 25) < 0.01);
+  const len = Math.hypot(1, -1);
+  const slanted = rayGround([0, 1000, 0], [1 / len, -1 / len, 0], heightAt, 20000, 8000);
+  // y = 1000 − t·0.707 = 0.05·x con x = t·0.707 → x ≈ 952
+  assert.ok(Math.abs(slanted.x - 1000 / 1.05) < 0.5, `${slanted.x}`);
+  assert.equal(rayGround([0, 1000, 0], [0, 1, 0], heightAt, 20000, 8000), null, 'mirando al cielo no hay suelo');
+});
+
+test('desde lo alto la niebla es más fina', () => {
+  assert.ok(dustFogDensity(0.5, 5000) < dustFogDensity(0.5, 0) / 5);
+  assert.equal(dustFogDensity(0.5), dustFogDensity(0.5, 0));
+});
+
+test('se elige el mosaico regional cuando cubre el terreno y el global en otro caso', () => {
+  const bbox = (site) => {
+    const nw = toLatLon(site, -AREA_M / 2, -AREA_M / 2);
+    const se = toLatLon(site, AREA_M / 2, AREA_M / 2);
+    return { west: nw.lon, north: nw.lat, east: se.lon, south: se.lat };
+  };
+  assert.equal(chooseImagery(bbox(JEZERO)).id, 'jezero');
+  assert.equal(chooseImagery(bbox({ lat: -4.7, lon: 137.4 })).id, 'gale');
+  assert.equal(chooseImagery(bbox({ lat: 1, lon: 3 })).id, 'global');
+  assert.ok(IMAGERY.every((layer) => layer.refId));
+});
+
+test('las teselas cubren el recuadro y la imagen no pasa del tamaño pedido', () => {
+  const box = { west: 77.2, east: 77.48, south: 18.32, north: 18.6 };
+  for (const layer of IMAGERY) {
+    const level = pickLevel(box, layer, 2048);
+    const tiles = tileCover(box, level);
+    const { cover } = tiles;
+    assert.ok(cover.west <= box.west && cover.east >= box.east && cover.south <= box.south && cover.north >= box.north);
+    const cols = tiles.col1 - tiles.col0 + 1;
+    assert.ok((cols - 1) * layer.tileSize <= 2048, `${layer.id}: ${cols} columnas`);
+    assert.ok(Math.abs(cover.east - cover.west - cols * tileDeg(level)) < 1e-9);
+  }
+  const url = tileUrl(IMAGERY[0], 12, 1628, 5857);
+  assert.ok(url.endsWith('/12/1628/5857.png'));
+  assert.deepEqual(uvOf({ west: 0, east: 10, south: 0, north: 10 }, 10, 0), [0, 1], 'esquina noroeste → u 0, v 1');
+});
