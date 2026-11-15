@@ -121,13 +121,37 @@ def build(key: str, spec: dict, offline: bool) -> dict:
         "landing": [round(first["lat"], 6), round(first["lon"], 6)],
         "current": [round(last["lat"], 6), round(last["lon"], 6)],
         "paths": [[[round(lat, 6), round(lon, 6)] for lon, lat in path] for path in simple],
+        # Paradas (una por manejo): [lat, lon, sol, site, drive, metros recorridos, elevación m].
+        # site y drive coinciden con los de las fotos crudas de la NASA; elevación sobre el geoide,
+        # None si el archivo trae -9999 (sin dato).
+        "stopFields": ["lat", "lon", "sol", "site", "drive", "distM", "elevM"],
+        "stops": [stop(w["properties"]) for w in waypoints],
     }
+
+
+def stop(p: dict) -> list:
+    elev = p.get("elev_geoid")
+    return [
+        round(p["lat"], 6),
+        round(p["lon"], 6),
+        int(p["sol"]),
+        int(p["site"]),
+        int(p["drive"]),
+        round(p["dist_total_m"], 1),
+        None if elev is None or elev <= -9000 else round(elev, 1),
+    ]
 
 
 def main() -> None:
     offline = "--offline" in sys.argv
+    # Sin conexión, la fecha es la de la descarga (la de los archivos crudos), no la de hoy.
+    if offline:
+        mtime = (RAW / "perseverance_waypoints.json").stat().st_mtime
+        generated = datetime.date.fromtimestamp(mtime).isoformat()
+    else:
+        generated = datetime.date.today().isoformat()
     data = {
-        "generated": datetime.date.today().isoformat(),
+        "generated": generated,
         "note": "Recorridos simplificados a ~1.5 m. 'landing' es el primer punto registrado del rover.",
         "rovers": {key: build(key, spec, offline) for key, spec in ROVERS.items()},
     }

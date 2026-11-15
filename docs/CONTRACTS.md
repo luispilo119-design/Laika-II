@@ -143,6 +143,10 @@ Other pieces of `src/core/` any module can use:
 - `core/journal.js`: daily targets and the logic of the sol-by-sol journal.
 - `spectrumHtml` and `radarSvg` from `core/viz.js`: score spectrum and factor radar chart.
 - `MARS_RADIUS_KM`, `KM_PER_DEG` and `haversineKm` from `core/geo.js`: distances on the surface.
+- `LANDING_SITES` and `SITE_REFERENCES` from `core/sites.js`: NASA landing sites (used by `map` and
+  `descent`).
+- `loadRovers`, `stopsOf`, `ROVER_IDS` and `ROVER_REFERENCES` from `core/rovers.js`: the real
+  Perseverance and Curiosity traverses and their stops (sol, site, drive, distance, elevation).
 - `esc` and `el` from `core/html.js`: HTML escaping and element creation.
 - `collectReferences(modules)` from `core/references.js`: every module's references without
   duplicates (used by the References screen and the dashboard).
@@ -159,7 +163,8 @@ Other pieces of `src/core/` any module can use:
 ## 10. Processed data
 
 The grids live in `public/data/` and only `src/core/env.js` reads them; modules never load them on
-their own. Their format is described in [tools/README.md](../tools/README.md).
+their own. Their format is described in [tools/README.md](../tools/README.md). The one exception is
+`rovers.json` (lines and points, not a grid), which only `core/rovers.js` loads.
 
 ## Contract change log
 
@@ -168,3 +173,6 @@ their own. Their format is described in [tools/README.md](../tools/README.md).
   `noData` and `modeled` to the factors from `evaluate`; a factor without data no longer counts as
   zero. The shell waits for `env.ready()`. Added `core/clock.js` and `core/human-needs.js`.
 - `mission.journal` added for the sol-by-sol journal (`core/journal.js`).
+- 2026-11-15 — `map/sites.js` moved to `core/sites.js`, and the `rovers.json` loader moved from
+  `map/index.js` to `core/rovers.js`, so `descent` can use them. `rovers.json` gains `stops` per
+  rover (one per drive, from the NASA waypoints). No state or `env` changes.

@@ -1,5 +1,6 @@
 /**
- * Sitios de aterrizaje de misiones de la NASA en Marte.
+ * Sitios de aterrizaje de misiones de la NASA en Marte. Dueño: Parte A.
+ * Compartido por el mapa (map) y la primera persona (descent); antes vivía en modules/map/sites.js.
  *
  * Coordenadas tal como las publica el catálogo NSSDCA de la NASA (leído el 2026-11-14), pasadas a
  * lon este-positivo −180..180. Excepciones:

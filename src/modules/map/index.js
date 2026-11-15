@@ -2,7 +2,7 @@
  * Módulo "map": mapa con capas y elección del sitio de aterrizaje.
  * Dueño: Parte A — tareas A2 (capas), A3 (datos y reloj) y A4 (ficha de zona).
  *
- * Mapas base y capas de Mars Trek (layers.js), sitios de aterrizaje y recorridos de rovers (sites.js),
+ * Mapas base y capas de Mars Trek (layers.js), sitios de aterrizaje y recorridos de rovers (core/sites.js, core/rovers.js),
  * reloj marciano, capas con escala numérica pintadas con ctx.env (envlayers.js), mejores zonas y la
  * ficha de zona del punto que se toca (zone.js), desde donde se elige el sitio de aterrizaje.
  */
@@ -11,7 +11,8 @@ import './map.css';
 import messages from './i18n.js';
 import { createMarsMap, BASEMAPS, trekLayer } from '../../core/marsmap.js';
 import { DATA_LAYERS, RAMPS } from './layers.js';
-import { LANDING_SITES, SITE_REFERENCES } from './sites.js';
+import { LANDING_SITES, SITE_REFERENCES } from '../../core/sites.js';
+import { loadRovers, ROVER_REFERENCES } from '../../core/rovers.js';
 import { ENV_LAYERS, createEnvOverlay, rampCss, craterMinDiameterKm } from './envlayers.js';
 import { KM_PER_DEG } from '../../core/geo.js';
 import { ENV_REFERENCES } from '../../core/env.js';
@@ -33,20 +34,7 @@ const REFERENCES = [
     url: 'https://trek.nasa.gov/tiles/apidoc/trekAPI.html?body=mars',
     verified: true,
   },
-  {
-    id: 'nasa-track-perseverance',
-    title: 'Perseverance: waypoints y recorrido (mapa "Where is Perseverance?")',
-    org: 'NASA/JPL',
-    url: 'https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json',
-    verified: true,
-  },
-  {
-    id: 'nasa-track-curiosity',
-    title: 'Curiosity: waypoints y recorrido (mapa "Where is Curiosity?")',
-    org: 'NASA/JPL',
-    url: 'https://mars.nasa.gov/mmgis-maps/MSL/Layers/json/MSL_waypoints.json',
-    verified: true,
-  },
+  ...ROVER_REFERENCES,
   ...DATA_LAYERS.map((layer) => layer.reference),
   ...SITE_REFERENCES,
   ...ENV_REFERENCES,
@@ -71,20 +59,6 @@ const ui = {
   center: [0, 0],
   zoom: 2,
 };
-
-let roversPromise = null;
-function loadRovers() {
-  roversPromise ??= fetch('./data/rovers.json')
-    .then((response) => {
-      if (!response.ok) throw new Error(`rovers.json ${response.status}`);
-      return response.json();
-    })
-    .catch((err) => {
-      roversPromise = null;
-      throw err;
-    });
-  return roversPromise;
-}
 
 /** @type {import('../../core/types.js').ModuleDef} */
 const mod = {

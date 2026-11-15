@@ -9,10 +9,8 @@
  *    (ver terrain.js y la nota en pantalla).
  */
 import {
-  BoxGeometry,
   BufferAttribute,
   Color,
-  CylinderGeometry,
   DirectionalLight,
   FogExp2,
   Group,
@@ -23,7 +21,6 @@ import {
   Mesh,
   MeshBasicMaterial,
   MeshLambertMaterial,
-  MeshStandardMaterial,
   PerspectiveCamera,
   PlaneGeometry,
   Quaternion,
@@ -34,6 +31,10 @@ import {
   WebGLRenderer,
 } from 'three';
 import { AREA_M, EYE_M, START_ALTITUDE_M, sunState, dustFogDensity, easeInOut } from './terrain.js';
+import { ROVER, makeVehicle, stepVehicle } from './vehicles.js';
+import { createKit, buildLander, buildPressurizedRover, buildHabitat, buildSolarField } from './models.js';
+
+export { ROVER };
 
 const DESCENT_SECONDS = 7;
 const WALK_MPS = 5; // más rápido que una caminata real, para poder recorrer el terreno
@@ -48,29 +49,6 @@ const TERRAIN_SEGMENTS = 255;
 const PERSON_RADIUS = 0.45;
 const SLOPE_SLOW = 0.55; // en una pendiente fuerte se camina a ~45 % de la velocidad
 const BOB_M = 0.045;
-
-// Rover manejable. Valores de juego, no de un vehículo real (el concepto SEV de la NASA va a ~10 km/h):
-// aquí se puede ir más rápido para recorrer el terreno. Se dice así en pantalla.
-export const ROVER = {
-  maxSpeed: 8, // m/s (~29 km/h)
-  reverseSpeed: 3,
-  accel: 2.4, // m/s²
-  coast: 0.7, // frenado al soltar el acelerador, 1/s
-  turnRate: 0.85, // rad/s a toda velocidad
-  length: 5.2,
-  width: 2.9,
-  radius: 3.2,
-  boardDistance: 11, // m: a qué distancia se puede subir
-  gravity: 3.71, // m/s², gravedad de Marte (NSSDCA Mars Fact Sheet)
-  energyPerM: 0.00004, // fracción de batería por metro en llano (~25 km con carga completa)
-  climbEnergy: 0.0004, // extra por metro y por unidad de pendiente de subida
-  idleDrain: 0.00002, // por segundo
-  solarCharge: 0.0005, // por segundo a pleno sol, detenido
-  crashSpeed: 1.2, // m/s: desde aquí un choque hace daño
-  crashDamage: 0.035, // daño por m/s de impacto
-  maxTiltDeg: 28,
-  tiltDamage: 0.06, // daño por segundo inclinado de más
-};
 
 function seeded(seed) {
   let s = seed >>> 0;
@@ -209,12 +187,7 @@ export function createScene({ canvas, field, palette, seed = 1114 }) {
   scene.add(boulders);
 
   // ---------- Equipo de la misión junto al sitio (modelos simples, no a escala exacta) ----------
-  const white = keep(new MeshStandardMaterial({ color: '#e9e4da', roughness: 0.6, metalness: 0.1 }));
-  const gold = keep(new MeshStandardMaterial({ color: '#c99a3b', roughness: 0.35, metalness: 0.7 }));
-  const darkMat = keep(new MeshStandardMaterial({ color: '#2a2724', roughness: 0.9 }));
-  const glass = keep(new MeshStandardMaterial({ color: '#1d3f66', roughness: 0.2, metalness: 0.4 }));
-  const panel = keep(new MeshStandardMaterial({ color: '#1f3f7a', roughness: 0.3, metalness: 0.5 }));
-  const accent = keep(new MeshStandardMaterial({ color: '#d6402a', roughness: 0.5 }));
+  const kit = createKit(keep);
   const place = (obj, x, z, yaw = 0, footprint = 0) => {
     obj.position.set(x, heightAt(x, z), z);
     obj.rotation.y = yaw;
@@ -222,87 +195,14 @@ export function createScene({ canvas, field, palette, seed = 1114 }) {
     if (footprint) obstacles.push({ x, z, r: footprint });
     return obj;
   };
-  const box = (w, h, d, mat) => new Mesh(keep(new BoxGeometry(w, h, d)), mat);
-  const cyl = (rt, rb, h, mat, seg = 16) => new Mesh(keep(new CylinderGeometry(rt, rb, h, seg)), mat);
 
-  // Módulo de aterrizaje: cuerpo, patas y antena.
-  const lander = new Group();
-  const body = cyl(2.6, 3.2, 3.2, gold, 8);
-  body.position.y = 3.4;
-  lander.add(body);
-  const top = cyl(1.4, 2.6, 1.4, white, 8);
-  top.position.y = 5.7;
-  lander.add(top);
-  for (let i = 0; i < 4; i++) {
-    const a = (i * Math.PI) / 2 + Math.PI / 4;
-    const leg = cyl(0.12, 0.12, 4.2, white, 6);
-    leg.position.set(Math.cos(a) * 3.1, 1.6, Math.sin(a) * 3.1);
-    leg.rotation.set(Math.sin(a) * 0.45, 0, -Math.cos(a) * 0.45);
-    const foot = cyl(0.55, 0.65, 0.2, white, 10);
-    foot.position.set(Math.cos(a) * 4, 0.1, Math.sin(a) * 4);
-    lander.add(leg, foot);
-  }
-  const dish = new Mesh(keep(new SphereGeometry(0.9, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2.4)), white);
-  dish.position.set(0.8, 7, 0);
-  dish.rotation.z = -0.8;
-  lander.add(dish);
-  place(lander, -22, -38, 0.4, 5);
-
-  // Rover presurizado: cabina, seis ruedas, mástil.
-  const rover = new Group();
-  const chassis = box(5.2, 1.0, 2.6, white);
-  chassis.position.y = 1.3;
-  const cabin = box(3.2, 1.6, 2.4, white);
-  cabin.position.set(-0.6, 2.6, 0);
-  const windows = box(0.1, 0.8, 2.0, glass);
-  windows.position.set(1.02, 2.8, 0);
-  const stripe = box(5.25, 0.18, 2.65, accent);
-  stripe.position.y = 1.85;
-  rover.add(chassis, cabin, windows, stripe);
-  for (const wx of [-1.9, 0, 1.9]) {
-    for (const wz of [-1.45, 1.45]) {
-      const wheel = cyl(0.62, 0.62, 0.5, darkMat, 14);
-      wheel.rotation.x = Math.PI / 2;
-      wheel.position.set(wx, 0.62, wz);
-      rover.add(wheel);
-    }
-  }
-  const mast = cyl(0.06, 0.06, 1.6, white, 6);
-  mast.position.set(-1.6, 4.1, 0.8);
-  rover.add(mast);
-  place(rover, 10, -26, -0.9, ROVER.radius);
+  place(buildLander(kit), -22, -38, 0.4, 5);
+  const rover = place(buildPressurizedRover(kit), 10, -26, -0.9, ROVER.radius);
   const roverObstacle = obstacles[obstacles.length - 1];
   rover.rotation.order = 'YXZ';
-
-  // Hábitat inflable con esclusa.
-  const habitat = new Group();
-  const dome = new Mesh(keep(new SphereGeometry(7, 28, 14, 0, Math.PI * 2, 0, Math.PI / 2)), white);
-  const ringBase = cyl(7.1, 7.3, 0.8, darkMat, 28);
-  ringBase.position.y = 0.4;
-  const lock = cyl(1.3, 1.3, 3.2, white, 14);
-  lock.rotation.z = Math.PI / 2;
-  lock.position.set(8, 1.4, 0);
-  const lockDoor = cyl(1.0, 1.0, 0.1, accent, 14);
-  lockDoor.rotation.z = Math.PI / 2;
-  lockDoor.position.set(9.65, 1.4, 0);
-  habitat.add(dome, ringBase, lock, lockDoor);
-  place(habitat, 48, -95, 2.6, 9);
-
-  // Paneles solares inclinados hacia el ecuador.
-  const solar = new Group();
-  for (let row = 0; row < 3; row++) {
-    for (let col = 0; col < 4; col++) {
-      const post = cyl(0.08, 0.08, 1.4, darkMat, 6);
-      post.position.set(col * 4.4, 0.7, row * 4);
-      const p2 = box(4, 0.08, 2.4, panel);
-      p2.position.set(col * 4.4, 1.45, row * 4);
-      p2.rotation.x = -0.45;
-      solar.add(post, p2);
-    }
-  }
-  place(solar, -95, -88, 0.2, 0);
+  place(buildHabitat(kit), 48, -95, 2.6, 9);
+  place(buildSolarField(kit), -95, -88, 0.2, 0);
   for (let row = 0; row < 3; row++) obstacles.push({ x: -95 + 6.6, z: -88 + row * 4, r: 8 });
-
 
   // ---------- Marca del sitio de aterrizaje (se ve desde arriba y sirve de referencia al caminar) ----------
   const markGeometry = new RingGeometry(70, 80, 64);
@@ -354,7 +254,7 @@ export function createScene({ canvas, field, palette, seed = 1114 }) {
 
   // ---------- Cámara ----------
   const view = { x: 0, z: 0, yaw: 0, pitch: LOOK_DOWN, mode: 'above', progress: 0, bob: 0 };
-  const vehicle = { x: 10, z: -26, heading: -0.9, speed: 0, battery: 1, damage: 0, odometer: 0, tilt: 0, grade: 0, warn: null, chaseYaw: 0 };
+  const vehicle = makeVehicle(10, -26, -0.9);
   const track = [[0, 0]]; // recorrido (x, z) para el mini mapa
   let daylight = 1;
 
@@ -366,80 +266,12 @@ export function createScene({ canvas, field, palette, seed = 1114 }) {
     }
   }
 
-  /** Mueve el rover un paso: acelerador, dirección, pendiente, choques, batería y daño. */
+  /** Mueve el rover un paso (física en vehicles.js) y coloca su modelo. */
   function drive(dt, input) {
-    const v = vehicle;
-    const disabled = v.battery <= 0 || v.damage >= 1;
-    const throttle = disabled ? 0 : input.forward;
-    const steer = Math.max(-1, Math.min(1, input.strafe + input.turn));
-    const fx = Math.cos(v.heading);
-    const fz = -Math.sin(v.heading);
-    // Pendiente en la dirección de avance: frena de subida y empuja de bajada.
-    v.grade = (heightAt(v.x + fx * 3, v.z + fz * 3) - heightAt(v.x - fx * 3, v.z - fz * 3)) / 6;
-    if (throttle !== 0) v.speed += throttle * ROVER.accel * dt;
-    else v.speed -= v.speed * ROVER.coast * dt;
-    v.speed -= ROVER.gravity * Math.sin(Math.atan(v.grade)) * dt * 0.6;
-    const top = ROVER.maxSpeed * (input.run ? 1.4 : 1) * (1 - 0.6 * v.damage);
-    v.speed = Math.max(-ROVER.reverseSpeed, Math.min(top, v.speed));
-    if (disabled && Math.abs(v.speed) < 0.05) v.speed = 0;
-    v.heading -= steer * ROVER.turnRate * dt * Math.max(-1, Math.min(1, v.speed / 3));
-
-    const step = v.speed * dt;
-    v.x = field.clampToArea(v.x + Math.cos(v.heading) * step);
-    v.z = field.clampToArea(v.z - Math.sin(v.heading) * step);
-    v.odometer += Math.abs(step);
-
-    // Choques con rocas grandes y equipo.
-    v.warn = null;
-    for (const o of obstacles) {
-      if (o === roverObstacle) continue;
-      const dx = v.x - o.x;
-      const dz = v.z - o.z;
-      const min = o.r + ROVER.radius * 0.8;
-      const d2 = dx * dx + dz * dz;
-      if (d2 >= min * min || d2 === 0) continue;
-      const impact = Math.abs(v.speed);
-      if (impact > ROVER.crashSpeed) {
-        v.damage = Math.min(1, v.damage + impact * ROVER.crashDamage);
-        v.warn = 'crash';
-      }
-      v.speed = -v.speed * 0.25;
-      const d = Math.sqrt(d2);
-      v.x = o.x + (dx / d) * min;
-      v.z = o.z + (dz / d) * min;
-    }
-    roverObstacle.x = v.x;
-    roverObstacle.z = v.z;
-
-    // Inclinación según el terreno bajo las ruedas.
-    const hl = ROVER.length / 2;
-    const hw = ROVER.width / 2;
-    const rx = Math.sin(v.heading); // derecha del rover (perpendicular al avance)
-    const rz = Math.cos(v.heading);
-    const front = heightAt(v.x + fx * hl, v.z + fz * hl);
-    const back = heightAt(v.x - fx * hl, v.z - fz * hl);
-    const right = heightAt(v.x + rx * hw, v.z + rz * hw);
-    const left = heightAt(v.x - rx * hw, v.z - rz * hw);
-    const pitch = Math.atan2(front - back, ROVER.length);
-    const roll = Math.atan2(right - left, ROVER.width);
-    v.tilt = (Math.max(Math.abs(pitch), Math.abs(roll)) * 180) / Math.PI;
-    if (v.tilt > ROVER.maxTiltDeg) {
-      v.damage = Math.min(1, v.damage + ROVER.tiltDamage * dt);
-      v.warn = v.warn ?? 'tilt';
-    }
-
-    // Batería: avanzar gasta (más de subida); detenido y con sol, se recarga.
-    const climb = Math.max(0, v.speed >= 0 ? v.grade : -v.grade);
-    v.battery -= Math.abs(step) * (ROVER.energyPerM + ROVER.climbEnergy * climb) + ROVER.idleDrain * dt;
-    if (Math.abs(v.speed) < 0.2) v.battery += ROVER.solarCharge * daylight * dt;
-    v.battery = Math.max(0, Math.min(1, v.battery));
-    if (v.battery <= 0) v.warn = 'battery';
-    else if (v.damage >= 1) v.warn = 'broken';
-    else if (!v.warn && v.battery < 0.15) v.warn = 'low';
-
-    rover.position.set(v.x, (front + back + left + right) / 4, v.z);
-    rover.rotation.set(-roll, v.heading, pitch);
-    pushTrack(v.x, v.z);
+    stepVehicle(vehicle, ROVER, dt, input, { heightAt, clampToArea: field.clampToArea, obstacles, self: roverObstacle, daylight });
+    rover.position.set(vehicle.x, vehicle.y, vehicle.z);
+    rover.rotation.set(-vehicle.roll, vehicle.heading, vehicle.pitch);
+    pushTrack(vehicle.x, vehicle.z);
   }
 
   function canBoard() {
