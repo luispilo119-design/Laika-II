@@ -30,11 +30,11 @@ It works on desktop and tablet, in Spanish and English.
   <tr>
     <td align="center">
       <b>30-second video</b><br>
-      <a href="docs/presentation/martian-map-reel.mp4?raw=true">Download MP4</a> · vertical 1080×1920, 21 MB
+      <a href="docs/presentation/martian-map-reel.mp4?raw=true">Download MP4</a> · vertical 1080×1920, 23 MB
     </td>
     <td align="center">
       <b>3-minute pitch · 7 slides</b><br>
-      <a href="docs/presentation/Martian-Map-presentation.pptx?raw=true">Download PowerPoint</a> (20 MB) ·
+      <a href="docs/presentation/Martian-Map-presentation.pptx?raw=true">Download PowerPoint</a> (22 MB) ·
       <a href="docs/presentation/Martian-Map-presentation.pdf">View as PDF</a>
     </td>
   </tr>
