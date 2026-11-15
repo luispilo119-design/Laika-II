@@ -10,7 +10,7 @@ phase** and crosses open NASA data with what the human body needs to decide whic
 | 0 · Start | Game-style start screen with an animated ASCII background, START / CONTINUE and an index of every screen | `home` |
 | 1 · Plan from Earth | Compute the Hohmann transfer (window, trip, Δv, arrival), see the equations behind it, and choose the landing site on the layered map | `hohmann`, `map` |
 | 2 · Transit | Live through the months of travel: the trip day by day, confinement routine, a minigame, hazards to the body | `transit` |
-| 3 · Descent | Go down to the chosen site and explore it in first person, on foot or by rover | `descent` |
+| 3 · Descent | Explore the site from the air and in first person: real orbital imagery, rover routes and photos, search, vehicles at real speed | `descent` |
 | 4 · Surface | Place autonomous hubs with a viability verdict; plot driving routes that avoid craters | `hubs`, `routes` |
 | 5 · Survival | Log each sol in the survival journal; read the body's daily needs and the emergency guides | `guides` |
 | 6 · Report | Mission dashboard and printable report | `dashboard` |

@@ -54,7 +54,7 @@ the script for two presenters. The PDF shows the same slides without motion.
 | 1 · Plan from Earth | `hohmann` | Computes a Hohmann transfer: launch windows, travel time, required Δv, arrival date and the Martian season at arrival. A "See equations and algorithm" dialog walks through every formula the app uses, step by step, with the numbers of the chosen window |
 | 1 · Plan from Earth | `map` | Map of Mars with NASA Mars Trek basemaps and data layers, past landing sites and rover tracks, a Martian clock, a zone report for any point, the best zones for the current time, and choosing the landing site |
 | 2 · Transit | `transit` | The trip day by day, a confinement routine, an original minigame with a score table, and the five hazards of human spaceflight |
-| 3 · Descent | `descent` | First-person view of the terrain around the landing site, on foot or driving a rover with battery and damage, a mini map and live conditions |
+| 3 · Descent | `descent` | 16 km of terrain draped with real orbital photos, a free aerial view, place search, the real Perseverance and Curiosity routes with the photos taken at each stop, and three vehicles at real or exploration speed |
 | 4 · Surface | `hubs` | Place habitats, greenhouses, solar plants, ice mines and landing pads, each with its viability verdict and the full data breakdown |
 | 4 · Surface | `routes` | Driving routes (up to 6 stops) that avoid large craters and steep slopes, with distance, time, elevation profile and turn-by-turn guidance |
 | 5 · Survival | `guides` | A sol-by-sol journal (water, meals, sleep, exercise, accumulated radiation), the body's daily needs, and step-by-step guides for emergencies |
@@ -92,8 +92,19 @@ The trip day by day, with what happens to the body at each stage and its NASA so
 
 ### Phase 3 · Descent
 
-First-person view of the landing site, with the live conditions at the person's position, a mini map
-and a touch joystick for tablets.
+A 16 km square of terrain around the landing site (or any place you search), draped with real
+orbital photos: the 6 m CTX mosaics of Jezero and Gale from Mars Trek, and the global CTX beta01
+mosaic elsewhere. Pan, zoom, tilt and rotate the aerial view, tap the ground to go down there, and
+walk or drive with the live conditions at your position.
+
+- **Search**: NASA landing sites and their regions, your site and hubs, the rover routes, "sol 500"
+  for a rover stop and typed coordinates.
+- **Rover routes**: the real Perseverance and Curiosity traverses on the terrain, with a stop slider,
+  an animated replay and the elevation each rover measured.
+- **Photos by stop**: the raw images NASA published for each stop (exact stop for Perseverance,
+  by sol for Curiosity), filtered by camera.
+- **Vehicles**: on foot, a pressurized rover (NASA SEV, 10 km/h) and a Perseverance replica
+  (152 m/h), at real speed with time acceleration or at a faster exploration speed.
 
 <img src="docs/img/screens/3-on-site.jpg" alt="First-person view on the Martian surface with a lander, a rover and a dome, and a panel with temperature, pressure, radiation, elevation, slope and dust" width="820">
 

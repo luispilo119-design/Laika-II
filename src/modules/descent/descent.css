@@ -871,3 +871,19 @@
   color: var(--text-dim);
   font-size: 11px;
 }
+
+/* Con la barra superior en dos filas (tablet), los paneles empiezan más abajo. */
+@media (max-width: 900px) {
+  .descent__panel {
+    max-height: calc(100% - 136px);
+  }
+
+  .descent__photos {
+    top: 112px;
+  }
+
+  .descent__realchip {
+    top: 112px;
+  }
+
+}

@@ -34,7 +34,7 @@ python tools/build_terrain.py --offline
 | `ice.bin`, `ice.json` | `build_ice.py` | SWIM4MIM, ice consistency 0–1 m and 1–5 m, PSI/NASA | Product derived from measurements |
 | `craters.bin`, `craters.json` | `build_craters.py` | Robbins and Hynek (2012), via USGS Astrogeology | Catalog |
 | `climate.bin`, `climate.json` | `build_climate.py` | Mars Climate Database v6.2, LMD/OU/IAA/ESA/CNES | **Model** |
-| `rovers.json` | `build_rovers.py` | NASA/JPL "Where is the rover?" maps | Measurement |
+| `rovers.json` | `build_rovers.py` | NASA/JPL "Where is the rover?" maps (traverse and one stop per drive) | Measurement |
 
 Each `.json` describes the exact format of the `.bin` next to it (data type, dimensions,
 orientation and how to convert the stored value to physical units) and the date it was generated.

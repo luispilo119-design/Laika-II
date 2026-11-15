@@ -995,6 +995,10 @@ const mod = {
     // ---------- Bucle ----------
 
     function frame(now) {
+      if (!scene || !alive) {
+        raf = 0; // la escena se liberó (cambio de lugar o de pantalla): no seguir dibujando
+        return;
+      }
       raf = requestAnimationFrame(frame);
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
