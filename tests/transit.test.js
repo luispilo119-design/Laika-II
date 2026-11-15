@@ -14,7 +14,7 @@ import {
   planChecks,
 } from '../src/modules/transit/trip.js';
 import { TILES, roundSpec, makeSequence, expectedInput, roundPoints } from '../src/modules/transit/game.js';
-import { REFERENCES, refOf, STAGES, METERS, HAZARDS, SOLO_CHANGES, SOLO_TIPS, ANALOGS, ACTIVITIES } from '../src/modules/transit/data.js';
+import { REFERENCES, refOf, STAGES, METERS, HAZARDS } from '../src/modules/transit/data.js';
 import messages from '../src/modules/transit/i18n.js';
 
 test('la duración por defecto es la transferencia de Hohmann: 259 días', () => {
@@ -99,18 +99,12 @@ test('todo bloque de contenido apunta a referencias registradas y tiene texto en
   const ids = new Set(REFERENCES.map((ref) => ref.id));
   assert.equal(ids.size, REFERENCES.length, 'ids de referencia sin repetir');
   for (const ref of REFERENCES) assert.match(ref.url, /^https:\/\//);
-  const groups = { stage: STAGES, meter: METERS, hazard: HAZARDS, analog: ANALOGS, activity: ACTIVITIES };
+  const groups = { stage: STAGES, meter: METERS, hazard: HAZARDS };
   for (const [key, items] of Object.entries(groups)) {
     for (const item of items) {
       assert.ok(item.refs.length > 0, `${key}.${item.id} sin fuente`);
       for (const id of item.refs) assert.ok(refOf(id), `referencia desconocida: ${id}`);
       for (const lang of ['es', 'en']) assert.ok(messages[lang][key][item.id], `falta texto ${lang} de ${key}.${item.id}`);
-    }
-  }
-  for (const [key, items] of [['change', SOLO_CHANGES], ['tip', SOLO_TIPS]]) {
-    for (const item of items) {
-      for (const id of item.refs) assert.ok(refOf(id));
-      for (const lang of ['es', 'en']) assert.ok(messages[lang].solo[key][item.id]);
     }
   }
   for (const tile of TILES) for (const lang of ['es', 'en']) assert.ok(messages[lang].tile[tile.id]);

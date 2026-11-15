@@ -106,26 +106,6 @@
   flex-shrink: 0;
 }
 
-.hubs__badge {
-  font-family: var(--font-mono);
-  font-weight: 700;
-  min-width: 38px;
-  text-align: center;
-  padding: 2px 6px;
-  border-radius: 999px;
-  color: #140c0a;
-}
-
-.hubs__badge.is-viable {
-  background: var(--ok);
-}
-.hubs__badge.is-marginal {
-  background: var(--warn);
-}
-.hubs__badge.is-not_viable {
-  background: var(--bad);
-}
-
 .hubs__clear {
   width: 100%;
   margin-top: 8px;
@@ -347,21 +327,6 @@
 .hubs__factor-head strong {
   font-family: var(--font-mono);
   color: var(--cream);
-}
-
-.hubs__bar {
-  height: 8px;
-  border-radius: 4px;
-  background: var(--bg-sunken);
-  border: 1px solid var(--line);
-  margin: 6px 0;
-  overflow: hidden;
-}
-
-.hubs__bar i {
-  display: block;
-  height: 100%;
-  background: var(--rust-300);
 }
 
 .hubs__actions {

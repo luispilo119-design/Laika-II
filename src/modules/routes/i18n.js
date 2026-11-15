@@ -43,7 +43,6 @@ export default {
       asStop: 'Agregar {name} como parada',
       leg: 'Tramo {from} → {to}',
       step: 'Parada {n} (km {km}). Sigue hacia el {dir}.',
-      count: '{n} paradas',
     },
     base: {
       title: 'Tu base',
@@ -162,7 +161,6 @@ export default {
       asStop: 'Add {name} as a stop',
       leg: 'Leg {from} → {to}',
       step: 'Stop {n} (km {km}). Continue {dir}.',
-      count: '{n} stops',
     },
     base: {
       title: 'Your base',

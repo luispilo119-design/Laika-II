@@ -12,8 +12,6 @@ export default {
       today: 'Diario del sol',
       body: 'Lo que necesita el cuerpo',
       page: 'Página {n}',
-      prev: 'Capítulo anterior',
-      next: 'Capítulo siguiente',
     },
     journal: {
       sol: 'Sol {n}',
@@ -82,9 +80,7 @@ export default {
     },
     guides: {
       title: 'Guías por situación',
-      pick: 'Elige una situación',
       facts: 'Qué pasa',
-      steps: 'Qué hacer',
       links: 'Dónde verlo en la app',
       basis: 'Los pasos se basan en',
       disclaimer: 'Los pasos son una guía general armada por el equipo a partir de estas fuentes. No son un procedimiento oficial de la NASA.',
@@ -174,8 +170,6 @@ export default {
       today: 'Sol log',
       body: 'What the body needs',
       page: 'Page {n}',
-      prev: 'Previous chapter',
-      next: 'Next chapter',
     },
     journal: {
       sol: 'Sol {n}',
@@ -244,9 +238,7 @@ export default {
     },
     guides: {
       title: 'Guides by situation',
-      pick: 'Choose a situation',
       facts: 'What happens',
-      steps: 'What to do',
       links: 'Where to see it in the app',
       basis: 'The steps are based on',
       disclaimer: 'The steps are a general guide put together by the team from these sources. They are not an official NASA procedure.',

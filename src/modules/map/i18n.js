@@ -134,12 +134,6 @@ export default {
         low: 'liso',
         high: 'rugoso',
       },
-      nightir: {
-        name: 'Infrarrojo nocturno',
-        why: 'De noche se ve qué zonas guardaron calor: muestra la inercia térmica con mucho detalle (100 m por píxel). Cubre de 65° S a 65° N.',
-        low: 'oscuro: más frío',
-        high: 'claro: más cálido',
-      },
     },
     explore: {
       sites: 'Sitios de aterrizaje',
@@ -299,12 +293,6 @@ export default {
         why: 'Brighter means rougher. Color tells the scale: blue 0.6 km, green 2.4 km, red 9.2 km. It matters for landing and for driving.',
         low: 'smooth',
         high: 'rough',
-      },
-      nightir: {
-        name: 'Nighttime infrared',
-        why: 'At night you can see which areas stored heat: it shows thermal inertia in fine detail (100 m per pixel). Covers 65° S to 65° N.',
-        low: 'dark: colder',
-        high: 'bright: warmer',
       },
     },
     explore: {

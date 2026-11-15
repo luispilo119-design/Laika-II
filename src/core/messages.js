@@ -15,11 +15,6 @@ export default {
     },
     mockBadge: 'Datos simulados',
     mockHint: 'Los valores ambientales son de relleno: no deben citarse.',
-    stub: {
-      pending: 'Módulo pendiente',
-      owner: 'Parte {owner}',
-      task: 'Tarea {task} · ver docs/PARTE-{owner}.md',
-    },
     langToggle: 'English',
     nav: {
       hohmann: 'Hohmann',
@@ -99,11 +94,6 @@ export default {
     },
     mockBadge: 'Simulated data',
     mockHint: 'Environmental values are placeholders: do not cite them.',
-    stub: {
-      pending: 'Module pending',
-      owner: 'Part {owner}',
-      task: 'Task {task} · see docs/PARTE-{owner}.md',
-    },
     langToggle: 'Español',
     nav: {
       hohmann: 'Hohmann',

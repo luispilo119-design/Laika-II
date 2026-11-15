@@ -87,30 +87,6 @@ export const REFERENCES = [
     verified: true,
   },
   {
-    // Hábitat de 650 pies cuadrados; misiones de hasta 45 días.
-    id: 'nasa-hera',
-    title: 'HERA — Human Exploration Research Analog',
-    org: 'NASA',
-    url: 'https://www.nasa.gov/mission/hera/',
-    verified: true,
-  },
-  {
-    // Cuatro personas, hábitat de 1,700 pies cuadrados, misiones de 378 días.
-    id: 'nasa-chapea',
-    title: 'CHAPEA — Crew Health and Performance Exploration Analog',
-    org: 'NASA',
-    url: 'https://www.nasa.gov/humans-in-space/chapea/',
-    verified: true,
-  },
-  {
-    // Seis personas, 520 días (junio de 2010 a noviembre de 2011), 20 min de retraso en comunicaciones.
-    id: 'esa-mars500',
-    title: 'Mars500: study overview',
-    org: 'ESA',
-    url: 'https://www.esa.int/articles/mars500-study-overview',
-    verified: true,
-  },
-  {
     // Semiejes mayores de la Tierra y Marte, para la duración por defecto del viaje.
     id: 'jpl-approx-pos',
     title: 'Approximate Positions of the Planets',
@@ -137,7 +113,6 @@ export const METERS = [
   { id: 'bone', refs: ['hrp-gravity'] },
   { id: 'dose', refs: ['jpl-rad-cruise'] },
   { id: 'exercise', refs: ['nasa-bone-muscle'] },
-  { id: 'comms', refs: ['hrp-distance'] },
 ];
 
 /** Los cinco peligros, en el orden de la sigla RIDGE (textos en transit.hazard.<id>). */
@@ -147,37 +122,4 @@ export const HAZARDS = [
   { id: 'distance', letter: 'D', refs: ['hrp-distance', 'hrp-body'] },
   { id: 'gravity', letter: 'G', refs: ['hrp-gravity', 'nasa-bone-muscle'] },
   { id: 'hostile', letter: 'E', refs: ['hrp-hostile', 'hrp-body'] },
-];
-
-/** Caso "solo": qué cambia y qué recomiendan las fuentes (textos en transit.solo.*). */
-export const SOLO_CHANGES = [
-  { id: 'watch', refs: ['esa-mars500'] },
-  { id: 'delay', refs: ['hrp-distance'] },
-  { id: 'contact', refs: ['hrp-body'] },
-];
-
-export const SOLO_TIPS = [
-  { id: 'journal', refs: ['hrp-body'] },
-  { id: 'light', refs: ['hrp-body'] },
-  { id: 'selftest', refs: ['hrp-body'] },
-  { id: 'exercise', refs: ['hrp-body'] },
-  { id: 'meaning', refs: ['hrp-body'] },
-  { id: 'garden', refs: ['hrp-body'] },
-];
-
-/** Estudios de aislamiento en la Tierra (textos en transit.analog.<id>). */
-export const ANALOGS = [
-  { id: 'hera', refs: ['nasa-hera'] },
-  { id: 'chapea', refs: ['nasa-chapea'] },
-  { id: 'mars500', refs: ['esa-mars500'] },
-];
-
-/** Fichas de actividades sin pantalla (textos en transit.activity.<id>). */
-export const ACTIVITIES = [
-  { id: 'journal', refs: ['hrp-body'] },
-  { id: 'garden', refs: ['hrp-body'] },
-  { id: 'learn', refs: ['hrp-body'] },
-  { id: 'exercise', refs: ['nasa-bone-muscle'] },
-  { id: 'library', refs: ['esa-mars500'] },
-  { id: 'letter', refs: ['hrp-distance'] },
 ];

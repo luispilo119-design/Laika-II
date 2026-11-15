@@ -18,7 +18,6 @@ export default {
     disclaimer: 'Información general basada en fuentes públicas de la NASA y la ESA. No es consejo médico ni psicológico.',
 
     trip: {
-      heading: 'El viaje a Marte',
       planned: 'Salida: {departure} · Llegada: {arrival} · {days} días de viaje',
       defaultNotice:
         'Aún no has planeado el viaje. Mientras tanto usamos una duración aproximada de {days} días: una transferencia de Hohmann entre órbitas circulares, calculada con el tamaño de las órbitas de la Tierra y de Marte.',
@@ -64,11 +63,6 @@ export default {
         label: 'Ejercicio acumulado',
         value: '{hours} h',
         note: 'Las tripulaciones de la estación espacial hacen en promedio dos horas de ejercicio al día para frenar la pérdida de hueso y músculo.',
-      },
-      comms: {
-        label: 'Comunicación con la Tierra',
-        value: 'hasta 20 min por trayecto',
-        note: 'El retraso crece con la distancia: en Marte, un mensaje tarda hasta 20 minutos en llegar y otros tantos en recibir respuesta.',
       },
     },
 
@@ -141,44 +135,6 @@ export default {
       },
     },
 
-    solo: {
-      heading: 'Caso «solo»',
-      lead: 'Qué cambia si una persona se queda sola durante el viaje y qué enseñan los estudios de aislamiento.',
-      changesTitle: 'Qué cambia',
-      change: {
-        watch:
-          'Nadie más te cuida. En Mars-500 la tripulación vigilaba el estado físico y psicológico propio y el de los demás; a solas, todo ese seguimiento recae en una sola persona.',
-        delay:
-          'No hay ayuda inmediata. Con hasta 20 minutos de retraso por trayecto, los problemas se resuelven sin el centro de control en tiempo real.',
-        contact:
-          'Menos contacto, más riesgo. Según la NASA, cuanto menor es el contacto con personas del exterior, más probables son los problemas de conducta y de pensamiento.',
-      },
-      tipsTitle: 'Qué usan las tripulaciones',
-      tip: {
-        journal: 'Llevar un diario. Los astronautas lo usan como un lugar seguro para desahogarse.',
-        light: 'Cuidar el sueño con la luz. En la estación espacial la iluminación LED ayuda a ordenar el reloj biológico.',
-        selftest: 'Medir la propia atención. Una prueba de 10 minutos muestra cuánto afecta el cansancio al rendimiento.',
-        exercise: 'Hacer ejercicio. Mantiene sanos el corazón, los huesos y los músculos, la mente alerta y un ánimo más positivo.',
-        meaning: 'Dedicar tiempo a algo con sentido, como aprender un idioma o habilidades médicas: ayuda a sostener la moral.',
-        garden: 'Cuidar plantas. Un huerto a bordo puede hacer bien al ánimo, además de dar comida fresca.',
-      },
-      analogsTitle: 'Estudios de aislamiento en la Tierra',
-    },
-    analog: {
-      hera: {
-        name: 'HERA · NASA',
-        text: 'Un hábitat de unos 60 m² (650 pies cuadrados) donde tripulaciones voluntarias viven misiones simuladas de hasta 45 días.',
-      },
-      chapea: {
-        name: 'CHAPEA · NASA',
-        text: 'Cuatro personas viven 378 días en un hábitat aislado de unos 158 m² (1,700 pies cuadrados) que simula una estancia en Marte, con caminatas espaciales simuladas.',
-      },
-      mars500: {
-        name: 'Mars-500 · ESA',
-        text: 'Seis personas pasaron 520 días encerradas, entre 2010 y 2011, simulando un viaje completo a Marte con 20 minutos de retraso en las comunicaciones.',
-      },
-    },
-
     games: {
       heading: 'Juegos y actividades',
       lead: 'Para los ratos libres del viaje.',
@@ -205,7 +161,6 @@ export default {
       boardCloud: 'De todas las tripulaciones',
       boardLocal: 'De este dispositivo',
       boardEmpty: 'Todavía no hay puntuaciones.',
-      activitiesTitle: 'Actividades sin pantalla',
     },
     tile: {
       o2: 'Oxígeno',
@@ -217,23 +172,6 @@ export default {
       tmp: 'Temperatura',
       prs: 'Presión',
       lux: 'Luz',
-    },
-    activity: {
-      journal: { name: 'Bitácora personal', how: 'Escribe a mano sobre tu día: qué salió bien y qué te frustró.' },
-      garden: { name: 'Huerto a bordo', how: 'Riega, mide y anota cómo crece cada planta.' },
-      learn: { name: 'Aprender algo nuevo', how: 'Practica un idioma o una técnica de primeros auxilios.' },
-      exercise: {
-        name: 'Circuito de ejercicio',
-        how: 'Alterna ejercicio aeróbico y de resistencia hasta completar tus dos horas del día.',
-      },
-      library: {
-        name: 'Lectura y estudio',
-        how: 'Un capítulo de un libro o un tema que estudies por tu cuenta, como hacía la tripulación de Mars-500.',
-      },
-      letter: {
-        name: 'Carta a casa',
-        how: 'Escribe un mensaje para la Tierra. Con hasta 20 minutos de retraso por trayecto no hay conversación: se escribe como una carta.',
-      },
     },
   },
 
@@ -252,7 +190,6 @@ export default {
     disclaimer: 'General information based on public NASA and ESA sources. It is not medical or psychological advice.',
 
     trip: {
-      heading: 'The trip to Mars',
       planned: 'Departure: {departure} · Arrival: {arrival} · {days} days of travel',
       defaultNotice:
         'You have not planned the trip yet. For now we use an approximate duration of {days} days: a Hohmann transfer between circular orbits, computed from the size of the orbits of Earth and Mars.',
@@ -298,11 +235,6 @@ export default {
         label: 'Accumulated exercise',
         value: '{hours} h',
         note: 'Space station crews exercise for an average of two hours a day to slow bone and muscle loss.',
-      },
-      comms: {
-        label: 'Communication with Earth',
-        value: 'up to 20 min one way',
-        note: 'The delay grows with distance: at Mars, a message takes up to 20 minutes to arrive and as long again for the reply.',
       },
     },
 
@@ -373,43 +305,6 @@ export default {
       },
     },
 
-    solo: {
-      heading: 'The “alone” case',
-      lead: 'What changes if one person is left alone during the trip, and what isolation studies teach.',
-      changesTitle: 'What changes',
-      change: {
-        watch:
-          'Nobody else looks after you. In Mars-500 the crew monitored their own physical and psychological state and each other’s; alone, all of that falls on one person.',
-        delay: 'There is no immediate help. With up to 20 minutes of delay one way, problems are solved without mission control in real time.',
-        contact:
-          'Less contact, more risk. According to NASA, the less contact with people outside, the more likely behavioral and cognitive problems become.',
-      },
-      tipsTitle: 'What crews use',
-      tip: {
-        journal: 'Keeping a journal. Astronauts use it as a safe place to vent.',
-        light: 'Protecting sleep with light. On the space station, LED lighting helps keep the body clock aligned.',
-        selftest: 'Checking your own attention. A 10-minute self-test shows how much fatigue affects performance.',
-        exercise: 'Exercising. It keeps the heart, bones and muscles healthy, the mind alert and the outlook more positive.',
-        meaning: 'Spending time on something meaningful, such as learning a language or medical skills: it helps keep morale up.',
-        garden: 'Tending plants. A garden on board may be good for mood, besides providing fresh food.',
-      },
-      analogsTitle: 'Isolation studies on Earth',
-    },
-    analog: {
-      hera: {
-        name: 'HERA · NASA',
-        text: 'A habitat of about 60 m² (650 square feet) where volunteer crews live simulated missions of up to 45 days.',
-      },
-      chapea: {
-        name: 'CHAPEA · NASA',
-        text: 'Four people live for 378 days in an isolated habitat of about 158 m² (1,700 square feet) that simulates a stay on Mars, with simulated spacewalks.',
-      },
-      mars500: {
-        name: 'Mars-500 · ESA',
-        text: 'Six people spent 520 days sealed in, between 2010 and 2011, simulating a full trip to Mars with a 20-minute communication delay.',
-      },
-    },
-
     games: {
       heading: 'Games and activities',
       lead: 'For the free time during the trip.',
@@ -436,7 +331,6 @@ export default {
       boardCloud: 'From all crews',
       boardLocal: 'From this device',
       boardEmpty: 'No scores yet.',
-      activitiesTitle: 'Activities away from the screen',
     },
     tile: {
       o2: 'Oxygen',
@@ -448,23 +342,6 @@ export default {
       tmp: 'Temperature',
       prs: 'Pressure',
       lux: 'Light',
-    },
-    activity: {
-      journal: { name: 'Personal log', how: 'Write by hand about your day: what went well and what frustrated you.' },
-      garden: { name: 'Garden on board', how: 'Water, measure and note how each plant grows.' },
-      learn: { name: 'Learn something new', how: 'Practice a language or a first-aid technique.' },
-      exercise: {
-        name: 'Exercise circuit',
-        how: 'Alternate aerobic and resistive exercise until you complete your two hours for the day.',
-      },
-      library: {
-        name: 'Reading and study',
-        how: 'A chapter of a book or a subject you study on your own, as the Mars-500 crew did.',
-      },
-      letter: {
-        name: 'Letter home',
-        how: 'Write a message for Earth. With up to 20 minutes of delay one way there is no conversation: you write it like a letter.',
-      },
     },
   },
 };
