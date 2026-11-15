@@ -164,7 +164,7 @@ export function renderEquations({ t, lang, num, fmtDate, plan, searchBackDays })
       `${v('δ')}(${v('t', '1')}) = ${v('λ', MARS)}(${v('t', '1')} + Δ${v('t')}) − ${v('λ', EARTH)}(${v(
         't',
         '1',
-      )}) − 180° &nbsp; <span class="hohmann__eq-note">(−180°, 180°]</span>`,
+      )}) − 180° &nbsp; <span class="hohmann__eq-note">[−180°, 180°)</span>`,
       `${v('δ')}(${v('t', '1')}) = 0`,
     ) +
       vals(
