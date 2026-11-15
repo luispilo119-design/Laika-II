@@ -1,9 +1,9 @@
 /**
  * Módulo "transit": la Fase 2, los meses de viaje. Dueño: Parte B — tarea B3 (docs/PARTE-B.md).
  *
- * Cinco secciones: el viaje día a día, los cinco peligros del vuelo espacial, la rutina de
- * confinamiento, el caso "solo" y los juegos. Los cálculos están en trip.js, las reglas del
- * minijuego en game.js y las fuentes en data.js.
+ * Cuatro pestañas: el viaje día a día, la rutina de confinamiento, los juegos y los cinco
+ * peligros del vuelo espacial. Los cálculos están en trip.js, las reglas del minijuego en
+ * game.js y las fuentes en data.js.
  */
 import './transit.css';
 import messages from './i18n.js';

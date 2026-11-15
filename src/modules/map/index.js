@@ -2,9 +2,9 @@
  * Módulo "map": mapa con capas y elección del sitio de aterrizaje.
  * Dueño: Parte A — tareas A2 (capas), A3 (datos y reloj) y A4 (ficha de zona).
  *
- * Estado actual (A3): mapas base y capas de Mars Trek (layers.js), sitios de aterrizaje y recorridos
- * de rovers (sites.js), reloj marciano, capas con escala numérica pintadas con ctx.env (envlayers.js)
- * y condiciones del punto que se toca. Falta la ficha de zona completa (A4).
+ * Mapas base y capas de Mars Trek (layers.js), sitios de aterrizaje y recorridos de rovers (sites.js),
+ * reloj marciano, capas con escala numérica pintadas con ctx.env (envlayers.js), mejores zonas y la
+ * ficha de zona del punto que se toca (zone.js), desde donde se elige el sitio de aterrizaje.
  */
 import L from 'leaflet';
 import './map.css';
