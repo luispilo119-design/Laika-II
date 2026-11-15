@@ -894,8 +894,14 @@ const mod = {
     function onLookDown(event) {
       exploring();
       pointers.set(event.pointerId, { x: event.clientX, y: event.clientY, sx: event.clientX, sy: event.clientY, t0: performance.now(), button: event.button });
-      canvas.setPointerCapture(event.pointerId);
+      try {
+        canvas.setPointerCapture(event.pointerId);
+      } catch {
+        // Algunos punteros (p. ej. sintéticos) no se pueden capturar; el gesto sigue funcionando.
+      }
       pair = pointers.size === 2 ? pairState() : null;
+      // Un dedo que fue parte de un gesto de dos no cuenta como toque al levantarse.
+      if (pointers.size > 1) for (const q of pointers.values()) q.multi = true;
     }
     function onLookMove(event) {
       const p = pointers.get(event.pointerId);
@@ -927,7 +933,7 @@ const mod = {
     function onLookUp(event) {
       const p = pointers.get(event.pointerId);
       if (!p) return;
-      const tap = pointers.size === 1 && Math.hypot(p.x - p.sx, p.y - p.sy) < 8 && performance.now() - p.t0 < 500;
+      const tap = pointers.size === 1 && !p.multi && Math.hypot(p.x - p.sx, p.y - p.sy) < 8 && performance.now() - p.t0 < 500;
       pointers.delete(event.pointerId);
       pair = pointers.size === 2 ? pairState() : null;
       if (tap && event.type === 'pointerup' && p.button !== 2) onTap(event.clientX, event.clientY);
