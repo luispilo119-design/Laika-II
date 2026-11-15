@@ -78,6 +78,77 @@ export default {
       p3: 'Con órbitas circulares, el caso de libro da {days} días de viaje, {dv1} km/s al salir y {dv2} km/s al llegar. Con las distancias reales, cada ventana cambia un poco.',
       p4: 'Las misiones reales usan trayectorias calculadas con más precisión y suelen ser más cortas. Para comparar: este modelo pone la ventana de 2020 el {model}; Perseverance despegó el {real}.',
     },
+    math: {
+      open: 'Ver ecuaciones y algoritmo',
+      title: 'Cómo se calcula una ventana de lanzamiento',
+      close: 'Cerrar',
+      intro:
+        'La app sigue estos pasos, en este orden. Las cajas amarillas muestran las cifras de la ventana que elegiste: salida el {departure}, llegada el {arrival}.',
+      legend:
+        'Símbolos: ⊕ Tierra · ♂︎ Marte · ☉ Sol · T elipse de transferencia · 1 salida · 2 llegada · D días desde J2000 (1 ene 2000, 12:00 TT) · d días · UA unidad astronómica.',
+      yours: 'Con tu ventana',
+      earthDep: 'Tierra al salir',
+      marsArr: 'Marte al llegar',
+      au: 'UA',
+      step: {
+        positions: {
+          name: 'Dónde están la Tierra y Marte',
+          text: 'Para una fecha se cuentan los días desde J2000 (D) y los siglos (T). Cada uno de los seis elementos orbitales de JPL se corrige con su cambio por siglo: q₀ es su valor en J2000 y q₁ el cambio. La ecuación de Kepler se resuelve con el método de Newton y la posición se gira del plano de la órbita al de la eclíptica.',
+        },
+        ellipse: {
+          name: 'La media elipse de transferencia',
+          text: 'La nave sale a la distancia real de la Tierra al Sol (r₁) y llega a la distancia real de Marte (r₂). La media elipse que toca las dos tiene su semieje en el promedio, y el viaje dura medio periodo de esa elipse (tercera ley de Kepler).',
+        },
+        arrival: {
+          name: 'La llegada depende del viaje',
+          text: 'r₂ depende de cuándo llegues, y eso depende de Δt. Se empieza con el caso de libro (órbitas circulares) y se repite {n} veces: mover a Marte a la fecha de llegada, medir r₂ y recalcular Δt.',
+        },
+        miss: {
+          name: 'El ángulo de fallo',
+          text: 'Al llegar, Marte tiene que estar justo enfrente del punto de salida, a 180° del otro lado del Sol. δ dice por cuántos grados fallaría el encuentro si salieras en la fecha t₁. Una ventana de lanzamiento es una fecha con δ = 0.',
+        },
+        search: {
+          name: 'Buscar el cruce por cero',
+          text: 'Desde {back} días antes de la fecha que pusiste, se avanza de {step} en {step} días calculando δ. La Tierra va más rápido que Marte, así que δ baja con el tiempo; cuando pasa de positivo a negativo, hay una ventana dentro de esos {step} días. Ese intervalo se parte por la mitad {n} veces (bisección), hasta menos de un milisegundo.',
+        },
+        dv: {
+          name: 'Cuánto impulso hace falta',
+          text: 'La rapidez en cada punto de una órbita sale de la ecuación vis-viva, usando el semieje de esa órbita. El impulso es la diferencia entre la rapidez sobre la elipse y la del planeta. Para salir desde una órbita baja de {alt} km también hay que escapar de la gravedad de la Tierra; por eso ese impulso es mayor que Δv₁.',
+        },
+        season: {
+          name: 'La estación al llegar',
+          text: 'La estación se mide con la longitud solar de Marte (Ls) en la fecha de llegada, con el algoritmo Mars24 de NASA GISS: la posición de un Sol medio ficticio (α FMS) más la ecuación del centro y siete pequeñas perturbaciones de otros planetas (PBS).',
+        },
+      },
+      ideal: {
+        name: 'El caso de libro: órbitas circulares',
+        text: 'Si las dos órbitas fueran círculos, la ventaja que Marte debe llevar al salir (φ) y el tiempo entre ventanas (periodo sinódico, S) tendrían fórmula directa. La app los usa solo para explicar: las ventanas se encuentran con la búsqueda de los pasos 4 y 5.',
+      },
+      data: {
+        name: 'Datos de entrada',
+        text: 'Constantes de JPL y elementos orbitales aproximados de JPL (Tabla 1, válidos de 1800 a 2050). Ángulos en grados y semieje en UA; q₁ es el cambio por siglo.',
+        element: 'Elemento',
+        earth: 'Tierra',
+        mars: 'Marte',
+        el: {
+          a: 'semieje mayor',
+          e: 'excentricidad',
+          I: 'inclinación',
+          L: 'longitud media',
+          peri: 'longitud del perihelio',
+          node: 'longitud del nodo ascendente',
+        },
+      },
+      limits: {
+        name: 'Simplificaciones del modelo',
+        plane: 'La elipse de transferencia está en el plano de la eclíptica: se ignora la inclinación de la órbita de Marte ({incl}°).',
+        burns: 'Los impulsos son instantáneos.',
+        angle: 'La velocidad de cada planeta se toma perpendicular a su radio, aunque sus órbitas son algo elípticas.',
+        real: 'Las misiones reales usan trayectorias calculadas con más precisión y suelen ser algo más cortas.',
+      },
+      sources:
+        'Fuentes: JPL SSD, “Approximate Positions of the Planets” (Standish y Williams), “Astrodynamic Parameters” y “Planetary Physical Parameters”; NASA GISS, algoritmo de Mars24.',
+    },
   },
   en: {
     title: 'Hohmann transfer',
@@ -156,6 +227,77 @@ export default {
       p2: 'The trip is a Hohmann-type transfer: half an ellipse between Earth’s real distance at departure and Mars’s at arrival. The tilt of Mars’s orbit is ignored and burns are treated as instantaneous.',
       p3: 'With circular orbits, the textbook case gives a {days}-day trip, {dv1} km/s at departure and {dv2} km/s at arrival. With real distances, each window differs a little.',
       p4: 'Real missions use more precisely computed trajectories and are usually shorter. For comparison: this model puts the 2020 window on {model}; Perseverance lifted off on {real}.',
+    },
+    math: {
+      open: 'See the equations and algorithm',
+      title: 'How a launch window is computed',
+      close: 'Close',
+      intro:
+        'The app follows these steps, in this order. The yellow boxes show the numbers for the window you picked: departure on {departure}, arrival on {arrival}.',
+      legend:
+        'Symbols: ⊕ Earth · ♂︎ Mars · ☉ Sun · T transfer ellipse · 1 departure · 2 arrival · D days since J2000 (1 Jan 2000, 12:00 TT) · d days · AU astronomical unit.',
+      yours: 'With your window',
+      earthDep: 'Earth at departure',
+      marsArr: 'Mars at arrival',
+      au: 'AU',
+      step: {
+        positions: {
+          name: 'Where Earth and Mars are',
+          text: 'For a date, count the days since J2000 (D) and the centuries (T). Each of JPL’s six orbital elements is corrected by its change per century: q₀ is its J2000 value and q₁ the change. Kepler’s equation is solved with Newton’s method and the position is rotated from the orbit’s plane to the ecliptic.',
+        },
+        ellipse: {
+          name: 'The half-ellipse transfer',
+          text: 'The ship leaves at Earth’s real distance from the Sun (r₁) and arrives at Mars’s real distance (r₂). The half ellipse that touches both has its semi-major axis at the average, and the trip lasts half that ellipse’s period (Kepler’s third law).',
+        },
+        arrival: {
+          name: 'The arrival depends on the trip',
+          text: 'r₂ depends on when you arrive, and that depends on Δt. Start from the textbook case (circular orbits) and repeat {n} times: move Mars to the arrival date, measure r₂ and recompute Δt.',
+        },
+        miss: {
+          name: 'The miss angle',
+          text: 'On arrival, Mars must be exactly opposite the departure point, 180° around the Sun. δ says by how many degrees the meeting would miss if you left on date t₁. A launch window is a date where δ = 0.',
+        },
+        search: {
+          name: 'Finding the zero crossing',
+          text: 'Starting {back} days before the date you entered, step forward {step} days at a time computing δ. Earth moves faster than Mars, so δ falls over time; when it goes from positive to negative, there is a window inside those {step} days. That interval is halved {n} times (bisection), down to under a millisecond.',
+        },
+        dv: {
+          name: 'How big a burn is needed',
+          text: 'The speed at each point of an orbit comes from the vis-viva equation, using that orbit’s semi-major axis. The burn is the difference between the speed on the ellipse and the planet’s speed. Leaving from a {alt} km low orbit also means escaping Earth’s gravity, which is why that burn is larger than Δv₁.',
+        },
+        season: {
+          name: 'The season on arrival',
+          text: 'The season is measured by Mars’s solar longitude (Ls) on the arrival date, using NASA GISS’s Mars24 algorithm: the position of a fictitious mean Sun (α FMS) plus the equation of center and seven small perturbations from other planets (PBS).',
+        },
+      },
+      ideal: {
+        name: 'The textbook case: circular orbits',
+        text: 'If both orbits were circles, the lead Mars needs at departure (φ) and the time between windows (synodic period, S) would have direct formulas. The app uses them only to explain: windows are found by the search in steps 4 and 5.',
+      },
+      data: {
+        name: 'Input data',
+        text: 'JPL constants and JPL approximate orbital elements (Table 1, valid from 1800 to 2050). Angles in degrees and semi-major axis in AU; q₁ is the change per century.',
+        element: 'Element',
+        earth: 'Earth',
+        mars: 'Mars',
+        el: {
+          a: 'semi-major axis',
+          e: 'eccentricity',
+          I: 'inclination',
+          L: 'mean longitude',
+          peri: 'longitude of perihelion',
+          node: 'longitude of ascending node',
+        },
+      },
+      limits: {
+        name: 'Model simplifications',
+        plane: 'The transfer ellipse lies in the plane of the ecliptic: the tilt of Mars’s orbit ({incl}°) is ignored.',
+        burns: 'Burns are instantaneous.',
+        angle: 'Each planet’s velocity is taken as perpendicular to its radius, although their orbits are slightly elliptical.',
+        real: 'Real missions use more precisely computed trajectories and are usually somewhat shorter.',
+      },
+      sources:
+        'Sources: JPL SSD, “Approximate Positions of the Planets” (Standish and Williams), “Astrodynamic Parameters” and “Planetary Physical Parameters”; NASA GISS, Mars24 algorithm.',
     },
   },
 };

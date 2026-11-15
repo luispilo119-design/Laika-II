@@ -471,3 +471,330 @@
 .hohmann__window.is-active .hohmann__window-sub {
   color: var(--ink, var(--text));
 }
+
+/* =====================================================================================
+   Ecuaciones y algoritmo: botón bajo las ventanas y diálogo con los pasos del cálculo.
+   ===================================================================================== */
+
+.hohmann__math-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--tap);
+  height: auto;
+  margin-top: 10px;
+  padding: 8px 14px;
+  white-space: normal;
+  text-align: left;
+  line-height: 1.2;
+}
+
+.hohmann__math-open:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.hohmann__math-mark {
+  display: inline-grid;
+  place-items: center;
+  min-width: 40px;
+  padding: 2px 6px;
+  background: var(--ink, var(--text));
+  color: var(--paper-hi, var(--bg));
+  font-family: 'Cambria Math', 'STIX Two Math', 'Times New Roman', serif;
+  font-style: italic;
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.hohmann__math {
+  width: min(860px, calc(100vw - 32px));
+  max-width: none;
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
+  padding: 0;
+  border: 2px solid var(--ink, var(--line));
+  border-radius: 0;
+  background: var(--paper-hi, var(--bg-raised));
+  color: var(--text);
+  box-shadow: 8px 8px 0 var(--ink, transparent);
+  overflow: hidden;
+}
+
+.hohmann__math[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.hohmann__math::backdrop {
+  background: rgba(22, 20, 18, 0.62);
+}
+
+.hohmann__math-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 2px solid var(--ink, var(--line));
+  border-top: 8px solid var(--red, var(--rust-500));
+}
+
+.hohmann__math-head h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.hohmann__math-close {
+  flex: none;
+  min-height: var(--tap);
+  min-width: var(--tap);
+}
+
+.hohmann__math-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 16px 20px 24px;
+}
+
+.hohmann__math-intro {
+  margin: 0 0 12px;
+  max-width: 70ch;
+}
+
+.hohmann__flow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+  counter-reset: hohmann-flow;
+}
+
+.hohmann__flow li {
+  counter-increment: hohmann-flow;
+  padding: 4px 10px;
+  border: 2px solid var(--ink, var(--line));
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.hohmann__flow li::before {
+  content: counter(hohmann-flow) ' ';
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--red, var(--rust-500));
+}
+
+.hohmann__math-legend {
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.hohmann__math-step {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 2px solid var(--ink, var(--line));
+}
+
+.hohmann__math-step h3 {
+  display: flex;
+  align-items: center;
+  margin: 0 0 6px;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.hohmann__math-step h3 .hohmann__num {
+  flex: none;
+}
+
+.hohmann__math-step > p {
+  margin: 0 0 10px;
+  max-width: 72ch;
+  font-size: 15px;
+}
+
+.hohmann__math-step--aside {
+  border-top-style: dashed;
+}
+
+.hohmann__eq {
+  margin: 0 0 10px;
+  padding: 10px 14px;
+  border-left: 5px solid var(--blue, var(--rust-500));
+  background: var(--paper, var(--bg));
+  font-family: 'Cambria Math', 'STIX Two Math', 'Times New Roman', serif;
+  font-size: 18px;
+  line-height: 1.5;
+  overflow-x: auto;
+}
+
+.hohmann__eq > div {
+  white-space: nowrap;
+  padding: 3px 0;
+}
+
+.hohmann__eq var {
+  font-style: italic;
+}
+
+.hohmann__eq sub,
+.hohmann__vals sub {
+  font-style: normal;
+}
+
+.hohmann__eq-note {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.hohmann__frac {
+  display: inline-flex;
+  flex-direction: column;
+  vertical-align: middle;
+  text-align: center;
+  margin: 0 2px;
+  font-size: 0.92em;
+  line-height: 1.25;
+}
+
+.hohmann__frac > span:first-child {
+  padding: 0 3px 1px;
+  border-bottom: 1px solid currentColor;
+}
+
+.hohmann__frac > span:last-child {
+  padding: 1px 3px 0;
+}
+
+.hohmann__sqrt {
+  white-space: nowrap;
+}
+
+.hohmann__sqrt > span {
+  display: inline-block;
+  margin-left: 1px;
+  padding: 2px 3px 0;
+  border-top: 1px solid currentColor;
+}
+
+.hohmann__vals {
+  position: relative;
+  padding: 10px 14px;
+  border: 2px solid var(--ink, var(--line));
+  background: #f6dd8f;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.hohmann__vals-kicker {
+  display: block;
+  margin-bottom: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hohmann__vals p {
+  margin: 0 0 4px;
+  overflow-wrap: anywhere;
+}
+
+.hohmann__vals p:last-child {
+  margin-bottom: 0;
+}
+
+.hohmann__vals var {
+  font-family: 'Cambria Math', 'STIX Two Math', 'Times New Roman', serif;
+  font-size: 1.1em;
+}
+
+.hohmann__table-wrap {
+  overflow-x: auto;
+}
+
+.hohmann__elements {
+  border-collapse: collapse;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.hohmann__elements th,
+.hohmann__elements td {
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.hohmann__elements thead th {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.hohmann__elements tbody th {
+  text-align: left;
+  font-weight: 400;
+}
+
+.hohmann__elements tbody th var {
+  display: inline-block;
+  min-width: 1.2em;
+  font-family: 'Cambria Math', 'STIX Two Math', 'Times New Roman', serif;
+  font-size: 16px;
+}
+
+.hohmann__elements tbody th span {
+  color: var(--text-dim);
+}
+
+.hohmann__limits {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 15px;
+}
+
+.hohmann__limits li {
+  margin-bottom: 4px;
+}
+
+.hohmann__math-sources {
+  margin: 20px 0 0;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+@media (max-width: 600px) {
+  .hohmann__math {
+    width: calc(100vw - 16px);
+    max-height: calc(100dvh - 16px);
+    box-shadow: none;
+  }
+  .hohmann__math-body {
+    padding: 12px 14px 20px;
+  }
+  .hohmann__math-head h2 {
+    font-size: 17px;
+  }
+  .hohmann__eq {
+    font-size: 16px;
+  }
+}

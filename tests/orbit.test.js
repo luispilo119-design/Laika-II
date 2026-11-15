@@ -12,6 +12,7 @@ import {
   northernSeason,
   isDustSeason,
   wrap180,
+  transferBreakdown,
 } from '../src/modules/hohmann/orbit.js';
 
 const near = (actual, expected, tolerance, label) =>
@@ -100,6 +101,23 @@ test('la nave sale de la posición de la Tierra y llega a la de Marte', () => {
 test('planTransfer fuera de ventana reporta que el encuentro falla', () => {
   const plan = planTransfer(utc('2027-11-01'));
   assert.ok(Math.abs(plan.missDeg) > 20);
+});
+
+test('las cifras del diálogo de ecuaciones cuadran con el plan', () => {
+  const [plan] = findWindows(utc('2026-11-14'), 1);
+  const b = transferBreakdown(plan);
+  const r1 = plan.earthAtDeparture.r;
+  const r2 = plan.marsAtArrival.r;
+  // Media elipse: a = (r1 + r2) / 2 y e = (r2 − r1) / (r2 + r1), con las distancias que se muestran.
+  near(plan.aTransferAu, (r1 + r2) / 2, 1e-5, 'semieje de la transferencia');
+  near(plan.eccentricity, (r2 - r1) / (r2 + r1), 1e-5, 'excentricidad de la transferencia');
+  // Los impulsos son la resta de las velocidades vis-viva que se muestran.
+  near(plan.dvDepartureKmS, b.vTransferDepartureKmS - b.vEarthKmS, 1e-9, 'Δv de salida');
+  near(plan.dvArrivalKmS, b.vMarsKmS - b.vTransferArrivalKmS, 1e-3, 'Δv de llegada');
+  // La ventana queda entre un δ positivo antes y uno negativo después.
+  assert.ok(b.missBeforeDeg > 0, `δ antes ${b.missBeforeDeg}`);
+  assert.ok(b.missAfterDeg < 0, `δ después ${b.missAfterDeg}`);
+  near(b.departureCenturies * 36525, b.departureDaysJ2000, 1e-9, 'siglos y días desde J2000');
 });
 
 test('estaciones y temporada de polvo a partir de Ls', () => {

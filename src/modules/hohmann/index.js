@@ -7,6 +7,7 @@
  */
 import './hohmann.css';
 import { createHohmann3D } from './scene3d.js';
+import { renderEquations } from './equations.js';
 import messages from './i18n.js';
 import {
   addDays,
@@ -31,6 +32,7 @@ const BURN_DAYS = 6; // tramo de la línea de tiempo que se muestra como "impuls
 const TAIL_DAYS = 25; // días que se siguen mostrando después de llegar
 const PLAY_SECONDS = 22; // duración de la animación completa
 const VIEW_RADIUS_AU = 1.8;
+const SEARCH_BACK_DAYS = 800; // las ventanas se buscan desde esta cantidad de días antes de la fecha elegida
 const EARTH_COLOR = '#6fb1e8';
 const SUN_COLOR = '#f4c95d';
 
@@ -41,7 +43,7 @@ const isoDay = (date) => date.toISOString().slice(0, 10);
 const sameMoment = (a, b) => Math.abs(new Date(a).getTime() - new Date(b).getTime()) < DAY_MS;
 
 function windowsFrom(from) {
-  const all = findWindows(addDays(from, -800), 6).filter((w) => w.arrival.getUTCFullYear() < 2050);
+  const all = findWindows(addDays(from, -SEARCH_BACK_DAYS), 6).filter((w) => w.arrival.getUTCFullYear() < 2050);
   let lastPast = -1;
   all.forEach((w, i) => {
     if (w.departure < from) lastPast = i;
@@ -107,7 +109,14 @@ const mod = {
       title: 'Astrodynamic Parameters',
       org: 'NASA/JPL Solar System Dynamics',
       url: 'https://ssd.jpl.nasa.gov/astro_par.html',
-      verified: false,
+      verified: true,
+    },
+    {
+      id: 'jpl-phys-par',
+      title: 'Planetary Physical Parameters',
+      org: 'NASA/JPL Solar System Dynamics',
+      url: 'https://ssd.jpl.nasa.gov/planets/phys_par.html',
+      verified: true,
     },
   ],
 
@@ -148,6 +157,9 @@ const mod = {
             <input type="date" min="${MIN_DATE}" max="${MAX_DATE}" />
           </label>
           <div class="hohmann__windows"></div>
+          <button type="button" class="btn hohmann__math-open" aria-haspopup="dialog" data-math-open>
+            <span class="hohmann__math-mark" aria-hidden="true">ƒ(x)</span>${t('hohmann.math.open')}
+          </button>
 
           <h2 class="hohmann__h"><span class="hohmann__num">2</span>${t('hohmann.watch')}</h2>
           <div class="hohmann__steps" role="group">
@@ -178,6 +190,7 @@ const mod = {
             <p data-how="p4"></p>
           </details>
         </section>
+        <dialog class="hohmann__math" aria-labelledby="hohmann-math-title"></dialog>
       </div>
     `;
 
@@ -190,7 +203,9 @@ const mod = {
     const windowsBox = $('.hohmann__windows');
     const summaryBox = $('.hohmann__summary');
     const planBar = $('[data-planbar]');
-    const stat = (name) => $(`[data-stat="${name}"]`);
+    const mathBtn = $('[data-math-open]');
+    const mathDialog = $('.hohmann__math');
+    const stat =(name) => $(`[data-stat="${name}"]`);
     const phaseEl = (name) => $(`[data-phase="${name}"]`);
 
     const css = getComputedStyle(document.documentElement);
@@ -460,6 +475,7 @@ const mod = {
 
     function renderWindows() {
       windowsBox.replaceChildren();
+      mathBtn.disabled = !plan;
       if (windows.length === 0) {
         const empty = document.createElement('p');
         empty.className = 'hohmann__empty';
@@ -618,6 +634,27 @@ const mod = {
         renderDynamic();
       });
     }
+    /* ---------- Diálogo de ecuaciones ---------- */
+
+    function closeMath() {
+      if (mathDialog.open) mathDialog.close();
+    }
+
+    mathBtn.addEventListener('click', () => {
+      if (!plan) return;
+      setPlaying(false);
+      mathDialog.innerHTML = renderEquations({ t, lang, num, fmtDate, plan, searchBackDays: SEARCH_BACK_DAYS });
+      if (typeof mathDialog.showModal === 'function') mathDialog.showModal();
+      else mathDialog.setAttribute('open', '');
+      mathDialog.querySelector('.hohmann__math-body').scrollTop = 0;
+      mathDialog.querySelector('[data-math-close]').focus();
+    });
+    mathDialog.addEventListener('click', (event) => {
+      // Cerrar con el botón o tocando fuera de la caja (el fondo cuenta como el propio <dialog>).
+      if (event.target === mathDialog || event.target.closest('[data-math-close]')) closeMath();
+    });
+    mathDialog.addEventListener('close', () => mathBtn.focus());
+
     dateInput.addEventListener('change', () => {
       const iso = dateInput.value;
       if (!iso || iso < MIN_DATE || iso > MAX_DATE) {
@@ -653,6 +690,7 @@ const mod = {
     setFrom(ui.fromISO);
 
     return () => {
+      closeMath();
       cancelAnimationFrame(raf);
       playing = false;
       resizeObserver.disconnect();

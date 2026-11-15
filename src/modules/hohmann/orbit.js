@@ -15,13 +15,21 @@
  *  Las misiones reales usan trayectorias calculadas con más precisión y suelen ser algo más cortas.
  */
 
+// Constantes de JPL SSD: "Astrodynamic Parameters" (UA, GM del Sol, GM de la Tierra según DE440)
+// y "Planetary Physical Parameters" (radio ecuatorial de la Tierra).
 export const AU_KM = 149597870.7;
-export const MU_SUN = 1.32712440018e11; // km³/s²
-export const MU_EARTH = 398600.4418; // km³/s²
-export const R_EARTH_KM = 6378.137;
+export const MU_SUN = 1.32712440041279419e11; // km³/s²
+export const MU_EARTH = 398600.435507; // km³/s²
+export const R_EARTH_KM = 6378.1366;
 export const C_KM_S = 299792.458;
 const DAY_S = 86400;
 const DAY_MS = 86400000;
+
+/** Parámetros del algoritmo; la pantalla "ecuaciones" los muestra tal cual. */
+export const LEO_ALTITUDE_KM = 300; // altura de la órbita baja terrestre de partida
+export const ARRIVAL_ITERATIONS = 6; // veces que se recalcula la llegada en planTransfer
+export const WINDOW_STEP_DAYS = 4; // paso de la búsqueda de ventanas
+export const WINDOW_BISECTIONS = 30; // mitades en que se parte el intervalo que contiene la ventana
 
 const rad = (deg) => (deg * Math.PI) / 180;
 const deg = (r) => (r * 180) / Math.PI;
@@ -113,7 +121,18 @@ export function planetPosition(planet, date) {
   const x = (cw * cn - sw * sn * ci) * xp + (-sw * cn - cw * sn * ci) * yp;
   const y = (cw * sn + sw * cn * ci) * xp + (-sw * sn + cw * cn * ci) * yp;
   const z = sw * si * xp + cw * si * yp;
-  return { x, y, z, r: Math.hypot(x, y, z), lon: wrap360(deg(Math.atan2(y, x))) };
+  return {
+    x,
+    y,
+    z,
+    r: Math.hypot(x, y, z),
+    lon: wrap360(deg(Math.atan2(y, x))),
+    // Valores intermedios, para mostrar el cálculo paso a paso.
+    a,
+    e,
+    meanAnomalyDeg: deg(M),
+    eccentricAnomalyDeg: deg(E),
+  };
 }
 
 /** Periodo orbital en días para un semieje mayor en UA. */
@@ -160,7 +179,7 @@ export function hohmannIdeal() {
 }
 
 /** Impulso necesario desde una órbita baja terrestre circular para salir con velocidad de exceso vInf. */
-export function dvFromLowEarthOrbit(vInfKmS, altitudeKm = 300) {
+export function dvFromLowEarthOrbit(vInfKmS, altitudeKm = LEO_ALTITUDE_KM) {
   const r = R_EARTH_KM + altitudeKm;
   return Math.sqrt(vInfKmS ** 2 + (2 * MU_EARTH) / r) - Math.sqrt(MU_EARTH / r);
 }
@@ -176,7 +195,7 @@ export function planTransfer(departure) {
   let transferDays = hohmannIdeal().transferDays;
   let mars = planetPosition('mars', addDays(departure, transferDays));
   let t = null;
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < ARRIVAL_ITERATIONS; i++) {
     t = transferBetween(earth.r, mars.r, ELEMENTS.earth.a[0], ELEMENTS.mars.a[0]);
     transferDays = t.transferDays;
     mars = planetPosition('mars', addDays(departure, transferDays));
@@ -202,7 +221,7 @@ export function planTransfer(departure) {
  */
 export function findWindows(from, count = 4) {
   const windows = [];
-  const step = 4;
+  const step = WINDOW_STEP_DAYS;
   const miss = (d) => planTransfer(d).missDeg;
   let prevDate = from;
   let prev = miss(prevDate);
@@ -213,7 +232,7 @@ export function findWindows(from, count = 4) {
     if (prev > 0 && value <= 0 && prev - value < 90) {
       let lo = prevDate;
       let hi = date;
-      for (let k = 0; k < 30; k++) {
+      for (let k = 0; k < WINDOW_BISECTIONS; k++) {
         const mid = new Date((lo.getTime() + hi.getTime()) / 2);
         if (miss(mid) > 0) lo = mid;
         else hi = mid;
@@ -224,6 +243,30 @@ export function findWindows(from, count = 4) {
     prev = value;
   }
   return windows;
+}
+
+/**
+ * Cifras intermedias de una ventana, para explicar el cálculo paso a paso.
+ * No cambia nada del plan: solo vuelve a evaluar las mismas fórmulas.
+ * @param {ReturnType<typeof planTransfer>} plan
+ */
+export function transferBreakdown(plan) {
+  const visViva = (rAu, aAu) => Math.sqrt(MU_SUN * (2 / (rAu * AU_KM) - 1 / (aAu * AU_KM)));
+  const r1 = plan.earthAtDeparture.r;
+  const r2 = plan.marsAtArrival.r;
+  const departureDays = daysSinceJ2000(plan.departure);
+  return {
+    departureDaysJ2000: departureDays,
+    departureCenturies: departureDays / 36525,
+    arrivalDaysJ2000: daysSinceJ2000(plan.arrival),
+    arrivalCenturies: daysSinceJ2000(plan.arrival) / 36525,
+    vEarthKmS: visViva(r1, ELEMENTS.earth.a[0]),
+    vTransferDepartureKmS: visViva(r1, plan.aTransferAu),
+    vTransferArrivalKmS: visViva(r2, plan.aTransferAu),
+    vMarsKmS: visViva(r2, ELEMENTS.mars.a[0]),
+    missBeforeDeg: planTransfer(addDays(plan.departure, -WINDOW_STEP_DAYS)).missDeg,
+    missAfterDeg: planTransfer(addDays(plan.departure, WINDOW_STEP_DAYS)).missDeg,
+  };
 }
 
 /**
