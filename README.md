@@ -106,7 +106,15 @@ walk or drive with the live conditions at your position.
 - **Vehicles**: on foot, a pressurized rover (NASA SEV, 10 km/h) and a Perseverance replica
   (152 m/h), at real speed with time acceleration or at a faster exploration speed.
 
-<img src="docs/img/screens/3-on-site.jpg" alt="First-person view on the Martian surface with a lander, a rover and a dome, and a panel with temperature, pressure, radiation, elevation, slope and dust" width="820">
+<img src="docs/img/screens/3-on-site.jpg" alt="Aerial view of Jezero crater draped with the CTX orbital photo, the yellow line of the real Perseverance traverse, the Rover routes panel with its stop slider and elevation profile, and the conditions panel" width="820">
+
+<img src="docs/img/screens/3-on-site-route.gif" alt="Animated replay of the Perseverance traverse at ×16 over the Jezero orbital photo, with the stop counter and the elevation profile advancing" width="820">
+
+<img src="docs/img/screens/3-on-site-routes.jpg" alt="Replay of the Perseverance route paused at stop 109 of 708, sol 383, with the marker on the route and the elevation measured by the rover" width="820">
+
+<img src="docs/img/screens/3-on-site-photos.jpg" alt="Photos panel for Perseverance stop 201, sol 592: 511 NASA raw images filtered by camera, Mastcam selected, and one enlarged photo of the ground credited to NASA/JPL-Caltech/ASU" width="820">
+
+<img src="docs/img/screens/3-on-site-vehicles.jpg" alt="Driving the Perseverance replica at real speed: speedometer at 0.15 km/h, radioisotope power, and the chip Real speed, time ×1,000" width="820">
 
 ### Phase 4 · Surface: autonomous hubs
 
