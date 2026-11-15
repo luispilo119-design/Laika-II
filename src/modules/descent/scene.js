@@ -140,7 +140,8 @@ export function createScene({ canvas, field, palette, site, equipment = true, se
   }
   geometry.setAttribute('color', new BufferAttribute(colors, 3));
   geometry.computeVertexNormals();
-  const groundMaterial = keep(new MeshLambertMaterial({ vertexColors: true }));
+  // polygonOffset: el parche nítido (misma superficie) se dibuja encima sin parpadeo.
+  const groundMaterial = keep(new MeshLambertMaterial({ vertexColors: true, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 4 }));
   const ground = new Mesh(geometry, groundMaterial);
   scene.add(ground);
   let groundTexture = null;
@@ -165,6 +166,71 @@ export function createScene({ canvas, field, palette, site, equipment = true, se
     groundMaterial.vertexColors = false;
     groundMaterial.color.set(palette.groundTint ?? '#f0b58e');
     groundMaterial.needsUpdate = true;
+  }
+
+  // ---------- Parche nítido alrededor de la persona ----------
+  // Usa los mismos vértices que el terreno (misma superficie y mismas normales), con una foto más
+  // detallada de ese cuadro.
+  let detail = null;
+  function clearDetail() {
+    if (!detail) return;
+    scene.remove(detail.mesh);
+    detail.mesh.geometry.dispose();
+    detail.mesh.material.map?.dispose();
+    detail.mesh.material.dispose();
+    detail = null;
+  }
+
+  /** @param {{ x0: number, z0: number, x1: number, z1: number }} rect  metros locales */
+  function setDetailImagery(imageCanvas, cover, rect) {
+    clearDetail();
+    const n = grid.n;
+    const toIndex = (v) => Math.max(0, Math.min(n, Math.round((v + AREA_M / 2) / grid.step)));
+    const ix0 = toIndex(rect.x0);
+    const ix1 = toIndex(rect.x1);
+    const iy0 = toIndex(rect.z0);
+    const iy1 = toIndex(rect.z1);
+    const cols = ix1 - ix0 + 1;
+    const rows = iy1 - iy0 + 1;
+    if (cols < 2 || rows < 2) return;
+    const pos = new Float32Array(cols * rows * 3);
+    const nor = new Float32Array(cols * rows * 3);
+    const uvs = new Float32Array(cols * rows * 2);
+    const groundNormals = geometry.attributes.normal;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const gi = (iy0 + r) * (n + 1) + (ix0 + c);
+        const k = r * cols + c;
+        const x = position.getX(gi);
+        const z = position.getZ(gi);
+        pos.set([x, position.getY(gi), z], k * 3);
+        nor.set([groundNormals.getX(gi), groundNormals.getY(gi), groundNormals.getZ(gi)], k * 3);
+        const { lat, lon } = toLatLon(site, x, z);
+        uvs.set(uvOf(cover, lat, lon), k * 2);
+      }
+    }
+    const index = [];
+    for (let r = 0; r < rows - 1; r++) {
+      for (let c = 0; c < cols - 1; c++) {
+        const a = r * cols + c; // noroeste
+        const b = (r + 1) * cols + c; // suroeste
+        const cc = (r + 1) * cols + c + 1; // sureste
+        const d = r * cols + c + 1; // noreste
+        index.push(a, b, d, b, cc, d); // los mismos triángulos que PlaneGeometry
+      }
+    }
+    const geo = new BufferGeometry();
+    geo.setAttribute('position', new Float32BufferAttribute(pos, 3));
+    geo.setAttribute('normal', new Float32BufferAttribute(nor, 3));
+    geo.setAttribute('uv', new Float32BufferAttribute(uvs, 2));
+    geo.setIndex(index);
+    const texture = new CanvasTexture(imageCanvas);
+    texture.colorSpace = SRGBColorSpace;
+    texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    const material = new MeshLambertMaterial({ map: texture, color: palette.groundTint ?? '#f0b58e' });
+    const mesh = new Mesh(geo, material);
+    scene.add(mesh);
+    detail = { mesh };
   }
 
   // ---------- Rocas (decorativas, cerca del centro) ----------
@@ -284,7 +350,7 @@ export function createScene({ canvas, field, palette, site, equipment = true, se
       for (const path of route.paths) {
         if (path.length < 2) continue;
         const positions = [];
-        for (const [x, z] of path) positions.push(x, heightAt(x, z) + 1.5, z);
+        for (const [x, z] of path) positions.push(x, heightAt(x, z) + 0.4, z); // a ras del suelo: a pie no tapa la vista
         const geometryLine = new LineGeometry();
         geometryLine.setPositions(positions);
         const material = new LineMaterial({ color: route.color, linewidth: 3, worldUnits: false, depthTest: true, fog: false });
@@ -300,7 +366,7 @@ export function createScene({ canvas, field, palette, site, equipment = true, se
         const pts = new Float32Array(route.stops.length * 3);
         route.stops.forEach(([x, z], i) => {
           pts[i * 3] = x;
-          pts[i * 3 + 1] = heightAt(x, z) + 2.5;
+          pts[i * 3 + 1] = heightAt(x, z) + 0.6;
           pts[i * 3 + 2] = z;
         });
         const geometryPts = new BufferGeometry();
@@ -671,6 +737,7 @@ export function createScene({ canvas, field, palette, site, equipment = true, se
   return {
     setEnvironment,
     setImagery,
+    setDetailImagery,
     setRoutes,
     startDescent,
     descendTo,
@@ -713,6 +780,7 @@ export function createScene({ canvas, field, palette, site, equipment = true, se
     /** Libera la memoria de la escena y el contexto WebGL. */
     dispose() {
       clearRoutes();
+      clearDetail();
       groundTexture?.dispose();
       for (const d of disposables) d.dispose();
       renderer.dispose();

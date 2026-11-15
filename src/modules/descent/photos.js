@@ -125,6 +125,8 @@ export async function fetchSol(rover, sol, { signal, fetchFn = fetch } = {}) {
   if (!response.ok) throw new Error(`raw images ${response.status}`);
   const json = await response.json();
   const photos = rover === 'perseverance' ? normalizeM20(json) : normalizeMSL(json);
+  // La API de Curiosity devuelve una página (100 fotos): `capped` avisa que el sol tiene más.
+  photos.capped = rover === 'curiosity' && Number(json.total) > (json.items?.length ?? 0);
   cache.set(key, photos);
   return photos;
 }
@@ -133,16 +135,17 @@ export async function fetchSol(rover, sol, { signal, fetchFn = fetch } = {}) {
  * Fotos tomadas en una parada.
  * @param {'perseverance'|'curiosity'} rover
  * @param {import('../../core/rovers.js').RoverStop[]} stops
- * @returns {Promise<{ photos: Photo[], sols: number[], exact: boolean, truncated: boolean }>}
+ * @returns {Promise<{ photos: Photo[], sols: number[], exact: boolean, truncated: boolean, capped: boolean }>}
  */
 export async function photosForStop(rover, stops, index, opts = {}) {
   const exactPairs = EXACT_PAIRS[rover];
   const { sols, exact, truncated } = photoSols(stops, index, exactPairs);
   const stop = stops[index];
   const lists = await Promise.all(sols.map((sol) => fetchSol(rover, sol, opts)));
+  const capped = lists.some((list) => list.capped);
   let photos = lists.flat();
   if (exact) photos = photos.filter((p) => p.site === stop.site && p.drive === stop.drive);
   const seen = new Set();
   photos = photos.filter((p) => (seen.has(p.id) ? false : seen.add(p.id)));
-  return { photos, sols, exact, truncated };
+  return { photos, sols, exact, truncated, capped };
 }

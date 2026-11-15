@@ -33,7 +33,7 @@ function loadTile(url, signal) {
  *   layer: ReturnType<typeof chooseImagery>, ok: number, failed: number }>}
  *   Rechaza solo si no llegó ninguna tesela.
  */
-export async function loadImagery(bbox, { signal, maxPx = 2048, layer = chooseImagery(bbox) } = {}) {
+export async function loadImagery(bbox, { signal, maxPx = 2048, layer = chooseImagery(bbox), background = null } = {}) {
   const level = pickLevel(bbox, layer, maxPx);
   const tiles = tileCover(bbox, level);
   const cols = tiles.col1 - tiles.col0 + 1;
@@ -43,6 +43,16 @@ export async function loadImagery(bbox, { signal, maxPx = 2048, layer = chooseIm
   canvas.width = cols * size;
   canvas.height = rows * size;
   const g = canvas.getContext('2d');
+  const { cover } = tiles;
+  if (background) {
+    // Debajo, la foto general: donde el mosaico detallado no tiene datos no queda un hueco negro.
+    const bg = background;
+    const sx = ((cover.west - bg.cover.west) / (bg.cover.east - bg.cover.west)) * bg.canvas.width;
+    const sy = ((bg.cover.north - cover.north) / (bg.cover.north - bg.cover.south)) * bg.canvas.height;
+    const sw = ((cover.east - cover.west) / (bg.cover.east - bg.cover.west)) * bg.canvas.width;
+    const sh = ((cover.north - cover.south) / (bg.cover.north - bg.cover.south)) * bg.canvas.height;
+    g.drawImage(bg.canvas, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+  }
   let ok = 0;
   let failed = 0;
   const jobs = [];
@@ -63,5 +73,5 @@ export async function loadImagery(bbox, { signal, maxPx = 2048, layer = chooseIm
   await Promise.all(jobs);
   if (signal?.aborted) throw new Error('abort');
   if (!ok) throw new Error('no tiles');
-  return { canvas, cover: tiles.cover, layer, ok, failed };
+  return { canvas, cover, layer, level, ok, failed };
 }

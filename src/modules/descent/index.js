@@ -10,7 +10,7 @@ import './descent.css';
 import messages from './i18n.js';
 import L from 'leaflet';
 import { AREA_M, GRID, areaBBox, makeHeightField, toLatLon, toLocal, insideArea } from './terrain.js';
-import { IMAGERY_REFERENCES } from './tiles.js';
+import { IMAGERY_REFERENCES, chooseDetailImagery, pickLevel } from './tiles.js';
 import { PHOTO_REFERENCES, photosForStop } from './photos.js';
 import { esc } from '../../core/html.js';
 import { createMarsMap } from '../../core/marsmap.js';
@@ -26,6 +26,8 @@ const EXAMPLE_SITE = { lat: 1.0, lon: 3.0 };
 const HUD_EVERY_MS = 400;
 const MINIMAP_M = 2000; // lado del mini mapa, centrado en la persona
 const EDGE_RELOAD_M = 1500; // a esta distancia del borde se ofrece cargar el terreno de más allá
+const DETAIL_M = 1000; // lado del parche de foto nítida alrededor de la persona
+const DETAIL_MOVE_M = 300; // al alejarse esto de su centro, el parche se vuelve a cargar
 
 const VEHICLE_REFS = {
   'nasa-sev': {
@@ -124,6 +126,12 @@ const mod = {
             <input type="range" min="0" max="24" step="0.5" value="${hour()}" data-hour />
           </label>
           <p class="descent__note">${t('descent.hud.hourNote')}</p>
+          <details class="descent__about">
+            <summary>${t('descent.aboutTitle')}</summary>
+            <p class="descent__note">${t('descent.decorNote', { km: num(AREA_M / 1000) })}</p>
+            <p class="descent__note" data-imagery-note>${t('descent.imagery.loading')}</p>
+            <p class="descent__note" data-detail-note hidden></p>
+          </details>
         </aside>
 
         <div class="descent__intro">
@@ -137,11 +145,6 @@ const mod = {
           }
           <p class="descent__status" role="status">${t('descent.loading')}</p>
           <button type="button" class="btn btn--primary" data-descend disabled>${t('descent.descend')}</button>
-          <details class="descent__about">
-            <summary>${t('descent.aboutTitle')}</summary>
-            <p class="descent__note">${t('descent.decorNote', { km: num(AREA_M / 1000) })}</p>
-            <p class="descent__note" data-imagery-note>${t('descent.imagery.loading')}</p>
-          </details>
         </div>
 
         <div class="descent__aerial" hidden>
@@ -151,7 +154,6 @@ const mod = {
           </div>
           <div class="descent__aerial-actions">
             <button type="button" class="btn btn--primary" data-descend-pin hidden>${t('descent.aerial.descendHere')}</button>
-            <button type="button" class="btn" data-reload-here hidden>${t('descent.aerial.reloadHere')}</button>
           </div>
           <p class="descent__aerial-hint">${t('descent.aerial.hint')}</p>
         </div>
@@ -212,6 +214,10 @@ const mod = {
         </section>
 
         <canvas class="descent__minimap" width="180" height="180" hidden aria-label="${t('descent.minimap')}"></canvas>
+
+        <div class="descent__edge">
+          <button type="button" class="btn" data-reload-here hidden>${t('descent.aerial.reloadHere')}</button>
+        </div>
 
         <div class="descent__board">
           <button type="button" class="btn btn--primary" data-board hidden>${t('descent.rover.board')}</button>
@@ -332,6 +338,10 @@ const mod = {
     /** Foto orbital ya cargada: { canvas, cover, layer } (también la usa el mini mapa). */
     let imagery = null;
     let imageryAbort = null;
+    /** Parche nítido: { x, z } de su centro mientras carga o ya cargado. */
+    let detailAt = null;
+    let detailAbort = null;
+    const detailNote = el.querySelector('[data-detail-note]');
 
     let alive = true;
     let scene = null;
@@ -379,7 +389,8 @@ const mod = {
       aerialBox.hidden = !aerial || !scene;
       descendPinBtn.hidden = !(aerial && pinPoint);
       const nearEdge = !insideArea(where.x, where.z, EDGE_RELOAD_M);
-      reloadHereBtn.hidden = !(nearEdge && (aerial || mode === 'ground'));
+      reloadHereBtn.hidden = !(nearEdge && (aerial || mode === 'ground' || driving));
+      if (mode === 'ground' || driving) maybeLoadDetail(where);
       paintRealChip();
       if (!where.vehicle || !driving) return;
       const v = where.vehicle;
@@ -806,6 +817,8 @@ const mod = {
       }
       const p = toLocal(site, r.lat, r.lon);
       if (scene && insideArea(p.x, p.z, 400)) {
+        const mode = scene.state().mode;
+        if (mode === 'ground' || mode === 'driving') ascendNow();
         pinPoint = { x: p.x, z: p.z };
         scene.flyTo(p.x, p.z, 2500);
         scene.setPin(pinPoint);
@@ -1108,6 +1121,43 @@ const mod = {
       }
     }
 
+    /**
+     * Foto más nítida en un cuadro de 1 km alrededor de la persona (HiRISE en Jezero; CTX del nivel
+     * más detallado en el resto). Solo si de verdad hay más detalle que en la foto general.
+     */
+    function maybeLoadDetail(where) {
+      if (!scene || !imagery) return;
+      if (detailAt && Math.hypot(where.x - detailAt.x, where.z - detailAt.z) < DETAIL_MOVE_M) return;
+      const cx = Math.round(where.x / 100) * 100;
+      const cz = Math.round(where.z / 100) * 100;
+      const nw = toLatLon(site, cx - DETAIL_M / 2, cz - DETAIL_M / 2);
+      const se = toLatLon(site, cx + DETAIL_M / 2, cz + DETAIL_M / 2);
+      const bbox = { west: nw.lon, north: nw.lat, east: se.lon, south: se.lat };
+      const layer = chooseDetailImagery(bbox);
+      const level = pickLevel(bbox, layer, 2048);
+      const farPxPerDeg = (imagery.layer.tileSize * 2 ** imagery.level) / 180;
+      const nearPxPerDeg = (layer.tileSize * 2 ** level) / 180;
+      detailAt = { x: cx, z: cz };
+      if (nearPxPerDeg <= farPxPerDeg * 1.5) return; // no hay más detalle que la foto general
+      detailAbort?.abort();
+      const controller = new AbortController();
+      detailAbort = controller;
+      import('./imagery.js')
+        .then(({ loadImagery }) => loadImagery(bbox, { signal: controller.signal, layer, background: imagery }))
+        .then((result) => {
+          if (!alive || controller.signal.aborted || !scene) return;
+          scene.setDetailImagery(result.canvas, result.cover, {
+            x0: cx - DETAIL_M / 2,
+            z0: cz - DETAIL_M / 2,
+            x1: cx + DETAIL_M / 2,
+            z1: cz + DETAIL_M / 2,
+          });
+          detailNote.hidden = false;
+          detailNote.textContent = t('descent.imagery.detail', { name: t(`descent.imagery.layer.${result.layer.id}`) });
+        })
+        .catch(() => {});
+    }
+
     // ---------- Eventos de la interfaz ----------
 
     async function reloadAt(place) {
@@ -1115,6 +1165,9 @@ const mod = {
       site = place ?? landing;
       imageryAbort?.abort();
       imagery = null;
+      detailAbort?.abort();
+      detailAt = null;
+      detailNote.hidden = true;
       pinPoint = null;
       routes.replay = null;
       routes.active = null;
@@ -1378,6 +1431,7 @@ const mod = {
           ? t(result.exact ? 'descent.photos.exact' : 'descent.photos.approx', { count: num(result.photos.length), sols })
           : t('descent.photos.none', { sols });
         if (result.truncated) note += ` ${t('descent.photos.truncated')}`;
+        if (result.capped) note += ` ${t('descent.photos.capped')}`;
         photosNote.textContent = note;
         renderPhotoFilters();
         renderPhotoGrid();
@@ -1495,6 +1549,7 @@ const mod = {
     return () => {
       alive = false;
       imageryAbort?.abort();
+      detailAbort?.abort();
       photosUi.abort?.abort();
       cancelAnimationFrame(raf);
       resizeObserver.disconnect();

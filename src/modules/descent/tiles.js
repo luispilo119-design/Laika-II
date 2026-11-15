@@ -19,6 +19,18 @@ export const trekAbstract = (label) => `https://trek.nasa.gov/mars/TrekWS/rest/c
  */
 export const IMAGERY = [
   {
+    // Solo para el parche nítido alrededor de la persona (detail): cubre parte del terreno.
+    id: 'jezeroHirise',
+    label: 'JEZ_hirise_soc_006_orthoMosaic_25cm_Eqc_latTs0_lon0_first_dd',
+    url: trek('JEZ_hirise_soc_006_orthoMosaic_25cm_Eqc_latTs0_lon0_first_dd'),
+    tileSize: 256,
+    maxLevel: 16,
+    bbox: { west: 77.2229331, south: 18.3067994, east: 77.583964, north: 18.669315 },
+    controlled: true,
+    detail: true,
+    refId: 'trek-jezero-hirise',
+  },
+  {
     id: 'jezero',
     label: 'JEZ_ctx_B_soc_008_orthoMosaic_6m_Eqc_latTs0_lon0',
     url: trek('JEZ_ctx_B_soc_008_orthoMosaic_6m_Eqc_latTs0_lon0'),
@@ -33,7 +45,7 @@ export const IMAGERY = [
     label: 'Gale_CTX_BlockAdj_dd',
     url: trek('Gale_CTX_BlockAdj_dd'),
     tileSize: 256,
-    maxLevel: 13,
+    maxLevel: 12, // el nivel 13 responde 404 (comprobado el 2026-11-15)
     bbox: { west: 135.1842593, south: -6.5732988, east: 139.2413012, north: -2.8077809 },
     controlled: true,
     refId: 'trek-gale-ctx',
@@ -52,6 +64,13 @@ export const IMAGERY = [
 
 /** @type {import('../../core/types.js').Reference[]} */
 export const IMAGERY_REFERENCES = [
+  {
+    id: 'trek-jezero-hirise',
+    title: 'Jezero: ortomosaico HiRISE (USGS Astrogeology, para Mars 2020)',
+    org: 'NASA/JPL Mars Trek · USGS',
+    url: trekAbstract('JEZ_hirise_soc_006_orthoMosaic_25cm_Eqc_latTs0_lon0_first_dd'),
+    verified: true, // ficha de Mars Trek leída el 2026-11-15
+  },
   {
     id: 'trek-jezero-ctx',
     title: 'Jezero: mosaico ortorrectificado CTX de ~6 m (mapa del sistema de aterrizaje de Mars 2020)',
@@ -80,7 +99,13 @@ const contains = (outer, inner) =>
 
 /** El mosaico que cubre todo el recuadro (si ninguno regional lo cubre, el global). */
 export function chooseImagery(bbox) {
-  return IMAGERY.find((layer) => contains(layer.bbox, bbox)) ?? IMAGERY[IMAGERY.length - 1];
+  return IMAGERY.find((layer) => !layer.detail && contains(layer.bbox, bbox)) ?? IMAGERY[IMAGERY.length - 1];
+}
+
+/** Para el parche nítido: el mosaico más detallado que cubre el recuadro. */
+export function chooseDetailImagery(bbox) {
+  const candidates = IMAGERY.filter((layer) => contains(layer.bbox, bbox));
+  return candidates.sort((a, b) => b.maxLevel - a.maxLevel)[0] ?? IMAGERY[IMAGERY.length - 1];
 }
 
 /** Grados por lado de una tesela en el nivel `level`. */

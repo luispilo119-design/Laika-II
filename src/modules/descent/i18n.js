@@ -17,6 +17,7 @@ export default {
       approx: '{count} fotos de los soles {sols}. Las fotos de Curiosity no traen la parada: la ubicación es aproximada (por sol).',
       none: 'No hay fotos registradas en esta parada (soles {sols}). Prueba con la parada anterior o la siguiente.',
       truncated: 'El rover se quedó más soles aquí: se muestran los primeros.',
+      capped: 'La NASA entrega hasta 100 fotos por sol en cada consulta: puede haber más en su página.',
       failed: 'No se pudieron cargar las fotos (sin conexión o la API de la NASA no respondió).',
       nasaPage: 'Ver en la NASA',
       more: 'Mostrar más',
@@ -71,7 +72,9 @@ export default {
       uncontrolled:
         'La imagen del suelo es una foto real desde órbita: {name}. Es un mosaico preliminar, no controlado: puede quedar algo desplazado respecto a otros datos. Es en blanco y negro; el tono rojizo es decorativo.',
       failed: 'No se pudo cargar la foto desde órbita (sin conexión o el servidor no respondió): el suelo usa colores de relleno.',
+      detail: 'En el kilómetro alrededor de ti se carga una foto más nítida: {name}.',
       layer: {
+        jezeroHirise: 'ortomosaico HiRISE de Jezero (USGS, Mars Trek)',
         jezero: 'mosaico CTX de 6 m de Jezero (NASA/JPL, Mars Trek)',
         gale: 'mosaico CTX de Gale (NASA/JPL, Mars Trek)',
         global: 'mosaico CTX global beta01 de 5 m (NASA/JPL/MSSS, Caltech Murray Lab, Esri)',
@@ -222,6 +225,7 @@ export default {
       approx: '{count} photos from sols {sols}. Curiosity photos do not carry the stop: the location is approximate (by sol).',
       none: 'No photos are recorded at this stop (sols {sols}). Try the previous or the next stop.',
       truncated: 'The rover stayed here for more sols: the first ones are shown.',
+      capped: 'NASA returns up to 100 photos per sol in each request: there may be more on its page.',
       failed: 'The photos could not be loaded (offline or the NASA API did not answer).',
       nasaPage: 'See at NASA',
       more: 'Show more',
@@ -275,7 +279,9 @@ export default {
       uncontrolled:
         'The ground image is a real photo from orbit: {name}. It is a preliminary, uncontrolled mosaic: it may sit slightly offset from other data. It is black and white; the reddish tint is decorative.',
       failed: 'The orbital photo could not be loaded (offline or the server did not answer): the ground uses placeholder colors.',
+      detail: 'In the kilometer around you a sharper photo is loaded: {name}.',
       layer: {
+        jezeroHirise: 'HiRISE orthomosaic of Jezero (USGS, Mars Trek)',
         jezero: '6 m CTX mosaic of Jezero (NASA/JPL, Mars Trek)',
         gale: 'CTX mosaic of Gale (NASA/JPL, Mars Trek)',
         global: '5 m CTX global mosaic beta01 (NASA/JPL/MSSS, Caltech Murray Lab, Esri)',

@@ -290,3 +290,11 @@ test('el buscador encuentra sitios, regiones, rutas, paradas por sol y coordenad
   assert.equal(searchPlaces(index, '18.4, 77.4')[0].kind, 'coords');
   assert.ok(searchPlaces(index, '').length > 0, 'sin texto sugiere lugares');
 });
+
+test('el parche nítido usa HiRISE dentro de su recuadro en Jezero y nunca para la foto general', async () => {
+  const { chooseDetailImagery, chooseImagery: pickFar } = await import('../src/modules/descent/tiles.js');
+  const small = { west: 77.39, east: 77.41, south: 18.44, north: 18.46 };
+  assert.equal(chooseDetailImagery(small).id, 'jezeroHirise');
+  assert.equal(pickFar(small).id, 'jezero', 'la foto general no usa el mosaico de detalle');
+  assert.equal(chooseDetailImagery({ west: 2.99, east: 3.01, south: 0.99, north: 1.01 }).id, 'global');
+});

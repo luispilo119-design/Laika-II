@@ -887,3 +887,19 @@
   }
 
 }
+
+/* Cargar el terreno de más allá cuando se llega cerca del borde (en cualquier modo). */
+.descent__edge {
+  position: absolute;
+  left: 50%;
+  bottom: 150px;
+  transform: translateX(-50%);
+}
+
+.descent__edge .btn {
+  min-height: 44px;
+}
+
+.descent__edge .btn[hidden] {
+  display: none;
+}
