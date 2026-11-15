@@ -115,20 +115,3 @@ Uses some references listed above (`hrp-body`, `hrp-distance`, `nasa-sleep-brief
 
 The guides' emergency steps are a general guide written by the team from these sources, not an
 official NASA procedure; the app says so on screen.
-
-## Photos in the README
-
-Real photos from the [NASA Image and Video Library](https://images.nasa.gov/), resized and stored in
-`docs/img/phases/`. They only appear in the README, not in the app.
-
-| File | Photo | Credit |
-|---|---|---|
-| `0-mars-globe.jpg` | [Global Color Views of Mars (PIA00407)](https://images.nasa.gov/details/PIA00407) | NASA/JPL/USGS |
-| `1-launch.jpg` | [Mars 2020 Liftoff (KSC-20200730-PH-FMX01_0042)](https://images.nasa.gov/details/KSC-20200730-PH-FMX01_0042) | NASA/Frank Michaux |
-| `1-jezero-landing-site.jpg` | [Jezero Crater, Mars 2020's Landing Site (PIA23239)](https://images.nasa.gov/details/PIA23239) | NASA/JPL-Caltech/MSSS/JHU-APL |
-| `2-exercise-in-orbit.jpg` | [Kuipers exercises on the ARED in the Node 3 (iss030e148403)](https://images.nasa.gov/details/iss030e148403) | NASA |
-| `3-perseverance-landing.jpg` | [High-Resolution Still Image of Perseverance's Landing (PIA24428)](https://images.nasa.gov/details/PIA24428) | NASA/JPL-Caltech |
-| `4-chapea-habitat.jpg` | [CHAPEA Mission 2 Crew Poses in Habitat (jsc2026e403153)](https://images.nasa.gov/details/jsc2026e403153) | NASA |
-| `4-rover-tracks.jpg` | [Perseverance Looks Back at Wheel Tracks (PIA25171)](https://images.nasa.gov/details/PIA25171) | NASA/JPL-Caltech |
-| `5-dust-storm-selfie.jpg` | [Curiosity's Dusty Selfie (PIA22486)](https://images.nasa.gov/details/PIA22486) | NASA/JPL-Caltech/MSSS |
-| `6-perseverance-selfie.jpg` | [Perseverance's Selfie with Ingenuity (PIA24542)](https://images.nasa.gov/details/PIA24542) | NASA/JPL-Caltech/MSSS |

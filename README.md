@@ -1,9 +1,7 @@
 # Martian Map — Interplanetary Survival Guide
 
 <p align="center">
-  <img src="docs/img/phases/0-mars-globe.jpg" alt="Global color view of Mars, with Valles Marineris across the center and the north polar cap at the top" width="360">
-  <br>
-  <sub>Mars seen by the Viking orbiters. Credit: NASA/JPL/USGS (<a href="https://images.nasa.gov/details/PIA00407">PIA00407</a>)</sub>
+  <img src="docs/img/screens/0-start.jpg" alt="Martian Map start screen: the title, START and INDEX buttons, the language switch and an animated ASCII black hole" width="820">
 </p>
 
 A hackathon project by team **LAIKA II**.
@@ -37,23 +35,65 @@ The phases are linked by data: the arrival date from the Hohmann planner sets th
 (solar longitude, Ls) at landing, and that season changes temperature and dust on the map, in the hubs
 and in the first-person view.
 
-## The mission in real photos
+## Screenshots by phase
 
-Each phase of the app, matched with a real NASA photo of the same moment in an actual mission.
+Screenshots of the app itself, in English, with a sample mission built in the app: the next launch
+window, the best-scoring landing zone, five hubs around it and a rover route to the ice mine.
 
-| | |
-|---|---|
-| <img src="docs/img/phases/1-launch.jpg" alt="Atlas V rocket lifting off with the Perseverance rover" width="420"> | <img src="docs/img/phases/1-jezero-landing-site.jpg" alt="Jezero crater and its ancient river delta seen from orbit" width="420"> |
-| **Phase 1 · Plan from Earth.** Perseverance lifts off on an Atlas V from Cape Canaveral on July 30, 2020, during its launch window to Mars. Credit: NASA/Frank Michaux ([KSC-20200730-PH-FMX01_0042](https://images.nasa.gov/details/KSC-20200730-PH-FMX01_0042)) | **Phase 1 · Landing site.** Jezero crater, the landing site chosen for Mars 2020, seen by the Mars Reconnaissance Orbiter. Credit: NASA/JPL-Caltech/MSSS/JHU-APL ([PIA23239](https://images.nasa.gov/details/PIA23239)) |
-| <img src="docs/img/phases/2-exercise-in-orbit.jpg" alt="Astronaut exercising on the resistive exercise device aboard the International Space Station" width="420"> | <img src="docs/img/phases/3-perseverance-landing.jpg" alt="Perseverance hanging from its cables above the Martian surface during landing" width="420"> |
-| **Phase 2 · Transit.** Astronaut André Kuipers exercises aboard the International Space Station, the daily routine that fights bone and muscle loss in weightlessness. Credit: NASA ([iss030e148403](https://images.nasa.gov/details/iss030e148403)) | **Phase 3 · Descent.** Perseverance moments before touchdown on February 18, 2021, photographed from the descent stage that lowered it. Credit: NASA/JPL-Caltech ([PIA24428](https://images.nasa.gov/details/PIA24428)) |
-| <img src="docs/img/phases/4-chapea-habitat.jpg" alt="Four CHAPEA crew members inside the simulated Mars habitat, by a door labeled To surface" width="420"> | <img src="docs/img/phases/4-rover-tracks.jpg" alt="Perseverance looking back at its wheel tracks across the floor of Jezero crater" width="420"> |
-| **Phase 4 · Hubs.** The CHAPEA Mission 2 crew inside NASA's simulated Mars habitat, where crews live for a year as if on Mars. Credit: NASA ([jsc2026e403153](https://images.nasa.gov/details/jsc2026e403153)) | **Phase 4 · Routes.** Perseverance looks back at its wheel tracks on sol 381 (March 17, 2022). Credit: NASA/JPL-Caltech ([PIA25171](https://images.nasa.gov/details/PIA25171)) |
-| <img src="docs/img/phases/5-dust-storm-selfie.jpg" alt="Curiosity self-portrait under a dusty, hazy sky" width="420"> | <img src="docs/img/phases/6-perseverance-selfie.jpg" alt="Perseverance self-portrait with the Ingenuity helicopter on the ground nearby" width="420"> |
-| **Phase 5 · Survival.** Curiosity's self-portrait on June 15, 2018, while a dust storm dimmed the sunlight in Gale crater. Credit: NASA/JPL-Caltech/MSSS ([PIA22486](https://images.nasa.gov/details/PIA22486)) | **Phase 6 · Report.** Perseverance and the Ingenuity helicopter on sol 46 (April 6, 2021). Credit: NASA/JPL-Caltech/MSSS ([PIA24542](https://images.nasa.gov/details/PIA24542)) |
+### Phase 1 · Plan from Earth: Hohmann transfer
 
-All photos come from the [NASA Image and Video Library](https://images.nasa.gov/), resized for this
-README. Sources are also listed in [docs/REFERENCES.md](docs/REFERENCES.md).
+The launch windows from the planning date, the transfer drawn around the Sun, and the button that
+opens the equations behind it.
+
+<img src="docs/img/screens/1-hohmann.jpg" alt="Hohmann transfer screen: orbit diagram of Earth, Mars and the transfer ellipse, and a list of launch windows with the selected plan" width="820">
+
+### Phase 1 · Plan from Earth: landing site
+
+The Mars Trek map with past landing sites, the chosen site (star) and the zone sheet for a tapped
+point: its score, its verdict, and each condition next to what the human body needs.
+
+<img src="docs/img/screens/1-landing-site.jpg" alt="Landing site map in color topography with the Martian clock on the left and the zone sheet on the right showing a score of 60, marginal" width="820">
+
+### Phase 2 · Transit
+
+The trip day by day, with what happens to the body at each stage and its NASA source.
+
+<img src="docs/img/screens/2-journey.jpg" alt="The journey screen: departure and arrival dates, a timeline of the 252-day trip and the stages of the trip" width="820">
+
+### Phase 3 · Descent
+
+First-person view of the landing site, with the live conditions at the person's position, a mini map
+and a touch joystick for tablets.
+
+<img src="docs/img/screens/3-on-site.jpg" alt="First-person view on the Martian surface with a lander, a rover and a dome, and a panel with temperature, pressure, radiation, elevation, slope and dust" width="820">
+
+### Phase 4 · Surface: autonomous hubs
+
+Habitat, greenhouse, solar plant, ice extraction and landing pad placed around the site, each with its
+own viability score.
+
+<img src="docs/img/screens/4-hubs.jpg" alt="Hubs screen: hub types on the left, five hub icons on the map, and the habitat card with a score of 69, viable" width="820">
+
+### Phase 4 · Surface: driving routes
+
+A route from the landing site to the ice mine for the pressurized rover; the red circles are large
+craters the route has to avoid.
+
+<img src="docs/img/screens/4-routes.jpg" alt="Driving routes screen: a route from point A to point B on the map, craters to avoid shaded in red, and the origin, destination and base list on the right" width="820">
+
+### Phase 5 · Survival: the sol journal
+
+Water, meals, sleep and exercise logged for each sol and compared with NASA's numbers, plus the
+radiation accumulated over the whole mission.
+
+<img src="docs/img/screens/5-guides.jpg" alt="Survival guides: sol 4 of the journal with a score of 91, water glasses, meals, sleep, exercise and accumulated radiation" width="820">
+
+### Phase 6 · Report
+
+The mission dashboard: progress, trip length, landing site score and hubs, ready to print or save as
+PDF.
+
+<img src="docs/img/screens/6-report.jpg" alt="Mission dashboard for LAIKA II: mission progress 5 of 5, a 252-day journey, a landing site scored 74 and 5 hubs" width="820">
 
 ## Getting started
 
