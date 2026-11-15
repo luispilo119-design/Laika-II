@@ -18,6 +18,8 @@ import { loadRovers, stopsOf, ROVER_IDS, ROVER_REFERENCES } from '../../core/rov
 import { routeCenter, localPaths, localStops, nearestStop, pointAtDistance, elevationProfile } from './traverse.js';
 import { formatHour } from '../../core/clock.js';
 import { VEHICLES, VEHICLE_IDS, WALK, travelSeconds } from './vehicles.js';
+import { buildIndex, searchPlaces } from './search.js';
+import { LANDING_SITES } from '../../core/sites.js';
 
 // Punto de ejemplo para cuando todavía no hay sitio de aterrizaje (el mismo que usa "routes").
 const EXAMPLE_SITE = { lat: 1.0, lon: 3.0 };
@@ -105,7 +107,7 @@ const mod = {
           <button type="button" class="btn" data-go="${prevModule}">${t('descent.prev', { name: t(`${prevModule}.title`) })}</button>
           <button type="button" class="btn" data-go="map">${t('descent.toMap')}</button>
           <button type="button" class="btn" data-ascend hidden>${t('descent.ascend')}</button>
-          <button type="button" class="btn" data-place-open>${t('descent.place.open')}</button>
+          <button type="button" class="btn" data-search-open aria-expanded="false">${t('descent.search.open')}</button>
           <button type="button" class="btn" data-routes-open aria-expanded="false">${t('descent.routes.open')}</button>
           <button type="button" class="btn" data-garage-open aria-expanded="false">${t('descent.garage.open')}</button>
           <button type="button" class="btn" data-go="${nextModule}">${t('descent.next', { name: t(`${nextModule}.title`) })}</button>
@@ -229,6 +231,23 @@ const mod = {
             </div>
           </div>
         </div>
+
+        <section class="descent__search descent__panel" hidden aria-label="${t('descent.search.title')}">
+          <div class="descent__panel-head">
+            <h2>${t('descent.search.title')}</h2>
+            <button type="button" class="btn" data-search-close aria-label="${t('descent.close')}">×</button>
+          </div>
+          <label class="descent__search-field">
+            <span class="descent__sr">${t('descent.search.label')}</span>
+            <input type="search" data-search-input autocomplete="off" placeholder="${t('descent.search.placeholder')}" />
+          </label>
+          <p class="descent__note">${t('descent.search.hint')}</p>
+          <ul class="descent__search-results" data-search-results></ul>
+          <div class="descent__routes-row">
+            <button type="button" class="btn" data-place-open>${t('descent.search.map')}</button>
+            <button type="button" class="btn" data-place-landing>${t('descent.place.landing')}</button>
+          </div>
+        </section>
 
         <section class="descent__routes descent__panel" hidden aria-label="${t('descent.routes.title')}">
           <div class="descent__panel-head">
@@ -456,6 +475,8 @@ const mod = {
       intro.hidden = true;
       garageBox.hidden = true;
       garageOpenBtn.setAttribute('aria-expanded', 'false');
+      searchBox.hidden = true;
+      searchOpenBtn.setAttribute('aria-expanded', 'false');
       const mode = scene?.state().mode;
       if (mode === 'ground' || mode === 'driving') ascendNow();
     }
@@ -491,7 +512,8 @@ const mod = {
       paintRoutes();
       if (!routes.active) return;
       const remembered = ui.stop?.rover === routes.active ? ui.stop.index : routes.stops.length - 1;
-      selectStop(Math.min(remembered, routes.stops.length - 1), { fly: false, pin: site.rover === routes.active });
+      selectStop(Math.min(remembered, routes.stops.length - 1), { fly: Boolean(routes.flyOnLoad), pin: site.rover === routes.active });
+      routes.flyOnLoad = false;
     }
 
     function paintRoutes() {
@@ -598,14 +620,16 @@ const mod = {
       if (r.distM >= routes.stops[routes.stops.length - 1].distM) stopReplay();
     }
 
-    function goToRoute(id) {
+    function goToRoute(id, stopIndex = null) {
       if (!routes.data) return;
+      setRoutesOpen(true);
       if (routes.active === id && site.rover === id) {
-        selectStop(routes.index);
+        selectStop(stopIndex ?? routes.index);
         return;
       }
       const center = routeCenter(routes.data.rovers[id]);
-      ui.stop = null;
+      ui.stop = stopIndex === null ? null : { rover: id, index: stopIndex };
+      routes.flyOnLoad = stopIndex !== null;
       reloadAt({ lat: center.lat, lon: center.lon, name: `${ROUTE_REGION[id]} · ${roverName(id)}`, rover: id });
       intro.hidden = true; // reloadAt la vuelve a mostrar; aquí el panel de rutas ya explica dónde se está
     }
@@ -638,6 +662,8 @@ const mod = {
         intro.hidden = true;
         routesBox.hidden = true;
         routesOpenBtn.setAttribute('aria-expanded', 'false');
+        searchBox.hidden = true;
+        searchOpenBtn.setAttribute('aria-expanded', 'false');
         paintGarage();
       }
     }
@@ -710,6 +736,90 @@ const mod = {
       lastHud = 0;
       setGarageOpen(false);
       canvas.focus({ preventScroll: true });
+    }
+
+    // ---------- Buscador de lugares ----------
+
+    const searchBox = el.querySelector('.descent__search');
+    const searchOpenBtn = el.querySelector('[data-search-open]');
+    const searchInput = el.querySelector('[data-search-input]');
+    const searchResults = el.querySelector('[data-search-results]');
+    let results = [];
+
+    function setSearchOpen(open) {
+      searchBox.hidden = !open;
+      searchOpenBtn.setAttribute('aria-expanded', String(open));
+      if (!open) return;
+      intro.hidden = true;
+      routesBox.hidden = true;
+      garageBox.hidden = true;
+      routesOpenBtn.setAttribute('aria-expanded', 'false');
+      garageOpenBtn.setAttribute('aria-expanded', 'false');
+      renderResults();
+      searchInput.focus({ preventScroll: true });
+    }
+
+    function searchIndex() {
+      const roverRoutes = routes.data
+        ? ROVER_IDS.map((id) => ({ id, name: t('descent.search.route', { name: roverName(id), region: ROUTE_REGION[id] }), ...routeCenter(routes.data.rovers[id]) }))
+        : [];
+      return buildIndex({
+        sites: LANDING_SITES,
+        landing: hasSite ? { ...landing, name: landing.name || t('descent.search.mySite') } : null,
+        hubs: (store.get().mission.hubs ?? []).map((h) => ({ lat: h.lat, lon: h.lon, label: t(`hubs.type.${h.type}.name`) })),
+        routes: roverRoutes,
+      });
+    }
+
+    function stopsByRover() {
+      if (!routes.data) return {};
+      return Object.fromEntries(ROVER_IDS.map((id) => [id, stopsOf(routes.data.rovers[id])]));
+    }
+
+    function resultLabel(r) {
+      if (r.kind === 'coords') return t('descent.search.coords', { place: coords(r.lat, r.lon) });
+      if (r.kind === 'stop') return t('descent.search.stop', { name: roverName(r.rover), sol: num(r.sol) });
+      return r.label;
+    }
+
+    function renderResults() {
+      results = searchPlaces(searchIndex(), searchInput.value, { stopsByRover: stopsByRover(), limit: 12 });
+      searchResults.innerHTML = results.length
+        ? results
+            .map(
+              (r, i) => `<li><button type="button" class="descent__result" data-result="${i}">
+                <span>${esc(resultLabel(r))}</span>
+                <small>${esc(t(`descent.search.kind.${r.kind}`))}${r.sub ? ` · ${esc(r.sub)}` : ''}</small>
+              </button></li>`,
+            )
+            .join('')
+        : `<li class="descent__note">${esc(t('descent.search.empty'))}</li>`;
+    }
+
+    /** Va al lugar elegido: si ya está en el terreno cargado, vuela hasta él; si no, carga su terreno. */
+    function chooseResult(r) {
+      if (!r) return;
+      setSearchOpen(false);
+      if (r.kind === 'stop' || r.kind === 'route') {
+        goToRoute(r.rover, r.kind === 'stop' ? r.stopIndex : null);
+        return;
+      }
+      const p = toLocal(site, r.lat, r.lon);
+      if (scene && insideArea(p.x, p.z, 400)) {
+        pinPoint = { x: p.x, z: p.z };
+        scene.flyTo(p.x, p.z, 2500);
+        scene.setPin(pinPoint);
+        lastHud = 0;
+        return;
+      }
+      const name = r.kind === 'coords' ? undefined : resultLabel(r);
+      reloadAt({ lat: r.lat, lon: r.lon, name });
+      intro.hidden = true;
+    }
+
+    function onSearchKey(event) {
+      if (event.key === 'Enter') chooseResult(results[0]);
+      else if (event.key === 'Escape') setSearchOpen(false);
     }
 
     function applyEnvironment() {
@@ -1057,7 +1167,10 @@ const mod = {
       if (event.target.closest('.descent__photos')) return onPhotosClick(event);
       const go = event.target.closest('[data-go]')?.dataset.go;
       if (go) return navigate(go);
-      if (event.target.closest('[data-place-open]')) return openPlace();
+      if (event.target.closest('[data-place-open]')) {
+        setSearchOpen(false);
+        return openPlace();
+      }
       if (event.target.closest('[data-place-close]')) {
         placeBox.hidden = true;
         return undefined;
@@ -1083,6 +1196,7 @@ const mod = {
       }
       if (event.target.closest('[data-place-landing]')) {
         placeBox.hidden = true;
+        setSearchOpen(false);
         return reloadAt(null);
       }
       if (event.target.closest('[data-board]') || event.target.closest('[data-exit]')) {
@@ -1105,6 +1219,20 @@ const mod = {
         intro.hidden = true;
         routesBox.hidden = true;
         canvas.focus({ preventScroll: true });
+        return undefined;
+      }
+      // Buscador
+      if (event.target.closest('[data-search-open]')) {
+        setSearchOpen(searchBox.hidden);
+        return undefined;
+      }
+      if (event.target.closest('[data-search-close]')) {
+        setSearchOpen(false);
+        return undefined;
+      }
+      const resultBtn = event.target.closest('[data-result]');
+      if (resultBtn) {
+        chooseResult(results[Number(resultBtn.dataset.result)]);
         return undefined;
       }
       // Vehículos y velocidad
@@ -1336,6 +1464,8 @@ const mod = {
     el.addEventListener('click', onClick);
     hourSlider.addEventListener('input', onHour);
     stopSlider.addEventListener('input', onStopSlider);
+    searchInput.addEventListener('input', renderResults);
+    searchInput.addEventListener('keydown', onSearchKey);
     function bindCanvas() {
       canvas.addEventListener('pointerdown', onLookDown);
       canvas.addEventListener('pointermove', onLookMove);
@@ -1367,6 +1497,8 @@ const mod = {
       el.removeEventListener('click', onClick);
       hourSlider.removeEventListener('input', onHour);
       stopSlider.removeEventListener('input', onStopSlider);
+      searchInput.removeEventListener('input', renderResults);
+      searchInput.removeEventListener('keydown', onSearchKey);
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('blur', onBlur);

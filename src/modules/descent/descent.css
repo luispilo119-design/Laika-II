@@ -824,3 +824,50 @@
 .descent__veh-bars [hidden] {
   display: none;
 }
+
+/* ---------- Buscador ---------- */
+
+.descent__search-field input {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.descent__search-results {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.descent__result {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  min-height: 44px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.descent__result:hover,
+.descent__result:focus-visible {
+  border-color: var(--rust-300);
+}
+
+.descent__result small {
+  color: var(--text-dim);
+  font-size: 11px;
+}

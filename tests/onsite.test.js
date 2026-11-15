@@ -260,3 +260,33 @@ test('el tiempo acelerado se reparte en pasos cortos', () => {
   const capped = subSteps(100, 0.05, 400);
   assert.equal(capped.steps, 400, 'con un tope de pasos por cuadro');
 });
+
+// ---------- Buscador ----------
+import { fold, parseCoords, buildIndex, searchPlaces } from '../src/modules/descent/search.js';
+import { LANDING_SITES } from '../src/core/sites.js';
+
+test('se entienden las coordenadas escritas de varias formas', () => {
+  assert.deepEqual(parseCoords('18.4, 77.4'), { lat: 18.4, lon: 77.4 });
+  assert.deepEqual(parseCoords('4.6S 137.4E'), { lat: -4.6, lon: 137.4 });
+  assert.deepEqual(parseCoords('22.5°N 312°E'), { lat: 22.5, lon: -48 });
+  assert.deepEqual(parseCoords('10 N, 20 O'), { lat: 10, lon: -20 });
+  assert.equal(parseCoords('95 10'), null);
+  assert.equal(parseCoords('Jezero'), null);
+  assert.equal(fold('Utópia Planitia'), 'utopia planitia');
+});
+
+test('el buscador encuentra sitios, regiones, rutas, paradas por sol y coordenadas', () => {
+  const routesIdx = ROVER_IDS.map((id) => ({ id, name: `Ruta de ${id}`, ...routeCenter(rovers.rovers[id]) }));
+  const index = buildIndex({ sites: LANDING_SITES, landing: { lat: 1, lon: 3, name: 'Mi sitio' }, hubs: [{ lat: 2, lon: 4, label: 'Invernadero' }], routes: routesIdx });
+  const jez = searchPlaces(index, 'jezero');
+  assert.ok(jez.some((r) => r.kind === 'region' && r.label === 'Jezero'));
+  assert.ok(jez.some((r) => r.kind === 'site' && r.label === 'Perseverance'));
+  assert.equal(searchPlaces(index, 'inver')[0].kind, 'hub');
+  const stopsByRover = Object.fromEntries(ROVER_IDS.map((id) => [id, stopsOf(rovers.rovers[id])]));
+  const sol = searchPlaces(index, 'perseverance sol 500', { stopsByRover });
+  const stop = sol.find((r) => r.kind === 'stop');
+  assert.equal(stop.rover, 'perseverance');
+  assert.ok(stop.sol <= 500);
+  assert.equal(searchPlaces(index, '18.4, 77.4')[0].kind, 'coords');
+  assert.ok(searchPlaces(index, '').length > 0, 'sin texto sugiere lugares');
+});
