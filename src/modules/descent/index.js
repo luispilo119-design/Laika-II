@@ -12,6 +12,8 @@ import L from 'leaflet';
 import { AREA_M, GRID, areaBBox, makeHeightField, toLatLon, toLocal, insideArea } from './terrain.js';
 import { IMAGERY_REFERENCES } from './tiles.js';
 import { createMarsMap } from '../../core/marsmap.js';
+import { loadRovers, stopsOf, ROVER_IDS, ROVER_REFERENCES } from '../../core/rovers.js';
+import { routeCenter, localPaths, localStops, nearestStop, pointAtDistance, elevationProfile } from './traverse.js';
 import { formatHour } from '../../core/clock.js';
 
 // Punto de ejemplo para cuando todavía no hay sitio de aterrizaje (el mismo que usa "routes").
@@ -31,10 +33,15 @@ const REFERENCES = [
     verified: true,
   },
   ...IMAGERY_REFERENCES,
+  ...ROVER_REFERENCES,
 ];
 
+const ROUTE_COLORS = { perseverance: '#ffd166', curiosity: '#5bd1c9' };
+const ROUTE_REGION = { perseverance: 'Jezero', curiosity: 'Gale' };
+const REPLAY_SPEEDS = [100, 400, 1600]; // m/s a lo largo del recorrido
+
 /** Hora elegida en la vista previa (null = la del reloj de la misión). No se escribe en el store. */
-const ui = { hour: null, place: null };
+const ui = { hour: null, place: null, stop: null, replaySpeed: 1 };
 
 /** @type {import('../../core/types.js').ModuleDef} */
 const mod = {
@@ -75,6 +82,7 @@ const mod = {
           <button type="button" class="btn" data-go="map">${t('descent.toMap')}</button>
           <button type="button" class="btn" data-ascend hidden>${t('descent.ascend')}</button>
           <button type="button" class="btn" data-place-open>${t('descent.place.open')}</button>
+          <button type="button" class="btn" data-routes-open aria-expanded="false">${t('descent.routes.open')}</button>
           <button type="button" class="btn" data-go="${nextModule}">${t('descent.next', { name: t(`${nextModule}.title`) })}</button>
           ${env.isMock ? `<span class="badge badge--warn">${t('core.mockBadge')}</span>` : ''}
         </div>
@@ -164,6 +172,39 @@ const mod = {
             </div>
           </div>
         </div>
+
+        <section class="descent__routes descent__panel" hidden aria-label="${t('descent.routes.title')}">
+          <div class="descent__panel-head">
+            <h2>${t('descent.routes.title')}</h2>
+            <button type="button" class="btn" data-routes-close aria-label="${t('descent.close')}">×</button>
+          </div>
+          <div class="descent__routes-pick">
+            ${ROVER_IDS.map(
+              (id) => `<button type="button" class="btn" data-route-go="${id}" style="--route:${ROUTE_COLORS[id]}">
+                <span class="descent__swatch"></span>${t('descent.routes.go', { name: id === 'perseverance' ? 'Perseverance' : 'Curiosity', region: ROUTE_REGION[id] })}</button>`,
+            ).join('')}
+          </div>
+          <p class="descent__note" data-routes-status>${t('descent.routes.loading')}</p>
+          <div class="descent__routes-body" hidden>
+            <p class="descent__routes-stop" data-stop-label aria-live="polite"></p>
+            <label class="descent__routes-slider">
+              <span class="descent__sr">${t('descent.routes.slider')}</span>
+              <input type="range" min="0" max="1" step="1" value="0" data-stop-slider />
+            </label>
+            <div class="descent__routes-row">
+              <button type="button" class="btn" data-stop-step="-1" aria-label="${t('descent.routes.prev')}">◀</button>
+              <button type="button" class="btn" data-replay>${t('descent.routes.play')}</button>
+              <button type="button" class="btn" data-replay-speed aria-label="${t('descent.routes.speedLabel')}"></button>
+              <button type="button" class="btn" data-stop-step="1" aria-label="${t('descent.routes.next')}">▶</button>
+            </div>
+            <div class="descent__routes-row">
+              <button type="button" class="btn btn--primary" data-stop-photos>${t('descent.routes.photos')}</button>
+              <button type="button" class="btn" data-stop-descend>${t('descent.aerial.descendHere')}</button>
+            </div>
+            <canvas class="descent__profile" width="340" height="96" aria-label="${t('descent.routes.profile')}"></canvas>
+            <p class="descent__note">${t('descent.routes.note')}</p>
+          </div>
+        </section>
 
         <div class="descent__stick" hidden aria-hidden="true"><span class="descent__knob"></span></div>
         <p class="descent__hint" hidden>${t('descent.hint')}</p>
@@ -308,6 +349,180 @@ const mod = {
       g.lineTo(W / 2 + Math.sin(a - 2.5) * 5, W / 2 - Math.cos(a - 2.5) * 5);
       g.closePath();
       g.fill();
+    }
+
+    // ---------- Rutas reales de los rovers ----------
+
+    const routesBox = el.querySelector('.descent__routes');
+    const routesBody = el.querySelector('.descent__routes-body');
+    const routesStatus = el.querySelector('[data-routes-status]');
+    const routesOpenBtn = el.querySelector('[data-routes-open]');
+    const stopLabel = el.querySelector('[data-stop-label]');
+    const stopSlider = el.querySelector('[data-stop-slider]');
+    const replayBtn = el.querySelector('[data-replay]');
+    const replaySpeedBtn = el.querySelector('[data-replay-speed]');
+    const profileCanvas = el.querySelector('.descent__profile');
+    /** active = rover cuyo recorrido está en el terreno cargado; stops con x, z locales. */
+    const routes = { data: null, active: null, stops: [], index: 0, replay: null };
+    const roverName = (id) => (id === 'perseverance' ? 'Perseverance' : 'Curiosity');
+
+    function setRoutesOpen(open) {
+      routesBox.hidden = !open;
+      routesOpenBtn.setAttribute('aria-expanded', String(open));
+      if (!open) return;
+      intro.hidden = true;
+      const mode = scene?.state().mode;
+      if (mode === 'ground' || mode === 'driving') ascendNow();
+    }
+
+    async function loadRoutes() {
+      try {
+        routes.data = await loadRovers();
+        if (alive) showRoutesInArea();
+      } catch {
+        if (alive) routesStatus.textContent = t('descent.routes.failed');
+      }
+    }
+
+    /** Dibuja los recorridos que pasan por el terreno cargado y elige el rover activo. */
+    function showRoutesInArea() {
+      if (!scene || !routes.data) return;
+      const list = [];
+      routes.active = null;
+      routes.stops = [];
+      for (const id of ROVER_IDS) {
+        const rover = routes.data.rovers[id];
+        if (!rover) continue;
+        const paths = localPaths(rover, site);
+        if (!paths.some((path) => path.some(([x, z]) => insideArea(x, z, 0)))) continue;
+        const stops = localStops(stopsOf(rover), site);
+        list.push({ paths, stops: stops.map((stop) => [stop.x, stop.z]), color: ROUTE_COLORS[id] });
+        if (!routes.active || site.rover === id) {
+          routes.active = id;
+          routes.stops = stops;
+        }
+      }
+      scene.setRoutes(list);
+      paintRoutes();
+      if (!routes.active) return;
+      const remembered = ui.stop?.rover === routes.active ? ui.stop.index : routes.stops.length - 1;
+      selectStop(Math.min(remembered, routes.stops.length - 1), { fly: false, pin: site.rover === routes.active });
+    }
+
+    function paintRoutes() {
+      const has = Boolean(routes.active);
+      routesBody.hidden = !has;
+      let status = t('descent.routes.none');
+      if (!routes.data) status = t('descent.routes.loading');
+      else if (has) status = t('descent.routes.inArea', { name: roverName(routes.active) });
+      routesStatus.textContent = status;
+      for (const btn of el.querySelectorAll('[data-route-go]')) btn.setAttribute('aria-pressed', String(btn.dataset.routeGo === routes.active));
+      if (has) stopSlider.max = String(routes.stops.length - 1);
+      replaySpeedBtn.textContent = `×${REPLAY_SPEEDS[ui.replaySpeed] / REPLAY_SPEEDS[0]}`;
+      replayBtn.textContent = routes.replay ? t('descent.routes.pause') : t('descent.routes.play');
+    }
+
+    function selectStop(index, { fly = true, pin = true } = {}) {
+      const stop = routes.stops[index];
+      if (!stop || !scene) return;
+      routes.index = index;
+      ui.stop = { rover: routes.active, index };
+      stopSlider.value = String(index);
+      stopLabel.textContent =
+        t('descent.routes.stop', { sol: num(stop.sol), km: num(stop.distM / 1000, 2), i: num(index + 1), n: num(routes.stops.length) }) +
+        (stop.elevM === null ? '' : ` · ${t('descent.routes.elev', { m: num(stop.elevM) })}`);
+      if (pin) {
+        pinPoint = { x: stop.x, z: stop.z };
+        scene.setPin(pinPoint);
+      }
+      if (fly) scene.flyTo(stop.x, stop.z, Math.min(scene.state().aerialDist, 2500));
+      drawProfile();
+      lastHud = 0;
+    }
+
+    /** Perfil de elevación medido por el rover, con la parada elegida marcada. */
+    function drawProfile() {
+      const g = profileCanvas.getContext('2d');
+      const W = profileCanvas.width;
+      const H = profileCanvas.height;
+      g.clearRect(0, 0, W, H);
+      const pts = elevationProfile(routes.stops);
+      if (pts.length < 2) return;
+      const maxKm = pts[pts.length - 1][0] || 1;
+      let lo = Infinity;
+      let hi = -Infinity;
+      for (const [, e] of pts) {
+        lo = Math.min(lo, e);
+        hi = Math.max(hi, e);
+      }
+      const left = 4;
+      const X = (km) => left + (km / maxKm) * (W - left - 4);
+      const Y = (e) => 16 + (1 - (e - lo) / (hi - lo || 1)) * (H - 34);
+      g.fillStyle = 'rgba(207, 138, 99, 0.22)';
+      g.beginPath();
+      g.moveTo(X(0), H - 18);
+      for (const [k, e] of pts) g.lineTo(X(k), Y(e));
+      g.lineTo(X(maxKm), H - 18);
+      g.closePath();
+      g.fill();
+      g.strokeStyle = ROUTE_COLORS[routes.active];
+      g.lineWidth = 1.5;
+      g.beginPath();
+      pts.forEach(([k, e], i) => (i ? g.lineTo(X(k), Y(e)) : g.moveTo(X(k), Y(e))));
+      g.stroke();
+      const stop = routes.stops[routes.index];
+      if (stop) {
+        g.strokeStyle = '#fffff3';
+        g.beginPath();
+        g.moveTo(X(stop.distM / 1000), 12);
+        g.lineTo(X(stop.distM / 1000), H - 18);
+        g.stroke();
+      }
+      g.fillStyle = '#cbb8a6';
+      g.font = '11px ui-monospace, monospace';
+      g.fillText(t('descent.unit.meters', { v: num(hi) }), left, 11);
+      g.fillText(t('descent.unit.meters', { v: num(lo) }), left, H - 4);
+      const kmText = t('descent.unit.km', { v: num(maxKm, 1) });
+      g.fillText(kmText, W - 4 - g.measureText(kmText).width, H - 4);
+    }
+
+    function startReplay() {
+      if (!routes.active || !scene) return;
+      const lastStop = routes.stops[routes.stops.length - 1];
+      const from = routes.stops[routes.index];
+      routes.replay = { distM: from && from.distM < lastStop.distM ? from.distM : 0 };
+      paintRoutes();
+    }
+    function stopReplay() {
+      routes.replay = null;
+      paintRoutes();
+    }
+    /** Avanza la repetición: el marcador sigue el recorrido real y la vista aérea lo acompaña. */
+    function stepReplay(dt) {
+      if (scene.state().mode !== 'aerial') {
+        stopReplay();
+        return;
+      }
+      const r = routes.replay;
+      r.distM += REPLAY_SPEEDS[ui.replaySpeed] * dt;
+      const p = pointAtDistance(routes.stops, r.distM);
+      pinPoint = { x: p.x, z: p.z };
+      scene.setPin(pinPoint);
+      scene.flyTo(p.x, p.z, scene.state().aerialDist);
+      if (p.index !== routes.index) selectStop(p.index, { fly: false, pin: false });
+      if (r.distM >= routes.stops[routes.stops.length - 1].distM) stopReplay();
+    }
+
+    function goToRoute(id) {
+      if (!routes.data) return;
+      if (routes.active === id && site.rover === id) {
+        selectStop(routes.index);
+        return;
+      }
+      const center = routeCenter(routes.data.rovers[id]);
+      ui.stop = null;
+      reloadAt({ lat: center.lat, lon: center.lon, name: `${ROUTE_REGION[id]} · ${roverName(id)}`, rover: id });
+      intro.hidden = true; // reloadAt la vuelve a mostrar; aquí el panel de rutas ya explica dónde se está
     }
 
     function applyEnvironment() {
@@ -482,6 +697,7 @@ const mod = {
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
       scene.update(dt, readInput());
+      if (routes.replay) stepReplay(dt);
       scene.render();
       if (!landed && scene.state().mode === 'ground') {
         landed = true;
@@ -560,6 +776,7 @@ const mod = {
         return;
       }
       loadGroundImagery();
+      loadRoutes();
     }
 
     /** Foto orbital del terreno. Va aparte del try de load(): si falla, la escena sigue con sus colores. */
@@ -591,6 +808,10 @@ const mod = {
       imageryAbort?.abort();
       imagery = null;
       pinPoint = null;
+      routes.replay = null;
+      routes.active = null;
+      routes.stops = [];
+      paintRoutes();
       cancelAnimationFrame(raf);
       raf = 0;
       resizeObserver.disconnect();
@@ -652,9 +873,11 @@ const mod = {
         return undefined;
       }
       if (event.target.closest('[data-descend-pin]') && scene && pinPoint) {
+        stopReplay();
         scene.descendTo(pinPoint.x, pinPoint.z, reducedMotion.matches);
         pinPoint = null;
         intro.hidden = true;
+        routesBox.hidden = true;
         canvas.focus({ preventScroll: true });
         return undefined;
       }
@@ -678,22 +901,90 @@ const mod = {
         return undefined;
       }
       if (event.target.closest('[data-ascend]') && scene) {
-        scene.ascend();
-        landed = false;
-        stick.hidden = true;
-        hint.hidden = true;
-        root.classList.remove('is-landed');
-        el.querySelector('[data-ascend]').hidden = true;
+        ascendNow();
         intro.hidden = false;
         return undefined;
       }
       if (event.target.closest('[data-descend]') && scene) {
         scene.startDescent(reducedMotion.matches);
         intro.hidden = true;
+        routesBox.hidden = true;
         canvas.focus({ preventScroll: true });
+        return undefined;
+      }
+      // Rutas de los rovers
+      if (event.target.closest('[data-routes-open]')) {
+        setRoutesOpen(routesBox.hidden);
+        return undefined;
+      }
+      if (event.target.closest('[data-routes-close]')) {
+        setRoutesOpen(false);
+        return undefined;
+      }
+      const routeGo = event.target.closest('[data-route-go]')?.dataset.routeGo;
+      if (routeGo) {
+        goToRoute(routeGo);
+        return undefined;
+      }
+      const stepBy = event.target.closest('[data-stop-step]')?.dataset.stopStep;
+      if (stepBy && routes.active) {
+        stopReplay();
+        selectStop(Math.max(0, Math.min(routes.stops.length - 1, routes.index + Number(stepBy))));
+        return undefined;
+      }
+      if (event.target.closest('[data-replay]')) {
+        if (routes.replay) stopReplay();
+        else startReplay();
+        return undefined;
+      }
+      if (event.target.closest('[data-replay-speed]')) {
+        ui.replaySpeed = (ui.replaySpeed + 1) % REPLAY_SPEEDS.length;
+        paintRoutes();
+        return undefined;
+      }
+      if (event.target.closest('[data-stop-descend]') && scene && routes.active) {
+        stopReplay();
+        const stop = routes.stops[routes.index];
+        routesBox.hidden = true;
+        scene.descendTo(stop.x, stop.z, reducedMotion.matches);
+        canvas.focus({ preventScroll: true });
+        return undefined;
+      }
+      if (event.target.closest('[data-stop-photos]') && routes.active) {
+        openPhotos(routes.active, routes.index);
+        return undefined;
       }
       return undefined;
     }
+
+    /** Vuelve a la vista aérea desde el suelo o el vehículo. */
+    function ascendNow() {
+      if (!scene) return;
+      scene.ascend();
+      landed = false;
+      stick.hidden = true;
+      hint.hidden = true;
+      root.classList.remove('is-landed');
+      el.querySelector('[data-ascend]').hidden = true;
+      lastHud = 0;
+    }
+
+    function onStopSlider() {
+      stopReplay();
+      selectStop(Number(stopSlider.value));
+    }
+
+    onPick = (point) => {
+      if (!point || !routes.active || !scene) return;
+      const index = nearestStop(routes.stops, point.x, point.z, Math.max(25, scene.state().aerialDist * 0.025));
+      if (index < 0) return;
+      stopReplay();
+      selectStop(index, { fly: false });
+      setRoutesOpen(true);
+    };
+
+    /** Panel de fotos de una parada (se completa en la sección de fotos). */
+    function openPhotos() {}
 
     function onHour() {
       ui.hour = Number(hourSlider.value);
@@ -702,6 +993,7 @@ const mod = {
 
     el.addEventListener('click', onClick);
     hourSlider.addEventListener('input', onHour);
+    stopSlider.addEventListener('input', onStopSlider);
     function bindCanvas() {
       canvas.addEventListener('pointerdown', onLookDown);
       canvas.addEventListener('pointermove', onLookMove);
@@ -731,6 +1023,7 @@ const mod = {
       resizeObserver.disconnect();
       el.removeEventListener('click', onClick);
       hourSlider.removeEventListener('input', onHour);
+      stopSlider.removeEventListener('input', onStopSlider);
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('blur', onBlur);

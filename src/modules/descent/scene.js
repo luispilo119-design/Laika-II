@@ -26,6 +26,10 @@ import {
   MeshLambertMaterial,
   PerspectiveCamera,
   PlaneGeometry,
+  Points,
+  PointsMaterial,
+  BufferGeometry,
+  Float32BufferAttribute,
   Quaternion,
   RingGeometry,
   SRGBColorSpace,
@@ -47,6 +51,9 @@ import {
   toLatLon,
 } from './terrain.js';
 import { uvOf } from './tiles.js';
+import { Line2 } from 'three/addons/lines/Line2.js';
+import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { ROVER, makeVehicle, stepVehicle } from './vehicles.js';
 import { createKit, buildLander, buildPressurizedRover, buildHabitat, buildSolarField } from './models.js';
 
@@ -244,6 +251,61 @@ export function createScene({ canvas, field, palette, site, equipment = true, se
   pin.renderOrder = 10;
   pin.visible = false;
   scene.add(pin);
+
+  // ---------- Rutas reales de los rovers: línea y paradas (se ven desde lejos, en píxeles) ----------
+  const routeGroup = new Group();
+  scene.add(routeGroup);
+  const lineMaterials = [];
+  let routeItems = [];
+
+  function clearRoutes() {
+    for (const item of routeItems) {
+      item.geometry.dispose();
+      item.material.dispose();
+      routeGroup.remove(item);
+    }
+    routeItems = [];
+    lineMaterials.length = 0;
+  }
+
+  /**
+   * Dibuja recorridos sobre el terreno.
+   * @param {{ paths: [number, number][][], stops: [number, number][], color: string }[]} routes  en metros locales
+   */
+  function setRoutes(routes) {
+    clearRoutes();
+    for (const route of routes) {
+      for (const path of route.paths) {
+        if (path.length < 2) continue;
+        const positions = [];
+        for (const [x, z] of path) positions.push(x, heightAt(x, z) + 1.5, z);
+        const geometryLine = new LineGeometry();
+        geometryLine.setPositions(positions);
+        const material = new LineMaterial({ color: route.color, linewidth: 3, worldUnits: false, depthTest: true, fog: false });
+        material.resolution.set(renderer.domElement.width, renderer.domElement.height);
+        lineMaterials.push(material);
+        const line = new Line2(geometryLine, material);
+        line.computeLineDistances();
+        line.renderOrder = 5;
+        routeGroup.add(line);
+        routeItems.push(line);
+      }
+      if (route.stops?.length) {
+        const pts = new Float32Array(route.stops.length * 3);
+        route.stops.forEach(([x, z], i) => {
+          pts[i * 3] = x;
+          pts[i * 3 + 1] = heightAt(x, z) + 2.5;
+          pts[i * 3 + 2] = z;
+        });
+        const geometryPts = new BufferGeometry();
+        geometryPts.setAttribute('position', new Float32BufferAttribute(pts, 3));
+        const dots = new Points(geometryPts, new PointsMaterial({ color: '#161412', size: 5, sizeAttenuation: false, fog: false }));
+        dots.renderOrder = 6;
+        routeGroup.add(dots);
+        routeItems.push(dots);
+      }
+    }
+  }
 
   // ---------- Luz, cielo y sol ----------
   const sunLight = new DirectionalLight(palette.sun, 2.4);
@@ -510,6 +572,7 @@ export function createScene({ canvas, field, palette, site, equipment = true, se
     if (!width || !height) return;
     viewHeight = height;
     renderer.setSize(width, height, false);
+    for (const m of lineMaterials) m.resolution.set(renderer.domElement.width, renderer.domElement.height);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
   }
@@ -517,6 +580,7 @@ export function createScene({ canvas, field, palette, site, equipment = true, se
   return {
     setEnvironment,
     setImagery,
+    setRoutes,
     startDescent,
     descendTo,
     ascend,
@@ -552,6 +616,7 @@ export function createScene({ canvas, field, palette, site, equipment = true, se
     },
     /** Libera la memoria de la escena y el contexto WebGL. */
     dispose() {
+      clearRoutes();
       groundTexture?.dispose();
       for (const d of disposables) d.dispose();
       renderer.dispose();

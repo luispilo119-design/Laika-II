@@ -125,21 +125,30 @@ def build(key: str, spec: dict, offline: bool) -> dict:
         # site y drive coinciden con los de las fotos crudas de la NASA; elevación sobre el geoide,
         # None si el archivo trae -9999 (sin dato).
         "stopFields": ["lat", "lon", "sol", "site", "drive", "distM", "elevM"],
-        "stops": [stop(w["properties"]) for w in waypoints],
+        "stops": stops(waypoints),
     }
 
 
-def stop(p: dict) -> list:
-    elev = p.get("elev_geoid")
-    return [
-        round(p["lat"], 6),
-        round(p["lon"], 6),
-        int(p["sol"]),
-        int(p["site"]),
-        int(p["drive"]),
-        round(p["dist_total_m"], 1),
-        None if elev is None or elev <= -9000 else round(elev, 1),
-    ]
+def stops(waypoints: list[dict]) -> list[list]:
+    """Una parada por waypoint. Algunos waypoints traen dist_total_m = 0 (sin dato): en esos casos
+    el acumulado sigue desde el anterior más la distancia de ese manejo (dist_m), para que nunca baje."""
+    rows = []
+    total = 0.0
+    for w in waypoints:
+        p = w["properties"]
+        reported = p.get("dist_total_m") or 0.0
+        total = reported if reported >= total else total + max(0.0, p.get("dist_m") or 0.0)
+        elev = p.get("elev_geoid")
+        rows.append([
+            round(p["lat"], 6),
+            round(p["lon"], 6),
+            int(p["sol"]),
+            int(p["site"]),
+            int(p["drive"]),
+            round(total, 1),
+            None if elev is None or elev <= -9000 else round(elev, 1),
+        ])
+    return rows
 
 
 def main() -> None:

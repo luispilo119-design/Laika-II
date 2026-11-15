@@ -47,6 +47,7 @@ test('rovers.json trae las paradas de los dos rovers, en orden de sol', () => {
     assert.equal(last.sol, rover.lastSol);
     assert.ok(Math.abs(last.distM / 1000 - rover.distanceKm) < 0.01);
     assert.ok(stops.every((s) => s.elevM === null || (s.elevM > -9000 && s.elevM < 22000)), 'sin -9999 como dato');
+    for (let i = 1; i < stops.length; i++) assert.ok(stops[i].distM >= stops[i - 1].distM, `${id}: la distancia no baja (parada ${i})`);
   }
 });
 
@@ -124,4 +125,49 @@ test('las teselas cubren el recuadro y la imagen no pasa del tamaño pedido', ()
   const url = tileUrl(IMAGERY[0], 12, 1628, 5857);
   assert.ok(url.endsWith('/12/1628/5857.png'));
   assert.deepEqual(uvOf({ west: 0, east: 10, south: 0, north: 10 }, 10, 0), [0, 1], 'esquina noroeste → u 0, v 1');
+});
+
+// ---------- Rutas de los rovers dentro de la escena ----------
+import { routeCenter, localStops, stopAtSol, nearestStop, photoSols, pointAtDistance, elevationProfile, MAX_PHOTO_SOLS } from '../src/modules/descent/traverse.js';
+
+const fakeStops = [
+  { sol: 10, site: 1, drive: 0, distM: 0, elevM: -2500, x: 0, z: 0 },
+  { sol: 12, site: 1, drive: 40, distM: 100, elevM: null, x: 100, z: 0 },
+  { sol: 12, site: 1, drive: 90, distM: 150, elevM: -2490, x: 150, z: 0 },
+  { sol: 20, site: 2, drive: 0, distM: 400, elevM: -2480, x: 150, z: -250 },
+];
+
+test('el recorrido de cada rover cabe en el terreno de 16 km', () => {
+  for (const id of ROVER_IDS) {
+    const rover = rovers.rovers[id];
+    const center = routeCenter(rover);
+    const stops = localStops(stopsOf(rover), center);
+    const far = Math.max(...stops.map((s) => Math.max(Math.abs(s.x), Math.abs(s.z))));
+    assert.ok(far < AREA_M / 2 - 200, `${id}: ${Math.round(far)} m del centro`);
+  }
+});
+
+test('paradas por sol, por cercanía y a lo largo del recorrido', () => {
+  assert.equal(stopAtSol(fakeStops, 5), 0);
+  assert.equal(stopAtSol(fakeStops, 12), 2, 'con dos manejos en un sol, la última parada de ese sol');
+  assert.equal(stopAtSol(fakeStops, 19), 2);
+  assert.equal(stopAtSol(fakeStops, 999), 3);
+  assert.equal(nearestStop(fakeStops, 140, 5, 30), 2);
+  assert.equal(nearestStop(fakeStops, 500, 500, 30), -1);
+  const mid = pointAtDistance(fakeStops, 50);
+  assert.deepEqual([mid.x, mid.z, mid.index], [50, 0, 0]);
+  const end = pointAtDistance(fakeStops, 1e6);
+  assert.equal(end.index, 3);
+  assert.deepEqual(elevationProfile(fakeStops).map(([km]) => km), [0, 0.15, 0.4], 'sin las paradas sin dato');
+});
+
+test('soles de fotos: exactos con site/drive y aproximados sin ellos', () => {
+  const exact = photoSols(fakeStops, 2, true);
+  assert.deepEqual(exact.sols, [12, 13, 14, 15]);
+  assert.equal(exact.truncated, true, 'se queda en los primeros soles');
+  assert.equal(exact.sols.length, MAX_PHOTO_SOLS);
+  const approx = photoSols(fakeStops, 1, false);
+  assert.deepEqual(approx.sols, [], 'sin site/drive, un sol con dos paradas queda para la última');
+  assert.deepEqual(photoSols(fakeStops, 0, false).sols, [10, 11]);
+  assert.deepEqual(photoSols(fakeStops, 3, true).sols, [20], 'la última parada: solo su sol');
 });
