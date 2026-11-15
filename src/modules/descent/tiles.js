@@ -54,17 +54,17 @@ export const IMAGERY = [
 export const IMAGERY_REFERENCES = [
   {
     id: 'trek-jezero-ctx',
-    title: 'Jezero: mosaico ortorrectificado CTX de 6 m (equipo de Mars 2020)',
+    title: 'Jezero: mosaico ortorrectificado CTX de ~6 m (mapa del sistema de aterrizaje de Mars 2020)',
     org: 'NASA/JPL Mars Trek',
     url: trekAbstract('JEZ_ctx_B_soc_008_orthoMosaic_6m_Eqc_latTs0_lon0'),
-    verified: false,
+    verified: true, // ficha de Mars Trek leída el 2026-11-15
   },
   {
     id: 'trek-gale-ctx',
     title: 'Gale: mosaico CTX con ajuste de bloque',
     org: 'NASA/JPL Mars Trek',
     url: trekAbstract('Gale_CTX_BlockAdj_dd'),
-    verified: false,
+    verified: true, // ficha de Mars Trek leída el 2026-11-15
   },
   {
     id: 'ctx-beta01',
