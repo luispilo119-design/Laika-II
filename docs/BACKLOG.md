@@ -1,30 +1,32 @@
-# Backlog abierto
+# Backlog
 
-Ideas sin compromiso de plazo. Cualquiera añade las suyas en su sección; cuando una se vuelve tarea,
-pasa a `PARTE-A.md` o `PARTE-B.md` con prioridad y criterio de "hecho cuando".
+Open items and ideas, with no deadline attached.
 
-## Parte A
+## Open items
 
-- Mosaico CTX de 5 m por píxel como mapa base (lo sirve astro.arcgis.com con teselas de 512 px;
-  hay que comprobar que alinea con la proyección del mapa).
-- Nombres oficiales de regiones y cráteres: Mars Trek expone 1 783 topónimos con coordenadas en
-  su índice de búsqueda.
-- Tormentas de polvo animadas sobre el mapa según la estación.
-- Comparar dos zonas lado a lado.
-- Trayectorias más realistas que Hohmann (gráfica de energía por fecha de salida y de llegada).
-- Viaje de regreso: espera en Marte hasta la siguiente ventana y duración total de la misión.
-- Reglas entre hubs: distancias, líneas de energía, cobertura de comunicación.
+- Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` as repository variables so the GitHub Pages
+  build can save to the cloud.
+- Full walkthrough on a real tablet, or at 768 px wide, through every phase.
+- Check the one reference still marked as not verified: `hassler2014` (paywalled; see
+  [REFERENCES.md](REFERENCES.md)).
+- A second confinement minigame in `transit`.
 
-## Parte B
+## Ideas
 
-- Modo sin conexión (la app instalada en la tablet con los datos descargados).
-- Fotos reales de Perseverance y Curiosity dentro de la primera persona.
-- Misiones con objetivos y logros.
-- Compartir una misión por enlace de solo lectura.
-- Tabla de puntuaciones entre equipos.
-- Más minijuegos de confinamiento.
-
-## Sin dueño todavía
-
-- Narración o sonido ambiente.
-- Modo presentación para la demo, que recorre las fases solo.
+- CTX mosaic at 5 m per pixel as a basemap (served by astro.arcgis.com in 512 px tiles; check that it
+  lines up with the map projection).
+- Official names of regions and craters: Mars Trek exposes 1,783 place names with coordinates in its
+  search index.
+- Animated dust storms on the map depending on the season.
+- Compare two zones side by side.
+- More realistic trajectories than Hohmann (energy chart by departure and arrival date).
+- Return trip: wait on Mars until the next window, and total mission length.
+- More rules between hubs: power lines, communication coverage.
+- Offline mode (the app installed on the tablet with the data downloaded).
+- Real Perseverance and Curiosity photos inside the first-person view.
+- Missions with goals and achievements.
+- Share a mission through a read-only link.
+- Score table across teams.
+- More confinement minigames.
+- Narration or ambient sound.
+- Presentation mode for demos that walks through the phases on its own.

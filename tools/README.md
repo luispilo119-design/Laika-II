@@ -1,74 +1,85 @@
-# Datos: de dónde sale cada archivo de `public/data/`
+# Data: where each file in `public/data/` comes from
 
-Los scripts de esta carpeta descargan productos públicos de NASA, USGS y otras fuentes científicas, y
-los reducen a rejillas ligeras que la web carga desde `public/data/`. La web nunca descarga datos
-crudos. Lo descargado se guarda en `tools/raw/` (no se sube al repositorio) y cada script acepta
-`--offline` para reprocesar sin volver a descargar.
+The scripts in this folder download public products from NASA, USGS and other scientific sources and
+reduce them to lightweight grids that the web app loads from `public/data/`. The web app never
+downloads raw data. Downloads are kept in `tools/raw/` (not committed), and every script accepts
+`--offline` to reprocess without downloading again.
 
-Solo `src/core/env.js` lee estas rejillas; los módulos usan `ctx.env` (ver `docs/CONTRATOS.md`).
+Only `src/core/env.js` reads these grids; modules use `ctx.env` (see
+[docs/CONTRACTS.md](../docs/CONTRACTS.md)).
 
-## Preparar Python
+## Set up Python
 
-Python 3.10 o superior.
+Python 3.10 or later.
 
 ```bash
 python -m pip install -r tools/requirements.txt
 ```
 
-## Archivos
+Run a script from the repository root, for example:
 
-| Archivo en `public/data/` | Script | Fuente | Tipo |
+```bash
+python tools/build_terrain.py
+```
+
+```bash
+python tools/build_terrain.py --offline
+```
+
+## Files
+
+| File in `public/data/` | Script | Source | Kind |
 |---|---|---|---|
-| `elevation.bin`, `slope.bin`, `terrain.json` | `build_terrain.py` | MGS MOLA MEGDR a 16 píxeles por grado, NASA PDS Geosciences Node | Medición |
-| `ice.bin`, `ice.json` | `build_ice.py` | SWIM4MIM, consistencia de hielo 0–1 m y 1–5 m, PSI/NASA | Producto derivado de mediciones |
-| `craters.bin`, `craters.json` | `build_craters.py` | Robbins y Hynek (2012), vía USGS Astrogeology | Catálogo |
-| `climate.bin`, `climate.json` | `build_climate.py` | Mars Climate Database v6.2, LMD/OU/IAA/ESA/CNES | **Modelo** |
-| `rovers.json` | `build_rovers.py` | Mapas "Where is the rover?" de NASA/JPL | Medición |
+| `elevation.bin`, `slope.bin`, `terrain.json` | `build_terrain.py` | MGS MOLA MEGDR at 16 pixels per degree, NASA PDS Geosciences Node | Measurement |
+| `ice.bin`, `ice.json` | `build_ice.py` | SWIM4MIM, ice consistency 0–1 m and 1–5 m, PSI/NASA | Product derived from measurements |
+| `craters.bin`, `craters.json` | `build_craters.py` | Robbins and Hynek (2012), via USGS Astrogeology | Catalog |
+| `climate.bin`, `climate.json` | `build_climate.py` | Mars Climate Database v6.2, LMD/OU/IAA/ESA/CNES | **Model** |
+| `rovers.json` | `build_rovers.py` | NASA/JPL "Where is the rover?" maps | Measurement |
 
-Cada `.json` describe el formato exacto del `.bin` que lo acompaña (tipo de dato, dimensiones,
-orientación y cómo convertir el valor guardado a unidades físicas) y la fecha en que se generó.
+Each `.json` describes the exact format of the `.bin` next to it (data type, dimensions,
+orientation and how to convert the stored value to physical units) and the date it was generated.
 
-Convención común: fila 0 al norte, columna 0 en 180° O, longitud este-positiva de −180 a 180.
+Shared convention: row 0 to the north, column 0 at 180° W, east-positive longitude from −180 to 180.
 
-### Terreno — `build_terrain.py`
+### Terrain — `build_terrain.py`
 
-- Entrada: `megt90n000eb.img`, 2880 × 5760 enteros de 16 bits, metros sobre el areoide.
+- Input: `megt90n000eb.img`, 2880 × 5760 16-bit integers, meters above the areoid.
   https://pds-geosciences.wustl.edu/mgs/mgs-m-mola-5-megdr-l3-v1/mgsl_300x/meg016/
-- `elevation.bin`: media a 0.25° por celda.
-- `slope.bin`: pendiente entre píxeles vecinos del original (línea base de unos 3.7 km), promediada a
-  0.5°. No es la pendiente a escala de metros que decide un aterrizaje; la interfaz la llama
-  "pendiente media".
+- `elevation.bin`: mean over 0.25° cells.
+- `slope.bin`: slope between neighboring pixels of the original (a baseline of about 3.7 km),
+  averaged to 0.5°. It is not the meter-scale slope that decides a landing; the interface calls it
+  "mean slope".
 
-### Hielo — `build_ice.py`
+### Ice — `build_ice.py`
 
-- Entrada: GeoTIFF `SWIM4MIM_Ci_0_1.tif` y `SWIM4MIM_Ci_1_5.tif` de
-  https://swim.psi.edu/SWIM4MIMProducts.php (cubren de 60° S a 60° N).
-- Ci va de −1 (datos inconsistentes con hielo) a +1 (consistentes con hielo).
-- `ice.bin`: en cada celda de 0.5°, el mayor Ci de los dos mapas; 255 = sin datos.
-- En la app, `iceIndex` es Ci con los negativos llevados a 0, y `null` fuera de la cobertura.
+- Input: the GeoTIFFs `SWIM4MIM_Ci_0_1.tif` and `SWIM4MIM_Ci_1_5.tif` from
+  https://swim.psi.edu/SWIM4MIMProducts.php (covering 60° S to 60° N).
+- Ci ranges from −1 (data inconsistent with ice) to +1 (consistent with ice).
+- `ice.bin`: in each 0.5° cell, the higher Ci of the two maps; 255 = no data.
+- In the app, `iceIndex` is Ci with negatives clamped to 0, and `null` outside the coverage.
 
-### Cráteres — `build_craters.py`
+### Craters — `build_craters.py`
 
-- Entrada: la colección `mars/robbinsv1` de la API de USGS Astrogeology, ordenada por diámetro.
-- Se guardan los cráteres de 5 km o más (47 598 de los 384 343 de la base).
+- Input: the `mars/robbinsv1` collection from the USGS Astrogeology API, sorted by diameter.
+- Craters of 5 km or more are kept (47,598 of the 384,343 in the database).
 
-### Clima — `build_climate.py`
+### Climate — `build_climate.py`
 
-- Entrada: 145 consultas a la interfaz web de la MCD (https://www-mars.lmd.jussieu.fr/mcd_python/),
-  escenario de climatología con actividad solar media: mapas globales para 12 estaciones (Ls cada
-  30°) y 12 horas locales (cada 2 h).
-- Variables: temperatura del aire a 1.5 m, flujo solar en superficie horizontal, presión en
-  superficie y opacidad de la columna de polvo; más la altura del terreno que usa la MCD.
-- La MCD es un modelo de circulación general validado con observaciones. Todo lo que sale de aquí se
-  marca como modelo en la app (`modeled` en cada muestra).
-- Las consultas van de una en una y con pausa: es un servicio público. Tarda unos 30 minutos.
+- Input: 145 queries to the MCD web interface (https://www-mars.lmd.jussieu.fr/mcd_python/),
+  climatology scenario with average solar activity: global maps for 12 seasons (Ls every 30°) and 12
+  local times (every 2 h).
+- Variables: air temperature at 1.5 m, solar flux on a horizontal surface, surface pressure and dust
+  column optical depth; plus the terrain height the MCD uses.
+- The MCD is a general circulation model validated against observations. Everything that comes from
+  it is labeled as a model in the app (`modeled` in every sample).
+- Queries run one at a time with a pause, since it is a public service. It takes about 30 minutes.
 
-## Lo que se calcula en `src/core/env.js` y no viene en un archivo
+## What `src/core/env.js` computes instead of reading from a file
 
-- **Presión en un punto:** la presión de la MCD en los nodos vecinos, llevada a la elevación MOLA del
-  punto con la ecuación hipsométrica (gravedad y masa molar media del Mars Fact Sheet de la NASA).
-- **Radiación:** la dosis equivalente que midió RAD en el cráter Gale (unos 0.7 mSv/día a 840 Pa) con
-  la dependencia de la presión que reportan Guo et al. (2015): unos 0.1 mSv/día entre 700 y 970 Pa.
-  Extender esa relación a todo el planeta es una extrapolación y se marca como modelo.
-- **Mínima y máxima del sol:** el menor y el mayor de los 12 valores horarios, así que los extremos
-  reales pueden ser un poco más marcados.
+- **Pressure at a point:** the MCD pressure at the neighboring nodes, brought to the MOLA elevation of
+  the point with the hypsometric equation (gravity and mean molar mass from NASA's Mars Fact Sheet).
+- **Radiation:** the dose equivalent RAD measured in Gale crater (about 0.7 mSv/day at 840 Pa) with
+  the pressure dependence reported by Guo et al. (2015): about 0.1 mSv/day between 700 and 970 Pa.
+  Extending that relation to the whole planet is an extrapolation and is labeled as a model.
+- **Daily minimum and maximum:** the lowest and highest of the 12 hourly values, so the real extremes
+  may be slightly sharper.

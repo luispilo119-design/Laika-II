@@ -1,18 +1,39 @@
 # Martian Map — Interplanetary Survival Guide
 
-Proyecto de hackathon del equipo **LAIKA II** (en honor a Laika, la perrita soviética que orbitó la
-Tierra en el Sputnik 2).
+A hackathon project by team **LAIKA II**.
 
-Una guía interactiva para sobrevivir en Marte que se recorre **por fases de misión**: se planea el
-viaje desde la Tierra con una transferencia de Hohmann, se elige el sitio de aterrizaje sobre un mapa
-con capas de datos de la NASA, se vive el tránsito en confinamiento, se desciende en primera persona
-y se levantan hubs autónomos comprobando qué zonas son viables.
+Martian Map is an interactive guide to surviving on Mars. You go through a crewed mission **phase by
+phase**: plan the trip from Earth, pick a landing site on a map built from NASA data, live through the
+months in transit, land and explore the site, set up autonomous hubs, plan driving routes, and keep
+your body healthy sol by sol.
 
-Funciona en computadora y tablet. Interfaz en español e inglés.
+Its core idea is to **cross public NASA data about Mars with what the human body needs**, so that any
+point on the planet gets a clear verdict: viable, marginal or not viable, and why.
 
-## Arrancar
+It works on desktop and tablet, in Spanish and English.
 
-Requiere Node 20.19 o superior.
+## What you can do
+
+| Phase | Screen | What it does |
+|---|---|---|
+| Start | `home` | Game-style start screen with an animated ASCII background, START / CONTINUE and an index of every screen |
+| 1 · Plan from Earth | `hohmann` | Computes a Hohmann transfer: launch windows, travel time, required Δv, arrival date and the Martian season at arrival. A "See equations and algorithm" dialog walks through every formula the app uses, step by step, with the numbers of the chosen window |
+| 1 · Plan from Earth | `map` | Map of Mars with NASA Mars Trek basemaps and data layers, past landing sites and rover tracks, a Martian clock, a zone report for any point, the best zones for the current time, and choosing the landing site |
+| 2 · Transit | `transit` | The trip day by day, a confinement routine, an original minigame with a score table, and the five hazards of human spaceflight |
+| 3 · Descent | `descent` | First-person view of the terrain around the landing site, on foot or driving a rover with battery and damage, a mini map and live conditions |
+| 4 · Surface | `hubs` | Place habitats, greenhouses, solar plants, ice mines and landing pads, each with its viability verdict and the full data breakdown |
+| 4 · Surface | `routes` | Driving routes (up to 6 stops) that avoid large craters and steep slopes, with distance, time, elevation profile and turn-by-turn guidance |
+| 5 · Survival | `guides` | A sol-by-sol journal (water, meals, sleep, exercise, accumulated radiation), the body's daily needs, and step-by-step guides for emergencies |
+| 6 · Report | `dashboard` | Everything about the mission in one dashboard, printable or saved as PDF, and a button to start a new mission |
+| Resources | `references` | Every source used in the app, with whether it was checked |
+
+The phases are linked by data: the arrival date from the Hohmann planner sets the Martian season
+(solar longitude, Ls) at landing, and that season changes temperature and dust on the map, in the hubs
+and in the first-person view.
+
+## Getting started
+
+Requires Node 20.19 or later.
 
 ```bash
 npm install
@@ -22,36 +43,57 @@ npm install
 npm run dev
 ```
 
-Otros comandos: `npm test` (comprueba que todo texto esté en los dos idiomas) y `npm run build`.
-
-Supabase es opcional para desarrollar: sin `.env.local` la app guarda en el navegador. Para
-activarlo, copia `.env.example` como `.env.local` y rellena los dos valores.
-
-## Dónde está cada cosa
-
-| Documento | Para qué |
+| Command | What it does |
 |---|---|
-| [docs/PLAN.md](docs/PLAN.md) | Plan general, fases, división del trabajo y calendario |
-| [docs/CONTRATOS.md](docs/CONTRATOS.md) | Interfaces compartidas entre las dos partes |
-| [docs/PARTE-A.md](docs/PARTE-A.md) | Tareas de la persona A |
-| [docs/PARTE-B.md](docs/PARTE-B.md) | Tareas de la persona B |
-| [docs/REFERENCIAS.md](docs/REFERENCIAS.md) | Fuentes de datos y su estado de verificación |
-| [docs/BACKLOG.md](docs/BACKLOG.md) | Ideas abiertas para agregar |
-| [CLAUDE.md](CLAUDE.md) | Instrucciones para los agentes de IA que trabajan en el repo |
+| `npm run dev` | Development server at http://localhost:5173 |
+| `npm test` | Runs every test in `tests/` with Node's built-in test runner, including the check that every text exists in both languages |
+| `npm run build` | Production build in `dist/` |
+| `npm run preview` | Serves the production build locally |
+
+To run a single test file: `node --test tests/routes.test.js`.
+
+### Supabase (optional)
+
+Without any configuration the app saves everything in the browser. To also save missions and
+minigame scores in the cloud, copy `.env.example` to `.env.local` and fill in the two values. Setup
+steps are in [supabase/README.md](supabase/README.md).
+
+### Deployment
+
+Every push to `main` runs the tests and the build in GitHub Actions and publishes `dist/` to GitHub
+Pages ([.github/workflows/deploy.yml](.github/workflows/deploy.yml)). Pages must be enabled once in
+the repository settings (Settings → Pages → Source: GitHub Actions). For the deployed site to use
+Supabase, set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` as repository variables.
+
+## Project layout
 
 ```
-src/core/       núcleo compartido (estado, idiomas, shell, entorno, mapa base)   → Parte A
-src/modules/    un módulo por pantalla; cada carpeta tiene un dueño              → A o B
-src/services/   Supabase y sincronización                                        → Parte B
-supabase/       migraciones SQL                                                  → Parte B
-tools/          scripts de Python que convierten datos NASA/USGS a rejillas      → Parte A
-public/data/    rejillas ya procesadas que carga la web                          → Parte A
+src/core/       shared core: shell, state, languages, environment data, base map, Martian clock
+src/modules/    one folder per screen
+src/services/   optional Supabase saving and sync
+src/styles/     global styles and design variables
+supabase/       SQL migrations
+tools/          Python scripts that turn NASA/USGS products into lightweight grids
+public/data/    the processed grids the app loads
+tests/          tests for the pure logic (run in Node, no browser)
 ```
 
-## Datos
+## Data
 
-Solo se usan fuentes de la NASA u otras fuentes científicas confiables, y cada cifra enlaza a su
-referencia dentro de la app. Los datos ambientales son reales: elevación de MOLA, hielo de SWIM,
-cráteres de Robbins y Hynek, y clima de Mars Climate Database. Lo que sale de un modelo (clima,
-presión, radiación) se marca como tal en la interfaz. De dónde sale cada archivo y cómo regenerarlo
-está en [tools/README.md](tools/README.md).
+The app only uses NASA and other trusted scientific sources, and every figure links to its source
+inside the app. The environmental data is real: MOLA elevation, SWIM subsurface ice, the Robbins and
+Hynek crater catalog, and the Mars Climate Database. Anything that comes from a model (climate,
+pressure, radiation) is labeled as such in the interface, and where there is no data the app says
+"no data" instead of showing a zero.
+
+## Documentation
+
+| Document | Contents |
+|---|---|
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | How the app is built and how to add to it |
+| [docs/CONTRACTS.md](docs/CONTRACTS.md) | Shared interfaces: module definition, `ctx`, state, environment API |
+| [docs/REFERENCES.md](docs/REFERENCES.md) | Every source used in the app and its verification status |
+| [docs/BACKLOG.md](docs/BACKLOG.md) | Open items and ideas |
+| [tools/README.md](tools/README.md) | Where each data file comes from and how to regenerate it |
+| [supabase/README.md](supabase/README.md) | Supabase setup and what gets saved |
+| [CLAUDE.md](CLAUDE.md) | Instructions for AI coding agents working in this repository |

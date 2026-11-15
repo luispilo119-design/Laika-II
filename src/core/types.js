@@ -1,5 +1,5 @@
 /**
- * Tipos compartidos (JSDoc). Este archivo es la versión en código de docs/CONTRATOS.md.
+ * Tipos compartidos (JSDoc). Este archivo es la versión en código de docs/CONTRACTS.md.
  * Dueño: Parte A. Si necesitas cambiar un contrato, avisa antes: los dos lados dependen de él.
  *
  * Convención de coordenadas en TODO el proyecto:

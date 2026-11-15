@@ -1,7 +1,7 @@
-# Construye la app y la publica en GitHub Pages en cada push a main.
-# Requiere activar Pages una vez: Settings -> Pages -> Source: GitHub Actions (docs/PLAN.md §9).
-# Supabase es opcional: si las variables del repositorio no existen, la app guarda en el navegador.
-name: Publicar en GitHub Pages
+# Builds the app and publishes it to GitHub Pages on every push to main.
+# Pages must be enabled once: Settings -> Pages -> Source: GitHub Actions (see README.md, Deployment).
+# Supabase is optional: if the repository variables do not exist, the app saves in the browser.
+name: Publish to GitHub Pages
 
 on:
   push:

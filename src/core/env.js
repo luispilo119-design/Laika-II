@@ -12,7 +12,7 @@
  *   radiación              medición de RAD en Gale ajustada por presión (MODELO, ver radiationFromPressure)
  *
  * Lo que viene de un modelo se lista en `modeled` de cada muestra para que la interfaz lo diga.
- * Firmas y unidades: ver types.js y docs/CONTRATOS.md. Las firmas no cambiaron respecto al relleno.
+ * Firmas y unidades: ver types.js y docs/CONTRACTS.md. Las firmas no cambiaron respecto al relleno.
  */
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));

@@ -1,43 +1,45 @@
 # Supabase
 
-Guarda las misiones y las puntuaciones de los minijuegos. Es opcional: sin estos pasos la app
-funciona igual y guarda todo en el navegador.
+Saves missions and minigame scores. It is optional: without these steps the app works the same and
+keeps everything in the browser.
 
-## Puesta en marcha (una sola vez, lo hace una persona)
+## Setup (once)
 
-1. Crear un proyecto en <https://supabase.com>.
-2. **Authentication → Sign In / Providers → Allow anonymous sign-ins:** activarlo.
-3. **SQL Editor:** pegar y ejecutar el contenido de
+1. Create a project at <https://supabase.com>.
+2. **Authentication → Sign In / Providers → Allow anonymous sign-ins:** turn it on.
+3. **SQL Editor:** paste and run the contents of
    [migrations/20261114000000_misiones_y_puntuaciones.sql](migrations/20261114000000_misiones_y_puntuaciones.sql).
-4. **Project Settings → API:** copiar la URL del proyecto y la llave pública (`anon` o
-   `publishable`) a un archivo `.env.local` en la raíz del repositorio:
+4. **Project Settings → API:** copy the project URL and the public key (`anon` or `publishable`) into
+   a `.env.local` file at the repository root:
 
 ```bash
 VITE_SUPABASE_URL=https://xxxxxxxx.supabase.co
 VITE_SUPABASE_ANON_KEY=...
 ```
 
-5. Reiniciar `npm run dev`. En la pantalla de inicio debe decir "Guardado en la nube".
-6. Compartir esos dos valores con la otra persona del equipo por un canal privado.
+5. Restart `npm run dev`. The start screen should say "Saved to the cloud".
+6. Share those two values with teammates through a private channel. For the GitHub Pages build, set
+   them as repository variables with the same names.
 
-`.env.local` no se sube al repositorio. La llave `service_role` (o `secret`) **nunca** va ahí:
-se salta la seguridad por filas. Si se pega por error, la app la detecta y no la usa.
+`.env.local` is not committed. The `service_role` (or `secret`) key **never** goes there: it bypasses
+row-level security. If it is pasted by mistake, the app detects it and does not use it.
 
-## Qué se guarda
+## What gets saved
 
-| Tabla | Contenido | Quién puede |
+| Table | Contents | Who can |
 |---|---|---|
-| `missions` | `state.mission` y `state.clock` en la columna `data` | Solo su dueño (leer y escribir) |
-| `scores` | juego, alias (1–16 caracteres) y puntos | Cualquiera lee; cada quien inserta las suyas |
+| `missions` | `state.mission` and `state.clock` in the `data` column | Only its owner (read and write) |
+| `scores` | game, alias (1–16 characters) and points | Anyone reads; each user inserts their own |
 
-La sesión es anónima y vive en el navegador: otra computadora es otra persona para Supabase.
+The session is anonymous and lives in the browser: another computer is another user for Supabase.
+The current mission syncs automatically whenever the state changes.
 
-## Para los módulos
+## For modules
 
-Los módulos no importan el cliente. Usan `src/services/index.js`:
+Modules never import the client. They use `src/services/index.js`:
 
-| Función | Para qué |
+| Function | What it does |
 |---|---|
-| `submitScore(game, alias, points)` | Registrar una puntuación (siempre queda también en local) |
-| `topScores(game, limit)` | Mejores puntuaciones; dice si vienen de la nube o de local |
-| `getStatus()` / `onStatus(fn)` | Estado del guardado: `local`, `connecting`, `saving`, `synced`, `offline` |
+| `submitScore(game, alias, points)` | Records a score (it is always kept locally too) |
+| `topScores(game, limit)` | Best scores; says whether they come from the cloud or from local storage |
+| `getStatus()` / `onStatus(fn)` | Saving status: `local`, `connecting`, `saving`, `synced`, `offline` |

@@ -1,6 +1,6 @@
 /**
  * Estado compartido de la app. Dueño: Parte A.
- * Forma del estado: ver AppState en types.js y docs/CONTRATOS.md.
+ * Forma del estado: ver AppState en types.js y docs/CONTRACTS.md.
  * Se guarda en localStorage; la sincronización con Supabase (Parte B) se suscribe aquí.
  */
 
