@@ -24,7 +24,7 @@ It works on desktop and tablet, in Spanish and English.
       <a href="docs/presentation/martian-map-reel.mp4?raw=true"><img src="docs/presentation/reel-preview.gif" alt="Preview of the 30-second Martian Map video: the ASCII black hole title, then each phase of the app" width="240"></a>
     </td>
     <td align="center">
-      <a href="docs/presentation/Martian-Map-presentation.pdf"><img src="docs/presentation/slides.jpg" alt="The seven slides of the Martian Map presentation: cover, the challenge, the solution, plan from Earth, the journey and the descent, build and survive, and how the app answers the challenge" width="560"></a>
+      <a href="docs/presentation/Martian-Map-presentation.pdf"><img src="docs/presentation/cover.jpg" alt="Cover slide of the Martian Map presentation: team LAIKA II, the title, START and INDEX buttons and the ASCII black hole" width="560"></a>
     </td>
   </tr>
   <tr>
@@ -39,6 +39,8 @@ It works on desktop and tablet, in Spanish and English.
     </td>
   </tr>
 </table>
+
+<a href="docs/presentation/Martian-Map-presentation.pdf"><img src="docs/presentation/slides.jpg" alt="The seven slides of the Martian Map presentation: cover, the challenge, the solution, plan from Earth, the journey and the descent, build and survive, and how the app answers the challenge" width="820"></a>
 
 The PowerPoint has the app's demo videos and the 30-second video inside. Open it in desktop PowerPoint:
 animations and videos start on their own, so it takes one click per slide, and the speaker notes carry
