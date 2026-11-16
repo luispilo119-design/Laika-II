@@ -22,6 +22,12 @@ export default {
       ascii:
         'El agujero negro en caracteres es una animación decorativa escrita desde cero para esta app. La idea visual viene de',
     },
+    repo: {
+      kicker: 'Código abierto',
+      title: 'El código está en GitHub',
+      text: 'Todo el código de la app, los scripts que procesan los datos y esta lista de fuentes.',
+      cta: 'Abrir el repositorio',
+    },
     libs: {
       leaflet: 'mapa interactivo',
       three: 'recorrido en primera persona',
@@ -50,6 +56,12 @@ export default {
       asciiTitle: 'Start screen background',
       ascii:
         'The character-drawn black hole is a decorative animation written from scratch for this app. The visual idea comes from',
+    },
+    repo: {
+      kicker: 'Open source',
+      title: 'The code is on GitHub',
+      text: "All of the app's code, the scripts that process the data and this list of sources.",
+      cta: 'Open the repository',
     },
     libs: {
       leaflet: 'interactive map',

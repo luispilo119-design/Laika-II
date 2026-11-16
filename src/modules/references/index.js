@@ -20,6 +20,8 @@ const LIBRARIES = [
 ];
 
 const ASCII_SOURCE = 'https://github.com/JIN2-ASCII/-JIN2-ASCII/tree/main/BLACK-HOLE';
+/** Repositorio público de la app, para que cualquiera revise el código y las fuentes. */
+const REPO_URL = 'https://github.com/luispilo119-design/Laika-II';
 const MARS_TREK = 'https://trek.nasa.gov/mars/';
 
 const isWebUrl = (url) => /^https?:\/\//i.test(String(url ?? ''));
@@ -67,6 +69,17 @@ const mod = {
       .join('');
 
     el.innerHTML = `
+      <div class="refs-layout">
+      <aside class="refs__repo" aria-labelledby="refs-repo-title">
+        <p class="refs__repo-kicker">${t('references.repo.kicker')}</p>
+        <h2 id="refs-repo-title" class="refs__repo-title">${t('references.repo.title')}</h2>
+        <p class="refs__repo-text">${t('references.repo.text')}</p>
+        <a class="refs__repo-link" href="${esc(REPO_URL)}" target="_blank" rel="noopener noreferrer">
+          <span class="refs__repo-url">${esc(REPO_URL.replace(/^https:\/\//, '')).replaceAll('/', '/<wbr>')}</span>
+          <span class="refs__repo-cta">${t('references.repo.cta')} →</span>
+        </a>
+      </aside>
+
       <article class="refs">
         <header class="refs__head">
           <h1>${t('references.title')}</h1>
@@ -123,6 +136,7 @@ const mod = {
           </div>
         </section>
       </article>
+      </div>
     `;
   },
 };
