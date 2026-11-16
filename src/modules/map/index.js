@@ -29,7 +29,7 @@ const ROVERS = {
 const REFERENCES = [
   {
     id: 'trek-api',
-    title: 'Mars Trek WMTS API — catálogo de capas',
+    title: 'Mars Trek WMTS API — layer catalog',
     org: 'NASA/JPL Mars Trek',
     url: 'https://trek.nasa.gov/tiles/apidoc/trekAPI.html?body=mars',
     verified: true,

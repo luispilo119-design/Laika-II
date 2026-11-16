@@ -69,7 +69,7 @@ const mod = {
   references: [
     {
       id: 'jin2-black-hole',
-      title: 'BLACK-HOLE — animación ASCII de un agujero negro (inspiración visual del fondo)',
+      title: 'BLACK-HOLE — ASCII animation of a black hole (visual inspiration for the background)',
       org: 'JIN2 (@jin_22ee)',
       url: 'https://github.com/JIN2-ASCII/-JIN2-ASCII/tree/main/BLACK-HOLE',
       year: 2026,
@@ -78,7 +78,7 @@ const mod = {
     {
       // Respalda la dedicatoria: Sputnik 2 se lanzó el 3 de noviembre de 1957 con la perra Laika.
       id: 'nasa-dawn-space-age',
-      title: 'Dawn of the Space Age (Sputnik 1 y Sputnik 2, con Laika a bordo)',
+      title: 'Dawn of the Space Age (Sputnik 1 and Sputnik 2, with Laika on board)',
       org: 'NASA History',
       url: 'https://www.nasa.gov/history/dawn-of-the-space-age/',
       verified: true,

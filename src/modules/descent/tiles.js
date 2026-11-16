@@ -66,28 +66,28 @@ export const IMAGERY = [
 export const IMAGERY_REFERENCES = [
   {
     id: 'trek-jezero-hirise',
-    title: 'Jezero: ortomosaico HiRISE (USGS Astrogeology, para Mars 2020)',
+    title: 'Jezero: HiRISE orthomosaic (USGS Astrogeology, for Mars 2020)',
     org: 'NASA/JPL Mars Trek · USGS',
     url: trekAbstract('JEZ_hirise_soc_006_orthoMosaic_25cm_Eqc_latTs0_lon0_first_dd'),
     verified: true, // ficha de Mars Trek leída el 2026-11-15
   },
   {
     id: 'trek-jezero-ctx',
-    title: 'Jezero: mosaico ortorrectificado CTX de ~6 m (mapa del sistema de aterrizaje de Mars 2020)',
+    title: 'Jezero: ~6 m orthorectified CTX mosaic (Mars 2020 landing system map)',
     org: 'NASA/JPL Mars Trek',
     url: trekAbstract('JEZ_ctx_B_soc_008_orthoMosaic_6m_Eqc_latTs0_lon0'),
     verified: true, // ficha de Mars Trek leída el 2026-11-15
   },
   {
     id: 'trek-gale-ctx',
-    title: 'Gale: mosaico CTX con ajuste de bloque',
+    title: 'Gale: block-adjusted CTX mosaic',
     org: 'NASA/JPL Mars Trek',
     url: trekAbstract('Gale_CTX_BlockAdj_dd'),
     verified: true, // ficha de Mars Trek leída el 2026-11-15
   },
   {
     id: 'ctx-beta01',
-    title: 'CTX global mosaic beta01 (preliminar, no controlado), 5 m por píxel',
+    title: 'CTX global mosaic beta01 (preliminary, uncontrolled), 5 m per pixel',
     org: 'NASA/JPL/MSSS · Caltech Murray Lab · Esri',
     url: 'https://astro.arcgis.com/arcgis/rest/services/OnMars/CTX/MapServer',
     verified: true,

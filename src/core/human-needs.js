@@ -23,7 +23,7 @@ export const HUMAN_REFERENCES = [
   },
   {
     id: 'nasa-std-3001-radiation',
-    title: 'OCHMO-TB-020: Design for Ionizing Radiation Protection (resumen de NASA-STD-3001)',
+    title: 'OCHMO-TB-020: Design for Ionizing Radiation Protection (summary of NASA-STD-3001)',
     org: 'NASA Office of the Chief Health & Medical Officer',
     url: 'https://www.nasa.gov/wp-content/uploads/2023/12/ochmo-tb-020-radiation-protection.pdf',
     year: 2025,

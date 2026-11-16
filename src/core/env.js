@@ -50,7 +50,7 @@ export function radiationFromPressure(pressurePa) {
 export const ENV_REFERENCES = [
   {
     id: 'mola',
-    title: 'MGS MOLA Mission Experiment Gridded Data Record (MEGDR), topografía a 16 píxeles por grado',
+    title: 'MGS MOLA Mission Experiment Gridded Data Record (MEGDR), topography at 16 pixels per degree',
     org: 'NASA PDS Geosciences Node',
     url: 'https://pds-geosciences.wustl.edu/mgs/mgs-m-mola-5-megdr-l3-v1/mgsl_300x/meg016/',
     year: 2003,
@@ -58,7 +58,7 @@ export const ENV_REFERENCES = [
   },
   {
     id: 'swim',
-    title: 'SWIM4MIM: mapas de consistencia de hielo subterráneo (0–1 m y 1–5 m)',
+    title: 'SWIM4MIM: subsurface ice consistency maps (0–1 m and 1–5 m)',
     org: 'Planetary Science Institute / NASA',
     url: 'https://swim.psi.edu/SWIM4MIMProducts.php',
     year: 2025,
@@ -66,7 +66,7 @@ export const ENV_REFERENCES = [
   },
   {
     id: 'robbins2012',
-    title: 'Robbins y Hynek (2012): base global de cráteres de impacto de Marte ≥ 1 km',
+    title: 'Robbins and Hynek (2012): global database of Mars impact craters ≥ 1 km',
     org: 'USGS Astrogeology',
     url: 'https://astrogeology.usgs.gov/pygeoapi/collections/mars/robbinsv1',
     year: 2012,
@@ -74,7 +74,7 @@ export const ENV_REFERENCES = [
   },
   {
     id: 'mcd',
-    title: 'Mars Climate Database v6.2 — interfaz web (modelo de circulación general)',
+    title: 'Mars Climate Database v6.2 — web interface (general circulation model)',
     org: 'LMD / OU / IAA / ESA / CNES',
     url: 'https://www-mars.lmd.jussieu.fr/mcd_python/',
     year: 2022,
@@ -83,7 +83,7 @@ export const ENV_REFERENCES = [
   {
     id: 'guo2015',
     title: 'Guo et al. (2015): Modeling the variations of dose rate measured by RAD during the first MSL Martian year',
-    org: 'The Astrophysical Journal (equipo de MSL/RAD)',
+    org: 'The Astrophysical Journal (MSL/RAD team)',
     url: 'https://arxiv.org/abs/1507.03473',
     year: 2015,
     verified: true,
@@ -98,7 +98,7 @@ export const ENV_REFERENCES = [
   },
   {
     id: 'mars-fact-sheet',
-    title: 'Mars Fact Sheet (gravedad en superficie y masa molar media de la atmósfera)',
+    title: 'Mars Fact Sheet (surface gravity and mean molar mass of the atmosphere)',
     org: 'NASA NSSDCA',
     url: 'https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html',
     verified: true,

@@ -12,14 +12,14 @@
 export const ROVER_REFERENCES = [
   {
     id: 'nasa-track-perseverance',
-    title: 'Perseverance: waypoints y recorrido (mapa "Where is Perseverance?")',
+    title: 'Perseverance waypoints and traverse ("Where is Perseverance?" map)',
     org: 'NASA/JPL',
     url: 'https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json',
     verified: true,
   },
   {
     id: 'nasa-track-curiosity',
-    title: 'Curiosity: waypoints y recorrido (mapa "Where is Curiosity?")',
+    title: 'Curiosity waypoints and traverse ("Where is Curiosity?" map)',
     org: 'NASA/JPL',
     url: 'https://mars.nasa.gov/mmgis-maps/MSL/Layers/json/MSL_waypoints.json',
     verified: true,

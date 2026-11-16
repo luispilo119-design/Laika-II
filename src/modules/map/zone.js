@@ -18,7 +18,7 @@ export const LANDING_CONSTRAINTS = { maxAbsLatDeg: 50, maxElevationM: 2000, maxS
 export const ZONE_REFERENCES = [
   {
     id: 'bussey2016',
-    title: 'Bussey y Hoffman (2016): Human Mars Landing Site and Impacts on Mars Surface Operations',
+    title: 'Bussey and Hoffman (2016): Human Mars Landing Site and Impacts on Mars Surface Operations',
     org: 'NASA Headquarters',
     url: 'https://ntrs.nasa.gov/citations/20160002370',
     year: 2016,

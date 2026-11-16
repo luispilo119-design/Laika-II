@@ -14,7 +14,7 @@ import { photoSols } from './traverse.js';
 export const PHOTO_REFERENCES = [
   {
     id: 'nasa-m20-raw',
-    title: 'Images from the Mars Perseverance Rover (imágenes crudas)',
+    title: 'Images from the Mars Perseverance Rover (raw images)',
     org: 'NASA/JPL-Caltech',
     url: 'https://mars.nasa.gov/mars2020/multimedia/raw-images/',
     verified: true,
